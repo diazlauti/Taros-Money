@@ -1,0 +1,282 @@
+/* Estilos mínimos, sólo funcionales — pensado para reemplazar/rediseñar después. */
+
+:root {
+  --bg: #111111;
+  --superficie: #1c1c1c;
+  --borde: #2e2e2e;
+  --texto: #f2f2f2;
+  --texto-tenue: #9a9a9a;
+  --acento: #4f8cff;
+  --error: #ff6b6b;
+  --exito: #4fd18b;
+  color-scheme: dark;
+  font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--texto);
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+  min-height: 100svh;
+}
+
+.app__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.app__header h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.boton-refrescar {
+  background: none;
+  border: 1px solid var(--borde);
+  color: var(--texto);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 16px;
+}
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.tarjeta-saldo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.etiqueta {
+  color: var(--texto-tenue);
+  font-size: 13px;
+}
+
+.valor-saldo {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.valor-saldo--vacio {
+  font-size: 16px;
+  color: var(--texto-tenue);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto-tenue);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.tab--activa {
+  color: var(--texto);
+  border-color: var(--acento);
+}
+
+.selector-periodo {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: transparent;
+  color: var(--texto-tenue);
+  font-size: 13px;
+}
+
+.chip--activo {
+  color: var(--texto);
+  border-color: var(--acento);
+}
+
+.mensaje-estado {
+  color: var(--texto-tenue);
+  font-size: 14px;
+  padding: 12px 0;
+}
+
+.mensaje-error {
+  color: var(--error);
+  font-size: 14px;
+}
+
+.mensaje-exito {
+  color: var(--exito);
+  font-size: 14px;
+}
+
+.subtitulo {
+  font-size: 16px;
+  margin: 20px 0 8px;
+}
+
+/* Resumen por categoría */
+
+.resumen-total {
+  color: var(--texto-tenue);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.resumen-total strong {
+  color: var(--texto);
+}
+
+.lista-barras {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.barra-categoria__encabezado {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.barra-categoria__pista {
+  background: var(--borde);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.barra-categoria__relleno {
+  background: var(--acento);
+  height: 100%;
+}
+
+/* Lista de gastos */
+
+.lista-gastos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fila-gasto {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--borde);
+  font-size: 14px;
+}
+
+.fila-gasto__fecha {
+  display: flex;
+  flex-direction: column;
+  color: var(--texto-tenue);
+  font-size: 12px;
+}
+
+.fila-gasto__detalle {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fila-gasto__descripcion {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fila-gasto__categoria {
+  color: var(--texto-tenue);
+  font-size: 12px;
+}
+
+.fila-gasto__monto {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Formulario de carga manual */
+
+.formulario-gasto {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.formulario-gasto__fila {
+  display: flex;
+  gap: 12px;
+}
+
+.formulario-gasto__fila label {
+  flex: 1;
+}
+
+.formulario-gasto label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--texto-tenue);
+}
+
+.formulario-gasto input,
+.formulario-gasto select {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  color: var(--texto);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.formulario-gasto button {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--acento);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.formulario-gasto button:disabled {
+  opacity: 0.6;
+}
