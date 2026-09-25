@@ -13,7 +13,16 @@ cargandoGastos,
 dias,
 onCambiarDias,
 cuentas,
+cotizacionUsdArs,
 }) {
+const hayCuentas = cuentas && cuentas.length > 0;
+// El saldo grande es la suma de las cuentas (convirtiendo las que están en
+// USD a ARS con la cotización del script) en vez del valor manual de la
+// planilla, en cuanto haya al menos una cuenta cargada.
+const totalCuentasArs = hayCuentas
+? cuentas.reduce((sum, c) => sum + (c.moneda === "USD" ? c.saldo * (cotizacionUsdArs || 0) : c.saldo), 0)
+: null;
+
 const categorias = resumen ? Object.keys(resumen.porCategoria || {}) : [];
 const entradas = resumen
 ? Object.entries(resumen.porCategoria).sort((a, b) => b[1].total - a[1].total)
@@ -36,14 +45,24 @@ return (
 <div className="card">
 <span className="card-kicker">Saldo estimado</span>
 <div style={{ fontSize: 34, fontWeight: 600, fontFamily: "var(--font-heading)" }}>
-{cargandoSaldo ? "…" : saldo === null || saldo === undefined ? "sin datos" : fmtMoney(saldo)}
+{hayCuentas
+? fmtMoney(totalCuentasArs)
+: cargandoSaldo
+? "…"
+: saldo === null || saldo === undefined
+? "sin datos"
+: fmtMoney(saldo)}
 </div>
-{cuentas && cuentas.length > 0 && (
-<div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+{hayCuentas && (
+<div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
 {cuentas.map((c) => (
-<span key={c.nombre} className="tag">
-{c.nombre}: {fmtMoney(c.saldo)}
-</span>
+<div key={c.nombre} className="text-muted" style={{ fontSize: 13 }}>
+{c.nombre}: {fmtMoney(c.saldo, c.moneda)}
+{c.moneda === "USD" &&
+(cotizacionUsdArs
+? ` (≈ ${fmtMoney(c.saldo * cotizacionUsdArs)})`
+: " (sin cotización para convertir)")}
+</div>
 ))}
 </div>
 )}

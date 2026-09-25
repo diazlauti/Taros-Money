@@ -9,6 +9,7 @@ getCuentas,
 getMetas,
 getSuscripciones,
 getTendencia,
+getCotizacion,
 } from "./api";
 import { getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { useSeccion, useIsMobile } from "./hooks";
@@ -37,6 +38,7 @@ const cuentas = useSeccion(getCuentas, []);
 const metas = useSeccion(getMetas, []);
 const suscripciones = useSeccion(getSuscripciones, []);
 const tendencia = useSeccion(() => getTendencia(6), []);
+const cotizacion = useSeccion(getCotizacion, []);
 
 const recargarTodo = useCallback(() => {
 saldo.recargar();
@@ -90,6 +92,7 @@ cargandoGastos={gastos.cargando}
 dias={dias}
 onCambiarDias={setDias}
 cuentas={cuentas.data}
+cotizacionUsdArs={cotizacion.data}
 />
 )}
 

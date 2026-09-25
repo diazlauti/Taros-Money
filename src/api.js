@@ -110,3 +110,10 @@ return apiGet("suscripciones").then((d) => d.suscripciones);
 export function getTendencia(meses = 6) {
 return apiGet("tendencia", { meses }).then((d) => d.tendencia);
 }
+
+// --- Cotización USD->ARS (la misma que usa el script para matchear gastos en
+// dólares), usada acá sólo para convertir el saldo de las cuentas en USD ---
+
+export function getCotizacion() {
+return apiGet("cotizacion").then((d) => d.cotizacionUsdArs);
+}

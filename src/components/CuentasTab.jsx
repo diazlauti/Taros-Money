@@ -5,6 +5,7 @@ import { fmtMoney } from "../format";
 export default function CuentasTab({ cuentas, cargando, error, onCambio }) {
 const [nombre, setNombre] = useState("");
 const [saldoInicial, setSaldoInicial] = useState("");
+const [moneda, setMoneda] = useState("ARS");
 const [enviando, setEnviando] = useState(false);
 const [errorForm, setErrorForm] = useState("");
 
@@ -14,7 +15,7 @@ if (!nombre.trim()) return;
 setEnviando(true);
 setErrorForm("");
 try {
-await crearCuenta({ nombre: nombre.trim(), saldo: parseFloat(saldoInicial) || 0 });
+await crearCuenta({ nombre: nombre.trim(), saldo: parseFloat(saldoInicial) || 0, moneda });
 setNombre("");
 setSaldoInicial("");
 onCambio?.();
@@ -36,7 +37,7 @@ return (
 {(cuentas || []).map((c) => (
 <div className="card" key={c.nombre}>
 <span className="card-title">{c.nombre}</span>
-<div style={{ fontSize: 22, fontWeight: 600 }}>{fmtMoney(c.saldo)}</div>
+<div style={{ fontSize: 22, fontWeight: 600 }}>{fmtMoney(c.saldo, c.moneda)}</div>
 </div>
 ))}
 {(!cuentas || cuentas.length === 0) && (
@@ -62,6 +63,13 @@ return (
     onChange={(e) => setSaldoInicial(e.target.value)}
     placeholder="0.00"
     />
+    </div>
+    <div className="field">
+    <label>Moneda</label>
+    <select className="input" value={moneda} onChange={(e) => setMoneda(e.target.value)}>
+    <option value="ARS">Pesos (ARS)</option>
+    <option value="USD">Dólares (USD)</option>
+    </select>
     </div>
     </div>
     <button className="btn btn-primary" type="submit" disabled={enviando}>
