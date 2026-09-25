@@ -38,6 +38,7 @@ return (
 <div className="card" key={c.nombre}>
 <span className="card-title">{c.nombre}</span>
 <div style={{ fontSize: 22, fontWeight: 600 }}>{fmtMoney(c.saldo, c.moneda)}</div>
+{c.esTarjeta && <span className="text-muted" style={{ fontSize: 12 }}>Se actualiza sola con los mails del banco</span>}
 </div>
 ))}
 {(!cuentas || cuentas.length === 0) && (
