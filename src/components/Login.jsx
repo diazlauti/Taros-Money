@@ -1,22 +1,20 @@
-import { useEffect, useState } from "react";
-import { configurarPin, getEstadoPin, login } from "../api";
+import { useState } from "react";
+import { crearEspacio, login } from "../api";
 import { playError, playSuccess } from "../sounds";
 
 export default function Login({ onSuccess }) {
-  const [modo, setModo] = useState("cargando"); // "cargando" | "elegir" | "ingresar" | "error-estado"
+  const [modo, setModo] = useState("elegir-modo"); // "elegir-modo" | "ingresar" | "crear"
   const [pin, setPin] = useState("");
   const [confirmarPin, setConfirmarPin] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    getEstadoPin()
-      .then((configurado) => setModo(configurado ? "ingresar" : "elegir"))
-      .catch((err) => {
-        setError(err.message || "No se pudo conectar con la planilla.");
-        setModo("error-estado");
-      });
-  }, []);
+  function irA(nuevoModo) {
+    setError("");
+    setPin("");
+    setConfirmarPin("");
+    setModo(nuevoModo);
+  }
 
   async function submitIngresar(e) {
     e.preventDefault();
@@ -35,7 +33,7 @@ export default function Login({ onSuccess }) {
     }
   }
 
-  async function submitElegir(e) {
+  async function submitCrear(e) {
     e.preventDefault();
     if (pin.length < 4) {
       setError("El PIN tiene que tener al menos 4 caracteres.");
@@ -48,12 +46,12 @@ export default function Login({ onSuccess }) {
     setEnviando(true);
     setError("");
     try {
-      await configurarPin(pin);
+      await crearEspacio(pin);
       playSuccess();
       onSuccess?.();
     } catch (err) {
       playError();
-      setError(err.message || "No se pudo guardar el PIN.");
+      setError(err.message || "No se pudo crear tu espacio.");
     } finally {
       setEnviando(false);
     }
@@ -67,15 +65,18 @@ export default function Login({ onSuccess }) {
           Taros Money
         </div>
 
-        {modo === "cargando" && <p className="mensaje-estado">Cargando…</p>}
-
-        {modo === "error-estado" && (
-          <>
-            <p className="mensaje-error">{error}</p>
-            <button className="btn btn-secondary" onClick={() => window.location.reload()}>
-              Reintentar
+        {modo === "elegir-modo" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <p className="mensaje-estado" style={{ padding: 0 }}>
+              ¿Ya tenés tu espacio o es la primera vez que entrás?
+            </p>
+            <button className="btn btn-primary" onClick={() => irA("ingresar")}>
+              Ya tengo cuenta
             </button>
-          </>
+            <button className="btn btn-secondary" onClick={() => irA("crear")}>
+              Es mi primera vez
+            </button>
+          </div>
         )}
 
         {modo === "ingresar" && (
@@ -96,13 +97,16 @@ export default function Login({ onSuccess }) {
               {enviando ? "Entrando…" : "Entrar"}
             </button>
             {error && <p className="mensaje-error">{error}</p>}
+            <button className="btn btn-secondary" type="button" onClick={() => irA("elegir-modo")}>
+              Volver
+            </button>
           </form>
         )}
 
-        {modo === "elegir" && (
-          <form onSubmit={submitElegir} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {modo === "crear" && (
+          <form onSubmit={submitCrear} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <p className="mensaje-estado" style={{ padding: 0 }}>
-              Primera vez acá: elegí el PIN que vas a usar para entrar.
+              Elegí el PIN que vas a usar para entrar. Se va a crear tu propio espacio, separado del de los demás.
             </p>
             <div className="field">
               <label>Elegí tu PIN</label>
@@ -128,9 +132,12 @@ export default function Login({ onSuccess }) {
               />
             </div>
             <button className="btn btn-primary" type="submit" disabled={enviando || !pin || !confirmarPin}>
-              {enviando ? "Guardando…" : "Guardar y entrar"}
+              {enviando ? "Creando…" : "Crear mi espacio"}
             </button>
             {error && <p className="mensaje-error">{error}</p>}
+            <button className="btn btn-secondary" type="button" onClick={() => irA("elegir-modo")}>
+              Volver
+            </button>
           </form>
         )}
       </div>

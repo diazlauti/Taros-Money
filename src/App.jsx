@@ -87,12 +87,10 @@ setSonido(toggleSonido());
 }
 
 async function manejarCambiarPin() {
-const actual = window.prompt("PIN actual:");
-if (!actual) return;
 const nuevo = window.prompt("PIN nuevo (al menos 4 caracteres):");
 if (!nuevo) return;
 try {
-await cambiarPin(actual, nuevo);
+await cambiarPin(nuevo);
 playSuccess();
 window.alert("Listo, PIN cambiado.");
 } catch (err) {

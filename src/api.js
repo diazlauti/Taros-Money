@@ -89,18 +89,13 @@ async function apiPost(accion, payload = {}) {
 }
 
 // --- Login ---
-
-// Antes de mostrar el formulario de login, la app pregunta si ya hay un PIN
-// configurado: si no, en vez de pedirlo deja que el usuario elija el suyo.
-export async function getEstadoPin() {
-  chequearConfig();
-  const url = new URL(API_URL);
-  url.searchParams.set("accion", "estadoPin");
-  const res = await fetch(url.toString());
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return !!data.configurado;
-}
+//
+// La app es multiusuario: un mismo link sirve a varios "espacios" (cada uno
+// con su propia planilla), identificados por PIN. No hay forma de saber de
+// antemano si un PIN ya existe sin intentarlo, así que el login ya no
+// pregunta un "estado" global — el usuario elige explícitamente si ya tiene
+// cuenta (login) o si es la primera vez que entra (crearEspacio, que le crea
+// una planilla nueva en el momento).
 
 export async function login(pin) {
   chequearConfig();
@@ -114,22 +109,22 @@ export async function login(pin) {
   setSessionToken(data.sessionToken);
 }
 
-// Primera vez: elegir el PIN de la app. Ya deja logueado (no hace falta
-// volver a escribirlo).
-export async function configurarPin(pin) {
+// Primera vez: crea un espacio (planilla propia) nuevo con ese PIN. Ya deja
+// logueado (no hace falta volver a escribirlo).
+export async function crearEspacio(pin) {
   chequearConfig();
   const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ accion: "configurarPin", pin }),
+    body: JSON.stringify({ accion: "crearEspacio", pin }),
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error);
   setSessionToken(data.sessionToken);
 }
 
-export function cambiarPin(pinActual, pinNuevo) {
-  return apiPost("cambiarPin", { pinActual, pinNuevo });
+export function cambiarPin(pinNuevo) {
+  return apiPost("cambiarPin", { pinNuevo });
 }
 
 export function getGastos(dias = 30) {
