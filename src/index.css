@@ -1,6 +1,6 @@
 /* Taros Money — tema día/noche estilo cartoon (paleta original, no es de ninguna marca). */
 
-..app-shell[data-theme="light"] {
+.app-shell[data-theme="light"] {
 --color-bg: #5ec8f0;
 --color-surface: #fffdf0;
 --color-surface-2: #f2eeda;
@@ -15,7 +15,7 @@
 color-scheme: light;
 }
 
-..app-shell[data-theme="dark"] {
+.app-shell[data-theme="dark"] {
 --color-bg: #1a1f45;
 --color-surface: #262c5c;
 --color-surface-2: #1f2450;
