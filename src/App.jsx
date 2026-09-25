@@ -12,10 +12,11 @@ getTendencia,
 getCotizacion,
 haySesion,
 cerrarSesion,
+cambiarPin,
 } from "./api";
 import { getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { useSeccion, useIsMobile } from "./hooks";
-import { sonidoHabilitado, toggleSonido } from "./sounds";
+import { playError, playSuccess, sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav } from "./components/Layout";
 import ResumenTab from "./components/ResumenTab";
 import MovimientosTab from "./components/MovimientosTab";
@@ -85,6 +86,21 @@ function alternarSonido() {
 setSonido(toggleSonido());
 }
 
+async function manejarCambiarPin() {
+const actual = window.prompt("PIN actual:");
+if (!actual) return;
+const nuevo = window.prompt("PIN nuevo (al menos 4 caracteres):");
+if (!nuevo) return;
+try {
+await cambiarPin(actual, nuevo);
+playSuccess();
+window.alert("Listo, PIN cambiado.");
+} catch (err) {
+playError();
+window.alert(err.message || "No se pudo cambiar el PIN.");
+}
+}
+
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
@@ -97,6 +113,7 @@ theme={theme}
 onToggleTheme={toggleTheme}
 sonido={sonido}
 onToggleSonido={alternarSonido}
+onCambiarPin={manejarCambiarPin}
 onCerrarSesion={onCerrarSesion}
 />
 )}

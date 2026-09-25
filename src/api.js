@@ -90,6 +90,18 @@ async function apiPost(accion, payload = {}) {
 
 // --- Login ---
 
+// Antes de mostrar el formulario de login, la app pregunta si ya hay un PIN
+// configurado: si no, en vez de pedirlo deja que el usuario elija el suyo.
+export async function getEstadoPin() {
+  chequearConfig();
+  const url = new URL(API_URL);
+  url.searchParams.set("accion", "estadoPin");
+  const res = await fetch(url.toString());
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return !!data.configurado;
+}
+
 export async function login(pin) {
   chequearConfig();
   const res = await fetch(API_URL, {
@@ -100,6 +112,24 @@ export async function login(pin) {
   const data = await res.json();
   if (data.error) throw new Error(data.error);
   setSessionToken(data.sessionToken);
+}
+
+// Primera vez: elegir el PIN de la app. Ya deja logueado (no hace falta
+// volver a escribirlo).
+export async function configurarPin(pin) {
+  chequearConfig();
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ accion: "configurarPin", pin }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  setSessionToken(data.sessionToken);
+}
+
+export function cambiarPin(pinActual, pinNuevo) {
+  return apiPost("cambiarPin", { pinActual, pinNuevo });
 }
 
 export function getGastos(dias = 30) {
