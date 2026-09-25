@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dev-dist
 *.local
 
 # Variables de entorno con secretos (token de la API). El .env.example sí se versiona.

@@ -496,3 +496,18 @@ color: var(--color-text-dim);
 font-size: 14px;
 padding: 4px 0;
 }
+
+.pantalla-login {
+min-height: 100vh;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 16px;
+background: var(--color-bg);
+}
+
+.login-card {
+width: 100%;
+max-width: 320px;
+gap: 14px;
+}

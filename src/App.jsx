@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 getSaldo,
 getResumen,
@@ -10,6 +10,8 @@ getMetas,
 getSuscripciones,
 getTendencia,
 getCotizacion,
+haySesion,
+cerrarSesion,
 } from "./api";
 import { getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { useSeccion, useIsMobile } from "./hooks";
@@ -21,8 +23,27 @@ import MetasTab from "./components/MetasTab";
 import RecurrentesTab from "./components/RecurrentesTab";
 import ReportesTab from "./components/ReportesTab";
 import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
+import Login from "./components/Login";
 
 export default function App() {
+const [autenticado, setAutenticado] = useState(haySesion);
+
+useEffect(() => {
+function onSesionVencida() {
+setAutenticado(false);
+}
+window.addEventListener("taros:sesion-vencida", onSesionVencida);
+return () => window.removeEventListener("taros:sesion-vencida", onSesionVencida);
+}, []);
+
+if (!autenticado) {
+return <Login onSuccess={() => setAutenticado(true)} />;
+}
+
+return <PanelPrincipal onCerrarSesion={() => { cerrarSesion(); setAutenticado(false); }} />;
+}
+
+function PanelPrincipal({ onCerrarSesion }) {
 const [theme, setTheme] = useState(getTemaInicial);
 const [activeTab, setActiveTab] = useState("resumen");
 const [dias, setDias] = useState(30);
@@ -63,7 +84,13 @@ const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 return (
 <div className="app-shell" data-theme={theme}>
 {!isMobile && (
-<Sidebar activeTab={activeTab} onSelect={setActiveTab} theme={theme} onToggleTheme={toggleTheme} />
+<Sidebar
+activeTab={activeTab}
+onSelect={setActiveTab}
+theme={theme}
+onToggleTheme={toggleTheme}
+onCerrarSesion={onCerrarSesion}
+/>
 )}
 
 <main className="main">
@@ -72,6 +99,11 @@ return (
 {isMobile && (
 <button className="btn btn-icon btn-secondary" onClick={toggleTheme}>
 <i className={theme === "dark" ? "ph ph-sun" : "ph ph-moon"} />
+</button>
+)}
+{isMobile && (
+<button className="btn btn-icon btn-secondary" onClick={onCerrarSesion} title="Cerrar sesión">
+<i className="ph ph-sign-out" />
 </button>
 )}
 <button className="btn btn-primary" onClick={() => setDialogOpen(true)}>
@@ -97,7 +129,13 @@ cotizacionUsdArs={cotizacion.data}
 )}
 
 {activeTab === "movimientos" && (
-<MovimientosTab gastos={gastos.data} ingresos={ingresos.data} cargando={gastos.cargando} />
+<MovimientosTab
+gastos={gastos.data}
+ingresos={ingresos.data}
+cargando={gastos.cargando}
+categorias={categorias.data}
+onCambio={recargarTodo}
+/>
 )}
 
 {activeTab === "cuentas" && (
