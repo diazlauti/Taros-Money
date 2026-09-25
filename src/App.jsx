@@ -1,103 +1,139 @@
-import { useCallback, useEffect, useState } from "react";
-import { getCategorias, getGastos, getResumen, getSaldo } from "./api";
-import Saldo from "./components/Saldo";
-import ResumenCategorias from "./components/ResumenCategorias";
-import ListaGastos from "./components/ListaGastos";
-import FormularioGasto from "./components/FormularioGasto";
-
-const PERIODOS = [7, 14, 30, 90];
+import { useCallback, useState } from "react";
+import {
+getSaldo,
+getResumen,
+getGastos,
+getCategorias,
+getIngresos,
+getCuentas,
+getMetas,
+getSuscripciones,
+getTendencia,
+} from "./api";
+import { getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
+import { useSeccion, useIsMobile } from "./hooks";
+import { Sidebar, BottomNav } from "./components/Layout";
+import ResumenTab from "./components/ResumenTab";
+import MovimientosTab from "./components/MovimientosTab";
+import CuentasTab from "./components/CuentasTab";
+import MetasTab from "./components/MetasTab";
+import RecurrentesTab from "./components/RecurrentesTab";
+import ReportesTab from "./components/ReportesTab";
+import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
 
 export default function App() {
-  const [pestania, setPestania] = useState("resumen");
-  const [dias, setDias] = useState(30);
+const [theme, setTheme] = useState(getTemaInicial);
+const [activeTab, setActiveTab] = useState("resumen");
+const [dias, setDias] = useState(30);
+const [dialogOpen, setDialogOpen] = useState(false);
+const isMobile = useIsMobile();
 
-  const [saldo, setSaldo] = useState(null);
-  const [resumen, setResumen] = useState(null);
-  const [gastos, setGastos] = useState([]);
-  const [categorias, setCategorias] = useState([]);
+const saldo = useSeccion(getSaldo, []);
+const resumen = useSeccion(() => getResumen(dias), [dias]);
+const gastos = useSeccion(() => getGastos(dias), [dias]);
+const ingresos = useSeccion(() => getIngresos(dias), [dias]);
+const categorias = useSeccion(getCategorias, []);
+const cuentas = useSeccion(getCuentas, []);
+const metas = useSeccion(getMetas, []);
+const suscripciones = useSeccion(getSuscripciones, []);
+const tendencia = useSeccion(() => getTendencia(6), []);
 
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
+const recargarTodo = useCallback(() => {
+saldo.recargar();
+resumen.recargar();
+gastos.recargar();
+ingresos.recargar();
+cuentas.recargar();
+metas.recargar();
+suscripciones.recargar();
+tendencia.recargar();
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, tendencia]);
 
-  const cargarDatos = useCallback(async () => {
-    setCargando(true);
-    setError("");
-    try {
-      const [saldoData, resumenData, gastosData, categoriasData] = await Promise.all([
-        getSaldo(),
-        getResumen(dias),
-        getGastos(dias),
-        getCategorias(),
-      ]);
-      setSaldo(saldoData);
-      setResumen(resumenData);
-      setGastos(gastosData);
-      setCategorias(categoriasData);
-    } catch (err) {
-      setError(err.message || "No se pudieron cargar los datos.");
-    } finally {
-      setCargando(false);
-    }
-  }, [dias]);
+function toggleTheme() {
+const next = theme === "dark" ? "light" : "dark";
+guardarTema(next);
+setTheme(next);
+}
 
-  useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
-  return (
-    <div className="app">
-      <header className="app__header">
-        <h1>Taros Money</h1>
-        <button className="boton-refrescar" onClick={cargarDatos} disabled={cargando}>
-          ↻
-        </button>
-      </header>
+return (
+<div className="app-shell" data-theme={theme}>
+{!isMobile && (
+<Sidebar activeTab={activeTab} onSelect={setActiveTab} theme={theme} onToggleTheme={toggleTheme} />
+)}
 
-      <Saldo saldo={saldo} cargando={cargando} />
+<main className="main">
+<header className="main-header">
+<h1>{activeItem.label}</h1>
+{isMobile && (
+<button className="btn btn-icon btn-secondary" onClick={toggleTheme}>
+<i className={theme === "dark" ? "ph ph-sun" : "ph ph-moon"} />
+</button>
+)}
+<button className="btn btn-primary" onClick={() => setDialogOpen(true)}>
+<i className="ph ph-plus" />
+Nuevo movimiento
+</button>
+</header>
 
-      <nav className="tabs">
-        <button
-          className={pestania === "resumen" ? "tab tab--activa" : "tab"}
-          onClick={() => setPestania("resumen")}
-        >
-          Resumen
-        </button>
-        <button
-          className={pestania === "cargar" ? "tab tab--activa" : "tab"}
-          onClick={() => setPestania("cargar")}
-        >
-          Cargar gasto
-        </button>
-      </nav>
+<div className={"main-content" + (isMobile ? " main-content--con-bottom-nav" : "")}>
+{activeTab === "resumen" && (
+<ResumenTab
+saldo={saldo.data}
+cargandoSaldo={saldo.cargando}
+resumen={resumen.data}
+cargandoResumen={resumen.cargando}
+gastos={gastos.data}
+cargandoGastos={gastos.cargando}
+dias={dias}
+onCambiarDias={setDias}
+cuentas={cuentas.data}
+/>
+)}
 
-      {error && <p className="mensaje-error">{error}</p>}
+{activeTab === "movimientos" && (
+<MovimientosTab gastos={gastos.data} ingresos={ingresos.data} cargando={gastos.cargando} />
+)}
 
-      {pestania === "resumen" && (
-        <section>
-          <div className="selector-periodo">
-            {PERIODOS.map((p) => (
-              <button
-                key={p}
-                className={dias === p ? "chip chip--activo" : "chip"}
-                onClick={() => setDias(p)}
-              >
-                {p}d
-              </button>
-            ))}
-          </div>
+{activeTab === "cuentas" && (
+<CuentasTab
+cuentas={cuentas.data}
+cargando={cuentas.cargando}
+error={cuentas.error}
+onCambio={cuentas.recargar}
+/>
+)}
 
-          <ResumenCategorias resumen={resumen} cargando={cargando} />
+{activeTab === "metas" && (
+<MetasTab metas={metas.data} cargando={metas.cargando} error={metas.error} onCambio={metas.recargar} />
+)}
 
-          <h2 className="subtitulo">Últimos gastos</h2>
-          <ListaGastos gastos={gastos} cargando={cargando} />
-        </section>
-      )}
+{activeTab === "recurrentes" && (
+<RecurrentesTab
+suscripciones={suscripciones.data}
+cargando={suscripciones.cargando}
+error={suscripciones.error}
+/>
+)}
 
-      {pestania === "cargar" && (
-        <section>
-          <FormularioGasto categorias={categorias} onGastoAgregado={cargarDatos} />
-        </section>
-      )}
-    </div>
-  );
+{activeTab === "reportes" && (
+<ReportesTab tendencia={tendencia.data} cargando={tendencia.cargando} error={tendencia.error} />
+)}
+</div>
+</main>
+
+{isMobile && <BottomNav activeTab={activeTab} onSelect={setActiveTab} />}
+
+{dialogOpen && (
+<NuevoMovimientoDialog
+categorias={categorias.data}
+cuentas={cuentas.data}
+onClose={() => setDialogOpen(false)}
+onGuardado={recargarTodo}
+/>
+)}
+</div>
+);
 }
