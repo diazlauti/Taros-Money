@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { crearMeta, aportarMeta } from "../api";
 import { fmtMoney } from "../format";
+import { playChime, playError, playSuccess } from "../sounds";
 
 export default function MetasTab({ metas, cargando, error, onCambio }) {
 const [nombre, setNombre] = useState("");
@@ -16,25 +17,31 @@ setEnviando(true);
 setErrorForm("");
 try {
 await crearMeta({ nombre: nombre.trim(), objetivo: parseFloat(objetivo), actual: 0 });
+playSuccess();
 setNombre("");
 setObjetivo("");
 onCambio?.();
 } catch (err) {
+playError();
 setErrorForm(err.message || "No se pudo crear la meta.");
 } finally {
 setEnviando(false);
 }
 }
 
-async function aportar(nombreMeta) {
-    const monto = window.prompt(`¿Cuánto querés sumar a "${nombreMeta}"?`);
+async function aportar(meta) {
+    const monto = window.prompt(`¿Cuánto querés sumar a "${meta.nombre}"?`);
     const num = parseFloat(monto);
     if (!num || num <= 0) return;
-    setAportando(nombreMeta);
+    setAportando(meta.nombre);
     try {
-    await aportarMeta(nombreMeta, num);
+    await aportarMeta(meta.nombre, num);
+    const llegoAlObjetivo = meta.objetivo > 0 && meta.actual < meta.objetivo && meta.actual + num >= meta.objetivo;
+    if (llegoAlObjetivo) playChime();
+    else playSuccess();
     onCambio?.();
     } catch (err) {
+    playError();
     setErrorForm(err.message || "No se pudo registrar el aporte.");
     } finally {
     setAportando(null);
@@ -66,7 +73,7 @@ return (
 </div>
 <button
 className="btn btn-secondary"
-onClick={() => aportar(g.nombre)}
+onClick={() => aportar(g)}
 disabled={aportando === g.nombre}
 >
 {aportando === g.nombre ? "Guardando…" : "Sumar aporte"}

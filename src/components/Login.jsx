@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { login } from "../api";
+import { playError, playSuccess } from "../sounds";
 
 export default function Login({ onSuccess }) {
   const [pin, setPin] = useState("");
@@ -13,8 +14,10 @@ export default function Login({ onSuccess }) {
     setError("");
     try {
       await login(pin);
+      playSuccess();
       onSuccess?.();
     } catch (err) {
+      playError();
       setError(err.message || "No se pudo iniciar sesión.");
     } finally {
       setEnviando(false);

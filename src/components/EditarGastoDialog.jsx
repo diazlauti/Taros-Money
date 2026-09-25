@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { borrarGasto, editarGasto } from "../api";
+import { playClick, playError, playSuccess } from "../sounds";
 
 export default function EditarGastoDialog({ gasto, categorias, onClose, onGuardado }) {
   const [categoria, setCategoria] = useState(gasto.categoria || "");
@@ -24,9 +25,11 @@ export default function EditarGastoDialog({ gasto, categorias, onClose, onGuarda
     setError("");
     try {
       await editarGasto(criterio, { categoria, descripcion, monto: montoNum });
+      playSuccess();
       onGuardado?.();
       onClose();
     } catch (err) {
+      playError();
       setError(err.message || "No se pudo guardar el cambio.");
     } finally {
       setEnviando(false);
@@ -39,9 +42,11 @@ export default function EditarGastoDialog({ gasto, categorias, onClose, onGuarda
     setError("");
     try {
       await borrarGasto(criterio);
+      playClick();
       onGuardado?.();
       onClose();
     } catch (err) {
+      playError();
       setError(err.message || "No se pudo borrar.");
       setBorrando(false);
     }

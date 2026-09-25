@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { crearCuenta } from "../api";
 import { fmtMoney } from "../format";
+import { playError, playSuccess } from "../sounds";
 
 export default function CuentasTab({ cuentas, cargando, error, onCambio }) {
 const [nombre, setNombre] = useState("");
@@ -16,10 +17,12 @@ setEnviando(true);
 setErrorForm("");
 try {
 await crearCuenta({ nombre: nombre.trim(), saldo: parseFloat(saldoInicial) || 0, moneda });
+playSuccess();
 setNombre("");
 setSaldoInicial("");
 onCambio?.();
 } catch (err) {
+playError();
 setErrorForm(err.message || "No se pudo crear la cuenta.");
 } finally {
 setEnviando(false);

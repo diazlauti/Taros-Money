@@ -62,10 +62,9 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
         ) : (
           filtrados.map((t, i) => (
             <div
-              className="movimiento"
+              className={"movimiento" + (t.tipo === "gasto" ? " movimiento--clicable" : "")}
               key={i}
               onClick={() => t.tipo === "gasto" && setEditando(t)}
-              style={t.tipo === "gasto" ? { cursor: "pointer" } : undefined}
               title={t.tipo === "gasto" ? "Tocar para editar o borrar" : undefined}
             >
               <i className={iconoPorCategoria(t.categoria)} />

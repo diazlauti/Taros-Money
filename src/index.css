@@ -116,6 +116,11 @@ font-size: 14px;
 text-align: left;
 background: transparent;
 color: var(--color-text);
+transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.nav-item:hover {
+transform: translateX(2px);
 }
 
 .nav-item.is-active {
@@ -165,6 +170,11 @@ background: transparent;
 cursor: pointer;
 color: var(--color-text-dim);
 font-size: 19px;
+transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.bottom-nav-item.is-active {
+transform: translateY(-2px);
 }
 
 .bottom-nav-item.is-active {
@@ -220,6 +230,7 @@ border-radius: var(--radius-sm);
 font-size: 14px;
 cursor: pointer;
 font-family: var(--font-body);
+transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
 }
 
 .btn-primary {
@@ -228,6 +239,16 @@ color: var(--ink);
 border: 2px solid var(--ink);
 box-shadow: var(--shadow-sm);
 font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+transform: translate(-1px, -1px);
+box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active:not(:disabled) {
+transform: translate(1px, 1px);
+box-shadow: none;
 }
 
 .btn-primary:disabled {
@@ -240,6 +261,16 @@ background: var(--color-surface);
 color: var(--color-text);
 border: 2px solid var(--ink);
 font-weight: 500;
+}
+
+.btn-secondary:hover:not(:disabled) {
+transform: translate(-1px, -1px);
+box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:active:not(:disabled) {
+transform: translate(0, 0);
+box-shadow: none;
 }
 
 .btn-icon {
@@ -257,6 +288,12 @@ padding: 16px;
 display: flex;
 flex-direction: column;
 gap: 10px;
+transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.grid-cards .card:hover {
+transform: translateY(-2px);
+box-shadow: var(--shadow-sm);
 }
 
 .card-kicker {
@@ -310,6 +347,7 @@ font-size: 12px;
 background: var(--color-surface-2);
 border: 2px solid var(--ink);
 color: var(--color-text);
+animation: aparecer 0.2s ease;
 }
 
 .seg {
@@ -337,6 +375,10 @@ opacity: 0;
 pointer-events: none;
 }
 
+.seg-opt {
+transition: background 0.15s ease, color 0.15s ease;
+}
+
 .seg-opt:has(input:checked) {
 background: var(--color-accent);
 color: var(--ink);
@@ -358,6 +400,11 @@ background: var(--color-surface);
 color: var(--color-text-dim);
 font-size: 13px;
 cursor: pointer;
+transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.chip:active {
+transform: scale(0.95);
 }
 
 .chip.is-active {
@@ -375,6 +422,16 @@ align-items: center;
 padding: 10px 0;
 border-bottom: 1px solid var(--color-divider);
 font-size: 14px;
+animation: aparecer 0.25s ease;
+transition: background 0.15s ease;
+}
+
+.movimiento--clicable {
+cursor: pointer;
+}
+
+.movimiento--clicable:hover {
+background: var(--color-surface-2);
 }
 
 .movimiento:last-child {
@@ -413,6 +470,7 @@ overflow: hidden;
 .progreso-relleno {
 height: 100%;
 background: var(--color-accent);
+transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* --- Formulario / dialog --- */
@@ -447,6 +505,7 @@ align-items: center;
 justify-content: center;
 padding: 16px;
 z-index: 20;
+animation: backdrop-in 0.18s ease;
 }
 
 .dialog {
@@ -461,6 +520,26 @@ overflow: auto;
 display: flex;
 flex-direction: column;
 gap: 14px;
+animation: dialog-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes backdrop-in {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+
+@keyframes dialog-in {
+from { opacity: 0; transform: scale(0.92) translateY(8px); }
+to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes aparecer {
+from { opacity: 0; transform: translateY(4px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-pane {
+animation: aparecer 0.2s ease;
 }
 
 .dialog-title {
@@ -510,4 +589,5 @@ background: var(--color-bg);
 width: 100%;
 max-width: 320px;
 gap: 14px;
+animation: dialog-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

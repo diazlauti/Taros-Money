@@ -15,6 +15,7 @@ cerrarSesion,
 } from "./api";
 import { getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { useSeccion, useIsMobile } from "./hooks";
+import { sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav } from "./components/Layout";
 import ResumenTab from "./components/ResumenTab";
 import MovimientosTab from "./components/MovimientosTab";
@@ -45,6 +46,7 @@ return <PanelPrincipal onCerrarSesion={() => { cerrarSesion(); setAutenticado(fa
 
 function PanelPrincipal({ onCerrarSesion }) {
 const [theme, setTheme] = useState(getTemaInicial);
+const [sonido, setSonido] = useState(sonidoHabilitado);
 const [activeTab, setActiveTab] = useState("resumen");
 const [dias, setDias] = useState(30);
 const [dialogOpen, setDialogOpen] = useState(false);
@@ -79,6 +81,10 @@ guardarTema(next);
 setTheme(next);
 }
 
+function alternarSonido() {
+setSonido(toggleSonido());
+}
+
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
@@ -89,6 +95,8 @@ activeTab={activeTab}
 onSelect={setActiveTab}
 theme={theme}
 onToggleTheme={toggleTheme}
+sonido={sonido}
+onToggleSonido={alternarSonido}
 onCerrarSesion={onCerrarSesion}
 />
 )}
@@ -99,6 +107,11 @@ onCerrarSesion={onCerrarSesion}
 {isMobile && (
 <button className="btn btn-icon btn-secondary" onClick={toggleTheme}>
 <i className={theme === "dark" ? "ph ph-sun" : "ph ph-moon"} />
+</button>
+)}
+{isMobile && (
+<button className="btn btn-icon btn-secondary" onClick={alternarSonido} title="Sonido">
+<i className={sonido ? "ph ph-speaker-high" : "ph ph-speaker-slash"} />
 </button>
 )}
 {isMobile && (
@@ -113,6 +126,7 @@ Nuevo movimiento
 </header>
 
 <div className={"main-content" + (isMobile ? " main-content--con-bottom-nav" : "")}>
+<div className="tab-pane" key={activeTab}>
 {activeTab === "resumen" && (
 <ResumenTab
 saldo={saldo.data}
@@ -162,6 +176,7 @@ error={suscripciones.error}
 {activeTab === "reportes" && (
 <ReportesTab tendencia={tendencia.data} cargando={tendencia.cargando} error={tendencia.error} />
 )}
+</div>
 </div>
 </main>
 

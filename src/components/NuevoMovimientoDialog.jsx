@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { agregarGasto, agregarIngreso, ajustarCuenta } from "../api";
+import { playError, playSuccess } from "../sounds";
 
 const GASTO_CATS_FALLBACK = ["Comida", "Transporte", "Servicios", "Entretenimiento", "Otros"];
 const INGRESO_CATS = ["Sueldo", "Freelance", "Otro ingreso"];
@@ -60,9 +61,11 @@ function campo(nombre, valor) {
     /* la sección de cuentas puede no estar conectada todavía */
     }
     }
+    playSuccess();
     onGuardado?.();
     onClose();
     } catch (err) {
+    playError();
     setError(err.message || "No se pudo guardar el movimiento.");
     } finally {
     setEnviando(false);
