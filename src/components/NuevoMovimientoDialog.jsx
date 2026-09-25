@@ -142,8 +142,6 @@ function campo(nombre, valor) {
                     </div>
                     </div>
 
-
-    )
 <div className="dialog-actions">
 <button type="button" className="btn btn-secondary" onClick={onClose}>
 Cancelar
