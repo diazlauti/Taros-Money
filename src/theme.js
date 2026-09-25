@@ -9,6 +9,7 @@ return localStorage.getItem(STORAGE_KEY) || "dark";
 } catch {
 return "dark";
 }
+}
 
 export function guardarTema(tema) {
 try {
