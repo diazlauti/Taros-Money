@@ -42,7 +42,6 @@ async function aportar(nombreMeta) {
     }
 
 
-}
 return (
 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 {cargando ? (
@@ -106,4 +105,3 @@ disabled={aportando === g.nombre}
     </div>
     );
     }
-    
