@@ -2,10 +2,11 @@ import { useState } from "react";
 import { borrarGasto, editarGasto } from "../api";
 import { playClick, playError, playSuccess } from "../sounds";
 
-export default function EditarGastoDialog({ gasto, categorias, onClose, onGuardado }) {
+export default function EditarGastoDialog({ gasto, categorias, cuentas, onClose, onGuardado }) {
   const [categoria, setCategoria] = useState(gasto.categoria || "");
   const [descripcion, setDescripcion] = useState(gasto.descripcion || "");
   const [monto, setMonto] = useState(String(gasto.monto));
+  const [cuenta, setCuenta] = useState(gasto.cuenta || "");
   const [enviando, setEnviando] = useState(false);
   const [borrando, setBorrando] = useState(false);
   const [error, setError] = useState("");
@@ -24,7 +25,7 @@ export default function EditarGastoDialog({ gasto, categorias, onClose, onGuarda
     setEnviando(true);
     setError("");
     try {
-      await editarGasto(criterio, { categoria, descripcion, monto: montoNum });
+      await editarGasto(criterio, { categoria, descripcion, monto: montoNum, cuenta });
       playSuccess();
       onGuardado?.();
       onClose();
@@ -92,6 +93,19 @@ export default function EditarGastoDialog({ gasto, categorias, onClose, onGuarda
               onChange={(e) => setDescripcion(e.target.value)}
             />
           </div>
+
+          {cuentas && cuentas.length > 0 && (
+            <div className="field">
+              <label>Cuenta</label>
+              <select className="input" value={cuenta} onChange={(e) => setCuenta(e.target.value)}>
+                {cuentas.map((c) => (
+                  <option key={c.nombre} value={c.nombre}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="dialog-actions" style={{ justifyContent: "space-between" }}>
             <button

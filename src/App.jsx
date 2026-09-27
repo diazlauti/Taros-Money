@@ -163,6 +163,7 @@ gastos={gastos.data}
 ingresos={ingresos.data}
 cargando={gastos.cargando}
 categorias={categorias.data}
+cuentas={cuentas.data}
 onCambio={recargarTodo}
 />
 )}

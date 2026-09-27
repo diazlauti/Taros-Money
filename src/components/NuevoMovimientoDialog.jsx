@@ -49,16 +49,19 @@ function campo(nombre, valor) {
     categoria: form.categoria,
     };
     if (tipo === "gasto") {
-    await agregarGasto(payload);
+    // El backend descuenta solo de la cuenta elegida (o del saldo estimado
+    // de la tarjeta si no hay otra cuenta) en la misma llamada.
+    await agregarGasto({ ...payload, cuenta: form.cuenta || undefined });
     } else {
     await agregarIngreso(payload);
-    }
-    // Si eligió una cuenta, ajustamos su saldo (no toca la hoja de Gastos).
+    // Los ingresos sí se acreditan aparte: no hay equivalente a "Cuscatlán"
+    // para ingresos, así que si eligió una cuenta se lo sumamos ahí.
     if (form.cuenta) {
     try {
-    await ajustarCuenta(form.cuenta, tipo === "ingreso" ? monto : -monto);
+    await ajustarCuenta(form.cuenta, monto);
     } catch {
     /* la sección de cuentas puede no estar conectada todavía */
+    }
     }
     }
     playSuccess();

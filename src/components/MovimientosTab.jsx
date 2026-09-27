@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
 import EditarGastoDialog from "./EditarGastoDialog";
 
-export default function MovimientosTab({ gastos, ingresos, cargando, categorias, onCambio }) {
+export default function MovimientosTab({ gastos, ingresos, cargando, categorias, cuentas, onCambio }) {
   const [filtro, setFiltro] = useState("todos");
   const [busqueda, setBusqueda] = useState("");
   const [editando, setEditando] = useState(null);
@@ -72,6 +72,7 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
                 <div className="movimiento-desc">{t.descripcion || "(sin descripción)"}</div>
                 <div className="text-muted">
                   {t.categoria || "sin categoría"} · {fmtFecha(t.fecha)}
+                  {t.tipo === "gasto" && t.cuenta ? ` · ${t.cuenta}` : ""}
                 </div>
               </div>
               <div className={"movimiento-monto" + (t.tipo === "ingreso" ? " es-ingreso" : "")}>
@@ -87,6 +88,7 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
         <EditarGastoDialog
           gasto={editando}
           categorias={categorias}
+          cuentas={cuentas}
           onClose={() => setEditando(null)}
           onGuardado={onCambio}
         />
