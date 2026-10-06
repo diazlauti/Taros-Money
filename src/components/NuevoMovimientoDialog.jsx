@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { agregarGasto, agregarIngreso } from "../api";
 import { playError, playSuccess } from "../sounds";
 
@@ -16,16 +16,31 @@ hora: `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`,
 
 export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, onGuardado }) {
 const catsGasto = categorias && categorias.length ? categorias : GASTO_CATS_FALLBACK;
+const cuentaTarjeta = (cuentas || []).find((c) => c.esTarjeta) || null;
+const primeraNoTarjeta = (cuentas || []).find((c) => !c.esTarjeta) || null;
 const [tipo, setTipo] = useState("gasto");
 const [form, setForm] = useState(() => ({
 ...fechaHoraActual(),
 monto: "",
 descripcion: "",
 categoria: "",
-cuenta: cuentas && cuentas[0] ? cuentas[0].nombre : "",
+cuenta: (cuentaTarjeta || primeraNoTarjeta)?.nombre || "",
 }));
 const [enviando, setEnviando] = useState(false);
 const [error, setError] = useState("");
+
+// Un ingreso manual casi nunca entra directo a la tarjeta (la pensión, la
+// única plata que sí llega ahí, se carga sola por mail) — si cambiás a
+// "Ingreso" y hay otra cuenta, arrancamos ahí en vez de dejar "Cuscatlán"
+// puesto por inercia, que fue justo lo que pasó con el regalo de cumple
+// que quedó mal taggeado.
+useEffect(() => {
+const preferida = tipo === "ingreso"
+? primeraNoTarjeta || cuentaTarjeta
+: cuentaTarjeta || primeraNoTarjeta;
+if (preferida) campo("cuenta", preferida.nombre);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [tipo]);
 
 function campo(nombre, valor) {
     setForm((f) => ({ ...f, [nombre]: valor }));
