@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { agregarGasto, agregarIngreso, ajustarCuenta } from "../api";
+import { agregarGasto, agregarIngreso } from "../api";
 import { playError, playSuccess } from "../sounds";
 
 const GASTO_CATS_FALLBACK = ["Comida", "Transporte", "Servicios", "Entretenimiento", "Otros"];
@@ -48,21 +48,12 @@ function campo(nombre, valor) {
     descripcion: form.descripcion,
     categoria: form.categoria,
     };
+    // El backend acredita/descuenta solo de la cuenta elegida (o la deja
+    // como "Cuscatlán" si no hay otra cuenta) en la misma llamada.
     if (tipo === "gasto") {
-    // El backend descuenta solo de la cuenta elegida (o del saldo estimado
-    // de la tarjeta si no hay otra cuenta) en la misma llamada.
     await agregarGasto({ ...payload, cuenta: form.cuenta || undefined });
     } else {
-    await agregarIngreso(payload);
-    // Los ingresos sí se acreditan aparte: no hay equivalente a "Cuscatlán"
-    // para ingresos, así que si eligió una cuenta se lo sumamos ahí.
-    if (form.cuenta) {
-    try {
-    await ajustarCuenta(form.cuenta, monto);
-    } catch {
-    /* la sección de cuentas puede no estar conectada todavía */
-    }
-    }
+    await agregarIngreso({ ...payload, cuenta: form.cuenta || undefined });
     }
     playSuccess();
     onGuardado?.();
