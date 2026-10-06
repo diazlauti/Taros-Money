@@ -19,6 +19,7 @@ return (
     </button>
     ))}
     </nav>
+    <div className="sidebar-footer">
     <button className="theme-toggle" onClick={onToggleTheme}>
     <i className={theme === "dark" ? "ph ph-sun" : "ph ph-moon"} />
     {theme === "dark" ? "Modo claro" : "Modo oscuro"}
@@ -35,6 +36,7 @@ return (
     <i className="ph ph-sign-out" />
     Cerrar sesión
     </button>
+    </div>
     </aside>
     );
     }
