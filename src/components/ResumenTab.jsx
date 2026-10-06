@@ -116,12 +116,10 @@ justifyContent: "center",
 }}
 >
 <span className="text-muted">Total</span>
-{/* El resumen por categoría todavía no distingue cuenta por gasto (se
-    arma en el backend sumando todo "Costo" junto), y hoy el 100% de
-    los gastos son de Cuscatlán (USD) — si en algún momento cargás
-    gastos de Efectivo/Mercado Pago en pesos, esto va a necesitar
-    separarlos por moneda para no sumar dólares con pesos. */}
-<span style={{ fontSize: 15, fontWeight: 600 }}>{fmtMoney(resumen.totalGeneral, "USD")}</span>
+{/* El backend ya convierte los gastos de Cuscatlán (USD) a ARS con la
+    cotización antes de sumarlos con los de Efectivo/Mercado Pago, así
+    que este total siempre viene en pesos. */}
+<span style={{ fontSize: 15, fontWeight: 600 }}>{fmtMoney(resumen.totalGeneral)}</span>
 </div>
 </div>
 <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 160 }}>
@@ -140,7 +138,7 @@ flex: "none",
 />
 <span style={{ flex: 1 }}>{nombre}</span>
 <span className="text-muted">{pct.toFixed(0)}%</span>
-<span style={{ fontWeight: 500 }}>{fmtMoney(datos.total, "USD")}</span>
+<span style={{ fontWeight: 500 }}>{fmtMoney(datos.total)}</span>
 </div>
 );
 })}
