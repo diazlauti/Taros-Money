@@ -7,6 +7,15 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
   const [busqueda, setBusqueda] = useState("");
   const [editando, setEditando] = useState(null);
 
+  // Cada movimiento viene con la cuenta de la que salió/entró, y cada cuenta
+  // tiene su propia moneda (Cuscatlán es USD, el resto suele ser ARS) — sin
+  // esto, un gasto en dólares se mostraba como si fueran pesos (ej: un gasto
+  // de US$64 se veía como "$64", cuando en pesos son casi $87.000).
+  const monedaPorCuenta = useMemo(
+    () => Object.fromEntries((cuentas || []).map((c) => [c.nombre, c.moneda])),
+    [cuentas]
+  );
+
   const combinados = useMemo(() => {
     const g = (gastos || []).map((x) => ({ ...x, tipo: "gasto" }));
     const i = (ingresos || []).map((x) => ({ ...x, tipo: "ingreso" }));
@@ -77,7 +86,7 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
               </div>
               <div className={"movimiento-monto" + (t.tipo === "ingreso" ? " es-ingreso" : "")}>
                 {t.tipo === "ingreso" ? "+" : "-"}
-                {fmtMoney(t.monto)}
+                {fmtMoney(t.monto, monedaPorCuenta[t.cuenta] || "ARS")}
               </div>
             </div>
           ))

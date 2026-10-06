@@ -16,6 +16,10 @@ cuentas,
 cotizacionUsdArs,
 }) {
 const hayCuentas = cuentas && cuentas.length > 0;
+// Igual que en Movimientos: cada gasto muestra la moneda de la cuenta de la
+// que salió (Cuscatlán es USD, el resto ARS), para no mostrar un gasto en
+// dólares como si fueran pesos.
+const monedaPorCuenta = Object.fromEntries((cuentas || []).map((c) => [c.nombre, c.moneda]));
 // El saldo grande es la suma de las cuentas (convirtiendo las que están en
 // USD a ARS con la cotización del script) en vez del valor manual de la
 // planilla, en cuanto haya al menos una cuenta cargada.
@@ -112,7 +116,12 @@ justifyContent: "center",
 }}
 >
 <span className="text-muted">Total</span>
-<span style={{ fontSize: 15, fontWeight: 600 }}>{fmtMoney(resumen.totalGeneral)}</span>
+{/* El resumen por categoría todavía no distingue cuenta por gasto (se
+    arma en el backend sumando todo "Costo" junto), y hoy el 100% de
+    los gastos son de Cuscatlán (USD) — si en algún momento cargás
+    gastos de Efectivo/Mercado Pago en pesos, esto va a necesitar
+    separarlos por moneda para no sumar dólares con pesos. */}
+<span style={{ fontSize: 15, fontWeight: 600 }}>{fmtMoney(resumen.totalGeneral, "USD")}</span>
 </div>
 </div>
 <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 160 }}>
@@ -131,7 +140,7 @@ flex: "none",
 />
 <span style={{ flex: 1 }}>{nombre}</span>
 <span className="text-muted">{pct.toFixed(0)}%</span>
-<span style={{ fontWeight: 500 }}>{fmtMoney(datos.total)}</span>
+<span style={{ fontWeight: 500 }}>{fmtMoney(datos.total, "USD")}</span>
 </div>
 );
 })}
@@ -157,7 +166,7 @@ flex: "none",
 {g.categoria || "sin categoría"} · {fmtFecha(g.fecha)}
 </div>
 </div>
-<div className="movimiento-monto">{fmtMoney(g.monto)}</div>
+<div className="movimiento-monto">{fmtMoney(g.monto, monedaPorCuenta[g.cuenta] || "ARS")}</div>
 </div>
 ))}
 </div>
