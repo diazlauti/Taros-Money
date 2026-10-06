@@ -159,6 +159,14 @@ export function agregarIngreso(ingreso) {
   return apiPost("agregarIngreso", { ingreso });
 }
 
+export function editarIngreso(criterio, cambios) {
+  return apiPost("editarIngreso", { criterio, cambios });
+}
+
+export function borrarIngreso(criterio) {
+  return apiPost("borrarIngreso", { criterio });
+}
+
 export function getIngresos(dias = 30) {
   return apiGet("ingresos", { dias }).then((d) => d.ingresos);
 }

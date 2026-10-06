@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
 import EditarGastoDialog from "./EditarGastoDialog";
+import EditarIngresoDialog from "./EditarIngresoDialog";
 
 export default function MovimientosTab({ gastos, ingresos, cargando, categorias, cuentas, onCambio }) {
   const [filtro, setFiltro] = useState("todos");
@@ -71,17 +72,17 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
         ) : (
           filtrados.map((t, i) => (
             <div
-              className={"movimiento" + (t.tipo === "gasto" ? " movimiento--clicable" : "")}
+              className="movimiento movimiento--clicable"
               key={i}
-              onClick={() => t.tipo === "gasto" && setEditando(t)}
-              title={t.tipo === "gasto" ? "Tocar para editar o borrar" : undefined}
+              onClick={() => setEditando(t)}
+              title="Tocar para editar o borrar"
             >
               <i className={iconoPorCategoria(t.categoria)} />
               <div style={{ minWidth: 0 }}>
                 <div className="movimiento-desc">{t.descripcion || "(sin descripción)"}</div>
                 <div className="text-muted">
                   {t.categoria || "sin categoría"} · {fmtFecha(t.fecha)}
-                  {t.tipo === "gasto" && t.cuenta ? ` · ${t.cuenta}` : ""}
+                  {t.cuenta ? ` · ${t.cuenta}` : ""}
                 </div>
               </div>
               <div className={"movimiento-monto" + (t.tipo === "ingreso" ? " es-ingreso" : "")}>
@@ -93,10 +94,18 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
         )}
       </div>
 
-      {editando && (
+      {editando && editando.tipo === "gasto" && (
         <EditarGastoDialog
           gasto={editando}
           categorias={categorias}
+          cuentas={cuentas}
+          onClose={() => setEditando(null)}
+          onGuardado={onCambio}
+        />
+      )}
+      {editando && editando.tipo === "ingreso" && (
+        <EditarIngresoDialog
+          ingreso={editando}
           cuentas={cuentas}
           onClose={() => setEditando(null)}
           onGuardado={onCambio}
