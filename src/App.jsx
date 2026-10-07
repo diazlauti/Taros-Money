@@ -92,7 +92,7 @@ if (!nuevo) return;
 try {
 await cambiarPin(nuevo);
 playSuccess();
-window.alert("Listo, PIN cambiado.");
+window.alert("Listo, PIN cambiado. Cualquier otro dispositivo donde hayas iniciado sesión antes va a tener que volver a loguearse con el PIN nuevo.");
 } catch (err) {
 playError();
 window.alert(err.message || "No se pudo cambiar el PIN.");

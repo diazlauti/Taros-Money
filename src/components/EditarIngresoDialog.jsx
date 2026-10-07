@@ -3,6 +3,7 @@ import { borrarIngreso, editarIngreso } from "../api";
 import { playClick, playError, playSuccess } from "../sounds";
 
 export default function EditarIngresoDialog({ ingreso, cuentas, onClose, onGuardado }) {
+  const [fecha, setFecha] = useState(ingreso.fecha || "");
   const [categoria, setCategoria] = useState(ingreso.categoria || "");
   const [descripcion, setDescripcion] = useState(ingreso.descripcion || "");
   const [monto, setMonto] = useState(String(ingreso.monto));
@@ -23,10 +24,14 @@ export default function EditarIngresoDialog({ ingreso, cuentas, onClose, onGuard
       setError("Ingresá un monto válido.");
       return;
     }
+    if (!fecha) {
+      setError("Completá la fecha.");
+      return;
+    }
     setEnviando(true);
     setError("");
     try {
-      await editarIngreso(criterio, { categoria, descripcion, monto: montoNum, cuenta });
+      await editarIngreso(criterio, { fecha, categoria, descripcion, monto: montoNum, cuenta });
       playSuccess();
       onGuardado?.();
       onClose();
@@ -59,6 +64,17 @@ export default function EditarIngresoDialog({ ingreso, cuentas, onClose, onGuard
       <div className="dialog" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-title">Editar ingreso</div>
         <form onSubmit={guardar} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="field">
+            <label>Fecha</label>
+            <input
+              className="input"
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              required
+            />
+          </div>
+
           <div className="fila-2">
             <div className="field">
               <label>Monto</label>

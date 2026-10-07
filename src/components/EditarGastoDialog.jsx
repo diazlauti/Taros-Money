@@ -3,6 +3,8 @@ import { borrarGasto, editarGasto } from "../api";
 import { playClick, playError, playSuccess } from "../sounds";
 
 export default function EditarGastoDialog({ gasto, categorias, cuentas, onClose, onGuardado }) {
+  const [fecha, setFecha] = useState(gasto.fecha || "");
+  const [hora, setHora] = useState(gasto.hora || "");
   const [categoria, setCategoria] = useState(gasto.categoria || "");
   const [descripcion, setDescripcion] = useState(gasto.descripcion || "");
   const [monto, setMonto] = useState(String(gasto.monto));
@@ -22,10 +24,14 @@ export default function EditarGastoDialog({ gasto, categorias, cuentas, onClose,
       setError("Ingresá un monto válido.");
       return;
     }
+    if (!fecha || !hora) {
+      setError("Completá fecha y hora.");
+      return;
+    }
     setEnviando(true);
     setError("");
     try {
-      await editarGasto(criterio, { categoria, descripcion, monto: montoNum, cuenta });
+      await editarGasto(criterio, { fecha, hora, categoria, descripcion, monto: montoNum, cuenta });
       playSuccess();
       onGuardado?.();
       onClose();
@@ -58,6 +64,29 @@ export default function EditarGastoDialog({ gasto, categorias, cuentas, onClose,
       <div className="dialog" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-title">Editar gasto</div>
         <form onSubmit={guardar} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="fila-2">
+            <div className="field">
+              <label>Fecha</label>
+              <input
+                className="input"
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Hora</label>
+              <input
+                className="input"
+                type="time"
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
           <div className="fila-2">
             <div className="field">
               <label>Monto</label>
