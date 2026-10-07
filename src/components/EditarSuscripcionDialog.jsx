@@ -2,11 +2,12 @@ import { useState } from "react";
 import { borrarSuscripcion, editarSuscripcion } from "../api";
 import { playClick, playError, playSuccess } from "../sounds";
 
-export default function EditarSuscripcionDialog({ suscripcion, categorias, onClose, onGuardado }) {
+export default function EditarSuscripcionDialog({ suscripcion, categorias, cuentas, onClose, onGuardado }) {
   const [nombre, setNombre] = useState(suscripcion.nombre || "");
   const [diaCobro, setDiaCobro] = useState(String(suscripcion.diaCobro || ""));
   const [categoria, setCategoria] = useState(suscripcion.categoria || "");
   const [monto, setMonto] = useState(String(suscripcion.monto));
+  const [cuenta, setCuenta] = useState(suscripcion.cuenta || "");
   const [enviando, setEnviando] = useState(false);
   const [borrando, setBorrando] = useState(false);
   const [error, setError] = useState("");
@@ -34,7 +35,7 @@ export default function EditarSuscripcionDialog({ suscripcion, categorias, onClo
     setEnviando(true);
     setError("");
     try {
-      await editarSuscripcion(nombreOriginal, { nombre: nombre.trim(), diaCobro: diaCobroNum, categoria, monto: montoNum });
+      await editarSuscripcion(nombreOriginal, { nombre: nombre.trim(), diaCobro: diaCobroNum, categoria, monto: montoNum, cuenta });
       playSuccess();
       onGuardado?.();
       onClose();
@@ -110,6 +111,19 @@ export default function EditarSuscripcionDialog({ suscripcion, categorias, onClo
               ))}
             </select>
           </div>
+
+          {cuentas && cuentas.length > 0 && (
+            <div className="field">
+              <label>Cuenta de la que se debita</label>
+              <select className="input" value={cuenta} onChange={(e) => setCuenta(e.target.value)}>
+                {cuentas.map((c) => (
+                  <option key={c.nombre} value={c.nombre}>
+                    {c.nombre} ({c.moneda})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="dialog-actions" style={{ justifyContent: "space-between" }}>
             <button

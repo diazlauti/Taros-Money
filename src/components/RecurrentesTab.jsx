@@ -1,17 +1,26 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { crearSuscripcion } from "../api";
 import { fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
 import { playError, playSuccess } from "../sounds";
 import EditarSuscripcionDialog from "./EditarSuscripcionDialog";
 
-export default function RecurrentesTab({ suscripciones, categorias, cargando, error, onCambio }) {
+export default function RecurrentesTab({ suscripciones, categorias, cuentas, cotizacionUsdArs, cargando, error, onCambio }) {
   const [nombre, setNombre] = useState("");
   const [diaCobro, setDiaCobro] = useState("");
   const [categoria, setCategoria] = useState("");
   const [monto, setMonto] = useState("");
+  const [cuenta, setCuenta] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [editando, setEditando] = useState(null);
+
+  // Cada suscripción se debita de una cuenta, y cada cuenta tiene su propia
+  // moneda — sin esto, una suscripción en dólares se sumaba al total como si
+  // fueran pesos (ej: una de US$15 se sumaba como "$15" en vez de ~$20.000).
+  const monedaPorCuenta = useMemo(
+    () => Object.fromEntries((cuentas || []).map((c) => [c.nombre, c.moneda])),
+    [cuentas]
+  );
 
   async function agregar(e) {
     e.preventDefault();
@@ -32,7 +41,7 @@ export default function RecurrentesTab({ suscripciones, categorias, cargando, er
     setEnviando(true);
     setErrorForm("");
     try {
-      await crearSuscripcion({ nombre: nombre.trim(), diaCobro: diaCobroNum, categoria, monto: montoNum });
+      await crearSuscripcion({ nombre: nombre.trim(), diaCobro: diaCobroNum, categoria, monto: montoNum, cuenta });
       playSuccess();
       setNombre("");
       setDiaCobro("");
@@ -47,10 +56,14 @@ export default function RecurrentesTab({ suscripciones, categorias, cargando, er
     }
   }
 
-  if (cargando) return <p className="mensaje-estado">Cargando recurrentes…</p>;
+  if (cargando) return <p className="mensaje-estado">Cargando suscripciones…</p>;
   if (error) return <p className="mensaje-estado">Todavía no está conectada esta sección ({error}).</p>;
 
-  const total = (suscripciones || []).reduce((sum, s) => sum + (Number(s.monto) || 0), 0);
+  const total = (suscripciones || []).reduce((sum, s) => {
+    const monto = Number(s.monto) || 0;
+    const esUsd = monedaPorCuenta[s.cuenta] === "USD";
+    return sum + (esUsd ? monto * (cotizacionUsdArs || 0) : monto);
+  }, 0);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -75,8 +88,11 @@ export default function RecurrentesTab({ suscripciones, categorias, cargando, er
                   <span className="card-title">{s.nombre}</span>
                 </div>
                 <span className="tag">{s.categoria}</span>
+                <div className="text-muted" style={{ fontSize: 12 }}>{s.cuenta}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <span style={{ fontSize: 18, fontWeight: 600 }}>{fmtMoney(s.monto)}/mes</span>
+                  <span style={{ fontSize: 18, fontWeight: 600 }}>
+                    {fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}/mes
+                  </span>
                   <span className="text-muted">próx. {fmtFecha(s.proximaFecha)}</span>
                 </div>
               </div>
@@ -130,6 +146,19 @@ export default function RecurrentesTab({ suscripciones, categorias, cargando, er
             ))}
           </select>
         </div>
+        {cuentas && cuentas.length > 0 && (
+          <div className="field">
+            <label>Cuenta de la que se debita</label>
+            <select className="input" value={cuenta} onChange={(e) => setCuenta(e.target.value)}>
+              <option value="">(elegí una cuenta)</option>
+              {cuentas.map((c) => (
+                <option key={c.nombre} value={c.nombre}>
+                  {c.nombre} ({c.moneda})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <button className="btn btn-primary" type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Agregar"}
         </button>
@@ -140,6 +169,7 @@ export default function RecurrentesTab({ suscripciones, categorias, cargando, er
         <EditarSuscripcionDialog
           suscripcion={editando}
           categorias={categorias}
+          cuentas={cuentas}
           onClose={() => setEditando(null)}
           onGuardado={onCambio}
         />

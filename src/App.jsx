@@ -185,6 +185,8 @@ onCambio={cuentas.recargar}
 <RecurrentesTab
 suscripciones={suscripciones.data}
 categorias={categorias.data}
+cuentas={cuentas.data}
+cotizacionUsdArs={cotizacion.data}
 cargando={suscripciones.cargando}
 error={suscripciones.error}
 onCambio={suscripciones.recargar}
