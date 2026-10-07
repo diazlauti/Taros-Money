@@ -205,6 +205,18 @@ export function getSuscripciones() {
   return apiGet("suscripciones").then((d) => d.suscripciones);
 }
 
+export function crearSuscripcion(suscripcion) {
+  return apiPost("crearSuscripcion", { suscripcion });
+}
+
+export function editarSuscripcion(nombreOriginal, cambios) {
+  return apiPost("editarSuscripcion", { nombreOriginal, cambios });
+}
+
+export function borrarSuscripcion(nombre) {
+  return apiPost("borrarSuscripcion", { nombre });
+}
+
 // --- Reportes: tendencia de ingresos/gastos de los últimos N meses ---
 
 export function getTendencia(meses = 6) {

@@ -184,8 +184,10 @@ onCambio={cuentas.recargar}
 {activeTab === "recurrentes" && (
 <RecurrentesTab
 suscripciones={suscripciones.data}
+categorias={categorias.data}
 cargando={suscripciones.cargando}
 error={suscripciones.error}
+onCambio={suscripciones.recargar}
 />
 )}
 
