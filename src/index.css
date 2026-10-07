@@ -563,7 +563,17 @@ margin-top: 4px;
 
 .fila-2 {
 display: flex;
+flex-wrap: wrap;
 gap: 12px;
+}
+
+.fila-2 .field {
+/* Sin esto, un <select> con texto largo (ej: "Pesos (ARS)") no se achica
+   por debajo de su ancho de contenido y, si entran 3 campos en una fila
+   angosta (como "Agregar cuenta"), el tercero se sale de la tarjeta en vez
+   de acomodarse. */
+min-width: 140px;
+flex: 1 1 140px;
 }
 
 .mensaje-error {
