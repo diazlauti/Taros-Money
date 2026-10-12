@@ -1,65 +1,92 @@
 # Taros Money
 
 App mobile-friendly, instalable como PWA, para ver y cargar gastos/ingresos/
-cuentas/metas, conectada a la misma planilla de Google Sheets que usa el
-Apps Script de gastos de Cuscatlán. No tiene base de datos propia: lee y
-escribe directamente en esa planilla a través de un endpoint que corre en el
-mismo proyecto de Apps Script.
+cuentas/metas. Multiusuario real: cada persona entra con su propia cuenta de
+Google y la app le crea (o abre) su propia planilla de Google Sheets, sin
+compartir datos con nadie más. No hay backend propio ni base de datos: la
+app llama directo a la API de Apps Script (`scripts.run`), autenticada con
+el token OAuth de quien está logueado.
 
-## 1. Publicar el Apps Script como API
+Hay DOS proyectos de Apps Script, a propósito separados:
 
-En el editor de Apps Script de la planilla (Extensiones > Apps Script):
+- **"Taros Money API"** — toda la lógica que usa esta app (gastos, ingresos,
+  cuentas, metas, suscripciones). Sin nada de Gmail, para que el permiso que
+  pide el login sea sólo Sheets/Drive, no la bandeja de entrada de nadie.
+- El proyecto que lee los mails del banco (ej. "Gastos Lauti") — aparte,
+  atado a la cuenta de quien lo usa, con su propio trigger automático. No lo
+  toca esta app.
 
-1. Abrí `CONFIG` al principio del archivo y definí un PIN en `APP_PIN` (lo
-   que vas a escribir en la app la primera vez que entres desde cada
-   dispositivo — después queda guardado ahí y no hay que repetirlo). A
-   diferencia de un token fijo, el PIN nunca queda escrito en el código de la
-   app web, así que no lo puede ver alguien que abra las herramientas de
-   desarrollador del navegador.
-2. Guardá, y andá a **Implementar > Nueva implementación** (o, si ya existe
-   una implementación, **Administrar implementaciones > ✏️ > Nueva versión**
-   para no cambiar la URL).
-3. Tipo: **Aplicación web**. Ejecutar como: **Yo**. Quién tiene acceso:
-   **Cualquier usuario**.
-4. Implementar, autorizá los permisos que pida, y copiá la URL que termina en
-   `/exec`. Esa es tu `VITE_API_URL`.
+## 1. Google Cloud: proyecto OAuth
 
-## 2. Configurar variables de entorno
+1. [console.cloud.google.com](https://console.cloud.google.com) → creá un
+   proyecto (o reusá uno existente).
+2. APIs y servicios → Biblioteca → habilitá **Google Apps Script API**.
+3. APIs y servicios → Pantalla de consentimiento de OAuth → Externo → nombre
+   de la app, tu mail como contacto → en **Usuarios de prueba** agregá el
+   mail de cada persona que va a entrar (mientras la app esté en modo
+   "Prueba", sin verificar por Google, sólo esos mails pueden loguearse).
+4. Credenciales → Crear credenciales → ID de cliente de OAuth → tipo
+   **Aplicación web** → en "Orígenes de JavaScript autorizados" agregá la
+   URL de Netlify de producción y `http://localhost:5173` (para desarrollo
+   local). Guardá el **Client ID**.
+
+## 2. Apps Script: "Taros Money API"
+
+1. [script.new](https://script.new) → pegá el contenido de
+   `taros-money-api.gs` (el código del backend multiusuario — pedíselo a
+   quien mantiene este repo si no lo tenés a mano).
+2. Configuración del proyecto (engranaje) → sección GCP → vinculá el mismo
+   número de proyecto del paso 1.
+3. Implementar → Nueva implementación → ícono de engranaje → **Ejecutable
+   de API** → acceso **"Cualquier persona que tenga una Cuenta de Google"**.
+4. Copiá el **ID de secuencia de comandos** (Script ID), en Configuración
+   del proyecto.
+
+## 3. Variables de entorno
 
 Copiá `.env.example` a `.env` y completá:
 
 ```
-VITE_API_URL=https://script.google.com/macros/s/.../exec
+VITE_GOOGLE_CLIENT_ID=...apps.googleusercontent.com
+VITE_APPS_SCRIPT_ID=...
 ```
 
-(No hace falta ninguna otra variable — el PIN se escribe en la app, no en el
-build.)
-
-## 3. Desarrollo local
+## 4. Desarrollo local
 
 ```
 npm install
 npm run dev
 ```
 
-## 4. Deploy en Netlify
+## 5. Deploy en Netlify
 
 1. Conectá este repo en Netlify (New site from Git).
 2. Build command: `npm run build` — Publish directory: `dist` (ya está en
-   `netlify.toml`, no hace falta tocar nada).
-3. En Site settings > Environment variables, cargá `VITE_API_URL`.
+   `netlify.toml`).
+3. Site settings > Environment variables: cargá `VITE_GOOGLE_CLIENT_ID` y
+   `VITE_APPS_SCRIPT_ID`.
 4. Deploy. Para instalarla en el celu: abrí el sitio en Chrome/Safari — al
    tener manifest + service worker (vite-plugin-pwa), el navegador ofrece
    instalarla sola, o usá "Agregar a pantalla de inicio" a mano.
 
+## Sumar gente nueva
+
+Agregá su mail como "Usuario de prueba" en la pantalla de consentimiento de
+OAuth (paso 1.3) — sin eso, Google le va a mostrar un error de acceso
+aunque tenga el link. Después sólo tiene que entrar y tocar "Iniciar sesión
+con Google"; la app le crea su planilla sola la primera vez.
+
 ## Cómo está armada
 
-- `src/api.js` — toda la comunicación con el Apps Script (GET para leer,
-  POST con `Content-Type: text/plain` para escribir, así se evita el
-  preflight CORS que Apps Script no responde), más el login por PIN y el
-  manejo de la sesión guardada en `localStorage`.
+- `src/auth.js` — login con Google (Google Identity Services): pide un
+  Access Token con los scopes de Sheets/Drive, lo guarda en `localStorage`
+  con su vencimiento, y lo renueva solo sin mostrar nada cuando puede
+  (`intentarSesionSilenciosa`).
+- `src/api.js` — llama a cada función del backend por nombre a través de
+  `scripts.run` (`https://script.googleapis.com/v1/scripts/{scriptId}:run`),
+  mandando el Access Token como `Authorization: Bearer`.
 - `src/App.jsx` — gate de login + pantalla principal con las pestañas
-  Resumen, Movimientos, Cuentas, Metas, Recurrentes y Reportes.
+  Resumen, Movimientos, Cuentas, Metas, Suscripciones y Reportes.
 - `src/components/` — cada pantalla/diálogo por separado (incluye editar y
   borrar un gasto ya cargado, tocando su fila en Movimientos).
 
@@ -68,32 +95,31 @@ pueda rediseñar después sin pelearse con nada. Los íconos de la PWA
 (`public/icon-*.png`, `apple-touch-icon.png`) son un placeholder — reemplazalos
 cuando tengas el diseño definitivo.
 
-## Endpoints del Apps Script
+## Funciones del backend (Apps Script API)
 
-Salvo `login`, todos requieren `?token=...` (GET) o `{ "token": "..." }` en
-el body (POST) — es el `sessionToken` que devuelve el login, no el PIN.
+Se llaman por nombre con `scripts.run`, pasando `parameters` como array
+posicional. Todas corren con el token de quien está logueado, así que no
+hace falta mandar ningún identificador de usuario — cada quien siempre lee/
+escribe su propia planilla.
 
-- `POST { accion: "login", pin }` → `{ sessionToken }`
-- `GET ?accion=gastos&dias=30` → `{ gastos: [...] }`
-- `GET ?accion=resumen&dias=30` → `{ porCategoria: {...}, totalGeneral }`
-- `GET ?accion=categorias` → `{ categorias: [...] }`
-- `GET ?accion=saldo` → `{ saldo: number|null }`
-- `GET ?accion=ingresos&dias=30` → `{ ingresos: [...] }`
-- `GET ?accion=cuentas` → `{ cuentas: [...] }`
-- `GET ?accion=metas` → `{ metas: [...] }`
-- `GET ?accion=suscripciones` → `{ suscripciones: [...] }`
-- `GET ?accion=tendencia&meses=6` → `{ tendencia: [...] }`
-- `GET ?accion=cotizacion` → `{ cotizacionUsdArs: number }`
-- `POST { accion: "agregarGasto", gasto: { fecha, hora, categoria, descripcion, monto } }` → `{ ok: true }`
-- `POST { accion: "editarGasto", criterio: { fecha, hora, monto }, cambios: { categoria?, descripcion?, monto? } }` → `{ ok: true }`
-- `POST { accion: "borrarGasto", criterio: { fecha, hora, monto } }` → `{ ok: true }`
-- `POST { accion: "agregarIngreso", ingreso: { fecha, descripcion, categoria, monto } }` → `{ ok: true }`
-- `POST { accion: "crearCuenta", cuenta: { nombre, saldo, moneda } }` → `{ ok: true }`
-- `POST { accion: "ajustarCuenta", nombre, delta }` → `{ ok: true }`
-- `POST { accion: "crearMeta", meta: { nombre, objetivo, actual } }` → `{ ok: true }`
-- `POST { accion: "aportarMeta", nombre, monto }` → `{ ok: true }`
+- `obtenerGastosRecientes(dias)` → `[{ fecha, hora, categoria, descripcion, monto, cuenta }]`
+- `generarResumen(dias)` → `{ porCategoria: {...}, totalGeneral }`
+- `obtenerCategoriasDelEspacio()` → `[...]`
+- `obtenerSaldo()` → `number | null`
+- `obtenerIngresosRecientes(dias)` → `[...]`
+- `obtenerCuentas()` → `[...]`
+- `obtenerMetas()` → `[...]`
+- `obtenerSuscripcionesView()` → `[...]`
+- `obtenerTendencia(meses)` → `[...]`
+- `obtenerCotizacion()` → `number`
+- `agregarGastoManual(gasto)`, `editarGasto(criterio, cambios)`, `borrarGasto(criterio)`
+- `agregarIngresoManual(ingreso)`, `editarIngreso(criterio, cambios)`, `borrarIngreso(criterio)`
+- `crearCuenta(cuenta)`, `ajustarCuenta(nombre, delta)`
+- `crearMeta(meta)`, `aportarMeta(nombre, monto)`
+- `crearSuscripcion(sus)`, `editarSuscripcion(nombreOriginal, cambios)`, `borrarSuscripcion(nombre)`
 
-Los errores siempre vienen con HTTP 200 y `{ "error": "..." }` en el body
-(limitación de Apps Script, no puede devolver otros status codes). Cuando la
-sesión venció, además viene `{ "requiereLogin": true }` y la app vuelve sola
-a la pantalla de login.
+Si una función tira un error (`throw new Error(...)` del lado del script),
+la respuesta de `scripts.run` lo trae en
+`error.details[0].errorMessage` — `src/api.js` ya lo desempaqueta solo.
+Un 401/403 HTTP (token vencido o falta un permiso) hace que la app vuelva
+sola a la pantalla de login.

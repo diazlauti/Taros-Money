@@ -1,6 +1,6 @@
 import { NAV_ITEMS } from "../theme";
 
-export function Sidebar({ activeTab, onSelect, theme, onToggleTheme, sonido, onToggleSonido, onCambiarPin, onCerrarSesion }) {
+export function Sidebar({ activeTab, onSelect, theme, onToggleTheme, sonido, onToggleSonido, onCerrarSesion }) {
 return (
     <aside className="sidebar">
     <div className="brand">
@@ -27,10 +27,6 @@ return (
     <button className="theme-toggle" onClick={onToggleSonido}>
     <i className={sonido ? "ph ph-speaker-high" : "ph ph-speaker-slash"} />
     {sonido ? "Sonido activado" : "Sonido silenciado"}
-    </button>
-    <button className="theme-toggle" onClick={onCambiarPin}>
-    <i className="ph ph-key" />
-    Cambiar PIN
     </button>
     <button className="theme-toggle" onClick={onCerrarSesion}>
     <i className="ph ph-sign-out" />

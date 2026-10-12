@@ -1,231 +1,167 @@
-// Capa de conexión con el Apps Script de la planilla de gastos.
-// VITE_API_URL se configura como variable de entorno de build (en Netlify:
-// Site settings > Environment variables). Ya no hay un token fijo acá: en
-// vez de eso, la primera vez que se abre la app en cada dispositivo pide un
-// PIN (login()) y a cambio recibe un sessionToken que se guarda en
-// localStorage — así el "secreto" nunca queda escrito en el código público
-// de la app (a diferencia de un token embebido en el build, que cualquiera
-// puede ver abriendo las herramientas de desarrollador del navegador).
-const API_URL = import.meta.env.VITE_API_URL;
-const SESSION_KEY = "taros-session-token";
+// Capa de conexión con Apps Script. Ya no hay un Web App propio con doGet/
+// doPost: la app llama DIRECTO a la API de Apps Script (scripts.run), que
+// ejecuta cada función del backend con el token OAuth de quien está
+// logueado — por eso cada quien termina leyendo/escribiendo su propia
+// planilla, sin que el backend tenga que saber de PINes ni sesiones.
+import { cerrarSesion, obtenerTokenActual } from "./auth";
 
-function getSessionToken() {
-  try {
-    return localStorage.getItem(SESSION_KEY) || "";
-  } catch {
-    return "";
-  }
-}
-
-function setSessionToken(token) {
-  try {
-    localStorage.setItem(SESSION_KEY, token);
-  } catch {
-    /* modo privado o storage bloqueado: la sesión no persiste, pero no rompe nada */
-  }
-}
-
-export function cerrarSesion() {
-  try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch {
-    /* ignorar */
-  }
-}
-
-export function haySesion() {
-  return !!getSessionToken();
-}
+const SCRIPT_ID = import.meta.env.VITE_APPS_SCRIPT_ID;
 
 function chequearConfig() {
-  if (!API_URL) {
-    throw new Error("Falta configurar VITE_API_URL (variable de entorno de build).");
+  if (!SCRIPT_ID) {
+    throw new Error("Falta configurar VITE_APPS_SCRIPT_ID (variable de entorno de build).");
   }
 }
 
-function manejarRespuesta(data) {
-  if (data.requiereLogin) {
-    cerrarSesion();
-    // Avisa a la app (sin acoplar esta capa a React) que hay que volver a
-    // mostrar el login — por ejemplo si la sesión venció mientras se estaba
-    // usando la app, no sólo al arrancarla.
-    try {
-      window.dispatchEvent(new Event("taros:sesion-vencida"));
-    } catch {
-      /* SSR o entorno sin window: no debería pasar en esta app, ignorar */
-    }
-    const err = new Error(data.error || "Tu sesión venció, iniciá sesión de nuevo.");
+function dispararSesionVencida() {
+  try {
+    window.dispatchEvent(new Event("taros:sesion-vencida"));
+  } catch {
+    /* SSR o entorno sin window: no debería pasar en esta app, ignorar */
+  }
+}
+
+// Llama a una función del backend por nombre, con el token de quien está
+// logueado. El cuerpo de la respuesta de scripts.run tiene dos formas
+// posibles: { response: { result: ... } } si la función terminó bien, o
+// { error: { ... } } si tiró una excepción (el mensaje real viaja adentro
+// de error.details[0].errorMessage) o si Google rechazó el pedido entero
+// (token vencido, falta un permiso) — eso último viene con status HTTP 401
+// o 403 en vez de 200.
+async function scriptsRun(funcion, parametros = []) {
+  chequearConfig();
+  const token = obtenerTokenActual();
+  if (!token) {
+    dispararSesionVencida();
+    const err = new Error("Iniciá sesión de nuevo.");
     err.requiereLogin = true;
     throw err;
   }
-  if (data.error) throw new Error(data.error);
-  return data;
-}
 
-async function apiGet(accion, params = {}) {
-  chequearConfig();
-  const url = new URL(API_URL);
-  url.searchParams.set("token", getSessionToken());
-  url.searchParams.set("accion", accion);
-  Object.entries(params).forEach(([clave, valor]) => {
-    if (valor !== undefined && valor !== null) url.searchParams.set(clave, valor);
-  });
-
-  const res = await fetch(url.toString());
-  return manejarRespuesta(await res.json());
-}
-
-async function apiPost(accion, payload = {}) {
-  chequearConfig();
-  const res = await fetch(API_URL, {
+  const res = await fetch(`https://script.googleapis.com/v1/scripts/${SCRIPT_ID}:run`, {
     method: "POST",
-    // Content-Type text/plain a propósito: así el navegador lo trata como
-    // "simple request" y no dispara el preflight OPTIONS, que el Web App de
-    // Apps Script no sabe responder (rompería el POST con CORS).
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ token: getSessionToken(), accion, ...payload }),
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ function: funcion, parameters: parametros, devMode: false }),
   });
-  return manejarRespuesta(await res.json());
-}
 
-// --- Login ---
-//
-// La app es multiusuario: un mismo link sirve a varios "espacios" (cada uno
-// con su propia planilla), identificados por PIN. No hay forma de saber de
-// antemano si un PIN ya existe sin intentarlo, así que el login ya no
-// pregunta un "estado" global — el usuario elige explícitamente si ya tiene
-// cuenta (login) o si es la primera vez que entra (crearEspacio, que le crea
-// una planilla nueva en el momento).
+  if (res.status === 401 || res.status === 403) {
+    cerrarSesion();
+    dispararSesionVencida();
+    const err = new Error("Tu sesión venció o falta un permiso — iniciá sesión de nuevo.");
+    err.requiereLogin = true;
+    throw err;
+  }
 
-export async function login(pin) {
-  chequearConfig();
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ accion: "login", pin }),
-  });
   const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  setSessionToken(data.sessionToken);
-}
+  if (data.error) {
+    const detalle = data.error.details?.[0];
+    throw new Error(detalle?.errorMessage || data.error.message || "Error llamando a la API.");
+  }
 
-// Primera vez: crea un espacio (planilla propia) nuevo con ese PIN. Ya deja
-// logueado (no hace falta volver a escribirlo).
-export async function crearEspacio(pin) {
-  chequearConfig();
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ accion: "crearEspacio", pin }),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  setSessionToken(data.sessionToken);
-}
-
-export function cambiarPin(pinNuevo) {
-  return apiPost("cambiarPin", { pinNuevo });
+  return data.response?.result;
 }
 
 export function getGastos(dias = 30) {
-  return apiGet("gastos", { dias }).then((d) => d.gastos);
+  return scriptsRun("obtenerGastosRecientes", [dias]);
 }
 
 export function getResumen(dias = 30) {
-  return apiGet("resumen", { dias });
+  return scriptsRun("generarResumen", [dias]);
 }
 
 export function getSaldo() {
-  return apiGet("saldo").then((d) => d.saldo);
+  return scriptsRun("obtenerSaldo");
 }
 
 export function getCategorias() {
-  return apiGet("categorias").then((d) => d.categorias);
+  return scriptsRun("obtenerCategoriasDelEspacio");
 }
 
 export function agregarGasto(gasto) {
-  return apiPost("agregarGasto", { gasto });
+  return scriptsRun("agregarGastoManual", [gasto]);
 }
 
 export function editarGasto(criterio, cambios) {
-  return apiPost("editarGasto", { criterio, cambios });
+  return scriptsRun("editarGasto", [criterio, cambios]);
 }
 
 export function borrarGasto(criterio) {
-  return apiPost("borrarGasto", { criterio });
+  return scriptsRun("borrarGasto", [criterio]);
 }
 
 export function agregarIngreso(ingreso) {
-  return apiPost("agregarIngreso", { ingreso });
+  return scriptsRun("agregarIngresoManual", [ingreso]);
 }
 
 export function editarIngreso(criterio, cambios) {
-  return apiPost("editarIngreso", { criterio, cambios });
+  return scriptsRun("editarIngreso", [criterio, cambios]);
 }
 
 export function borrarIngreso(criterio) {
-  return apiPost("borrarIngreso", { criterio });
+  return scriptsRun("borrarIngreso", [criterio]);
 }
 
 export function getIngresos(dias = 30) {
-  return apiGet("ingresos", { dias }).then((d) => d.ingresos);
+  return scriptsRun("obtenerIngresosRecientes", [dias]);
 }
 
 // --- Cuentas (pestaña "Cuentas" en la planilla, separada de Gastos) ---
 
 export function getCuentas() {
-  return apiGet("cuentas").then((d) => d.cuentas);
+  return scriptsRun("obtenerCuentas");
 }
 
 export function crearCuenta(cuenta) {
-  return apiPost("crearCuenta", { cuenta });
+  return scriptsRun("crearCuenta", [cuenta]);
 }
 
 export function ajustarCuenta(nombre, delta) {
-  return apiPost("ajustarCuenta", { nombre, delta });
+  return scriptsRun("ajustarCuenta", [nombre, delta]);
 }
 
 // --- Metas de ahorro (pestaña "Metas") ---
 
 export function getMetas() {
-  return apiGet("metas").then((d) => d.metas);
+  return scriptsRun("obtenerMetas");
 }
 
 export function crearMeta(meta) {
-  return apiPost("crearMeta", { meta });
+  return scriptsRun("crearMeta", [meta]);
 }
 
 export function aportarMeta(nombre, monto) {
-  return apiPost("aportarMeta", { nombre, monto });
+  return scriptsRun("aportarMeta", [nombre, monto]);
 }
 
-// --- Recurrentes (pestaña "Suscripciones", separada de Gastos) ---
+// --- Suscripciones (pestaña "Suscripciones") ---
 
 export function getSuscripciones() {
-  return apiGet("suscripciones").then((d) => d.suscripciones);
+  return scriptsRun("obtenerSuscripcionesView");
 }
 
 export function crearSuscripcion(suscripcion) {
-  return apiPost("crearSuscripcion", { suscripcion });
+  return scriptsRun("crearSuscripcion", [suscripcion]);
 }
 
 export function editarSuscripcion(nombreOriginal, cambios) {
-  return apiPost("editarSuscripcion", { nombreOriginal, cambios });
+  return scriptsRun("editarSuscripcion", [nombreOriginal, cambios]);
 }
 
 export function borrarSuscripcion(nombre) {
-  return apiPost("borrarSuscripcion", { nombre });
+  return scriptsRun("borrarSuscripcion", [nombre]);
 }
 
 // --- Reportes: tendencia de ingresos/gastos de los últimos N meses ---
 
 export function getTendencia(meses = 6) {
-  return apiGet("tendencia", { meses }).then((d) => d.tendencia);
+  return scriptsRun("obtenerTendencia", [meses]);
 }
 
-// --- Cotización USD->ARS (la misma que usa el script para matchear gastos en
-// dólares), usada acá sólo para convertir el saldo de las cuentas en USD ---
+// --- Cotización USD->ARS, usada para convertir el saldo de cuentas en USD ---
 
 export function getCotizacion() {
-  return apiGet("cotizacion").then((d) => d.cotizacionUsdArs);
+  return scriptsRun("obtenerCotizacion");
 }

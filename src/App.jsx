@@ -10,13 +10,11 @@ getMetas,
 getSuscripciones,
 getTendencia,
 getCotizacion,
-haySesion,
-cerrarSesion,
-cambiarPin,
 } from "./api";
+import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { useSeccion, useIsMobile } from "./hooks";
-import { playError, playSuccess, sonidoHabilitado, toggleSonido } from "./sounds";
+import { sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav } from "./components/Layout";
 import ResumenTab from "./components/ResumenTab";
 import MovimientosTab from "./components/MovimientosTab";
@@ -29,6 +27,11 @@ import Login from "./components/Login";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
+// Si ya había dado permiso antes (otra visita, PWA reabierta), intenta
+// renovar el token solo, sin mostrar nada — evita pedir el login de nuevo
+// cada vez que el token de una hora vence. Sólo corre si todavía no hay
+// una sesión guardada válida.
+const [verificando, setVerificando] = useState(!haySesion());
 
 useEffect(() => {
 function onSesionVencida() {
@@ -37,6 +40,25 @@ setAutenticado(false);
 window.addEventListener("taros:sesion-vencida", onSesionVencida);
 return () => window.removeEventListener("taros:sesion-vencida", onSesionVencida);
 }, []);
+
+useEffect(() => {
+if (autenticado) return;
+intentarSesionSilenciosa().then((datos) => {
+if (datos) setAutenticado(true);
+setVerificando(false);
+});
+}, [autenticado]);
+
+if (verificando) {
+return (
+<div className="pantalla-login">
+<div className="brand" style={{ justifyContent: "center" }}>
+<i className="ph ph-wallet" />
+Taros Money
+</div>
+</div>
+);
+}
 
 if (!autenticado) {
 return <Login onSuccess={() => setAutenticado(true)} />;
@@ -86,19 +108,6 @@ function alternarSonido() {
 setSonido(toggleSonido());
 }
 
-async function manejarCambiarPin() {
-const nuevo = window.prompt("PIN nuevo (al menos 4 caracteres):");
-if (!nuevo) return;
-try {
-await cambiarPin(nuevo);
-playSuccess();
-window.alert("Listo, PIN cambiado. Cualquier otro dispositivo donde hayas iniciado sesión antes va a tener que volver a loguearse con el PIN nuevo.");
-} catch (err) {
-playError();
-window.alert(err.message || "No se pudo cambiar el PIN.");
-}
-}
-
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
@@ -111,7 +120,6 @@ theme={theme}
 onToggleTheme={toggleTheme}
 sonido={sonido}
 onToggleSonido={alternarSonido}
-onCambiarPin={manejarCambiarPin}
 onCerrarSesion={onCerrarSesion}
 />
 )}
