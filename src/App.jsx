@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 getSaldo,
 getResumen,
@@ -15,10 +15,13 @@ getCotizacion,
 getUrlPlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
-import { getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
-import { useSeccion, useIsMobile } from "./hooks";
+import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
+import { mapaMonedas } from "./format";
+import { useSeccion } from "./hooks";
+import { useAvisos } from "./avisos";
 import { sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav } from "./components/Layout";
+import AvisosProvider from "./components/Avisos";
 import ResumenTab from "./components/ResumenTab";
 import MovimientosTab from "./components/MovimientosTab";
 import CuentasTab from "./components/CuentasTab";
@@ -36,6 +39,12 @@ const [autenticado, setAutenticado] = useState(haySesion);
 // cada vez que el token de una hora vence. Sólo corre si todavía no hay
 // una sesión guardada válida.
 const [verificando, setVerificando] = useState(!haySesion());
+// El tema vive acá (y no en el panel) para que el login también lo use.
+const [tema, setTema] = useState(getTemaInicial);
+
+useEffect(() => {
+aplicarTema(tema);
+}, [tema]);
 
 useEffect(() => {
 function onSesionVencida() {
@@ -53,14 +62,22 @@ setVerificando(false);
 });
 }, [autenticado]);
 
+function cambiarTema(nuevo) {
+guardarTema(nuevo);
+setTema(nuevo);
+}
+
 if (verificando) {
 return (
-<div className="pantalla-login">
-<div className="brand" style={{ justifyContent: "center" }}>
-<i className="ph ph-wallet" />
+<main className="pantalla-login">
+<div className="pila brand--centrada" role="status" aria-live="polite">
+<div className="brand brand--centrada">
+<i className="ph ph-wallet" aria-hidden="true" />
 Taros Money
 </div>
+<p className="mensaje-estado">Abriendo tu sesión…</p>
 </div>
+</main>
 );
 }
 
@@ -68,16 +85,25 @@ if (!autenticado) {
 return <Login onSuccess={() => setAutenticado(true)} />;
 }
 
-return <PanelPrincipal onCerrarSesion={() => { cerrarSesion(); setAutenticado(false); }} />;
+return (
+<AvisosProvider>
+<PanelPrincipal
+tema={tema}
+onCambiarTema={cambiarTema}
+onCerrarSesion={() => {
+cerrarSesion();
+setAutenticado(false);
+}}
+/>
+</AvisosProvider>
+);
 }
 
-function PanelPrincipal({ onCerrarSesion }) {
-const [theme, setTheme] = useState(getTemaInicial);
+function PanelPrincipal({ tema, onCambiarTema, onCerrarSesion }) {
 const [sonido, setSonido] = useState(sonidoHabilitado);
 const [activeTab, setActiveTab] = useState("resumen");
 const [dias, setDias] = useState(30);
 const [dialogOpen, setDialogOpen] = useState(false);
-const isMobile = useIsMobile();
 
 const saldo = useSeccion(getSaldo, []);
 const resumen = useSeccion(() => getResumen(dias), [dias]);
@@ -91,6 +117,20 @@ const tendencia = useSeccion(() => getTendencia(6), []);
 const cotizacion = useSeccion(getCotizacion, []);
 const urlPlanilla = useSeccion(getUrlPlanilla, []);
 
+// Si una recarga falla pero ya había datos en pantalla, se siguen mostrando
+// los anteriores y se avisa (antes no se enteraba nadie).
+const { avisar } = useAvisos();
+const erroresConDatos = [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, tendencia]
+.filter((s) => s.error && s.data !== null)
+.map((s) => s.error);
+const primerError = erroresConDatos[0] || "";
+useEffect(() => {
+if (primerError) avisar(`No se pudo actualizar: ${primerError}`, "error");
+}, [primerError, avisar]);
+
+// Única fuente de verdad para "en qué moneda está cada cuenta".
+const monedaPorCuenta = useMemo(() => mapaMonedas(cuentas.data), [cuentas.data]);
+
 const recargarTodo = useCallback(() => {
 saldo.recargar();
 resumen.recargar();
@@ -102,12 +142,6 @@ suscripciones.recargar();
 tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, tendencia]);
-
-function toggleTheme() {
-const next = theme === "dark" ? "light" : "dark";
-guardarTema(next);
-setTheme(next);
-}
 
 function alternarSonido() {
 setSonido(toggleSonido());
@@ -123,90 +157,79 @@ await borrarCategoria(nombre);
 categorias.recargar();
 }
 
+const abrirNuevo = () => setDialogOpen(true);
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
-<div className="app-shell" data-theme={theme}>
-{!isMobile && <Sidebar activeTab={activeTab} onSelect={setActiveTab} />}
+<div className="app-shell">
+<Sidebar activeTab={activeTab} onSelect={setActiveTab} />
 
 <main className="main">
 <header className="main-header">
+<i className="ph ph-wallet brand-icono" role="img" aria-label="Taros Money" />
 <h1>{activeItem.label}</h1>
-<button className="btn btn-primary" onClick={() => setDialogOpen(true)}>
-<i className="ph ph-plus" />
+<button type="button" className="btn btn-primary" onClick={abrirNuevo}>
+<i className="ph ph-plus" aria-hidden="true" />
 Nuevo movimiento
 </button>
 </header>
 
-<div className={"main-content" + (isMobile ? " main-content--con-bottom-nav" : "")}>
+<div className="main-content">
 <div className="tab-pane" key={activeTab}>
 {activeTab === "resumen" && (
 <ResumenTab
-saldo={saldo.data}
-cargandoSaldo={saldo.cargando}
-resumen={resumen.data}
-cargandoResumen={resumen.cargando}
-gastos={gastos.data}
-cargandoGastos={gastos.cargando}
+saldo={saldo}
+resumen={resumen}
+gastos={gastos}
+cuentas={cuentas}
+cotizacionUsdArs={cotizacion.data}
+monedaPorCuenta={monedaPorCuenta}
 dias={dias}
 onCambiarDias={setDias}
-cuentas={cuentas.data}
-cotizacionUsdArs={cotizacion.data}
+onNuevo={abrirNuevo}
+onIrA={setActiveTab}
 />
 )}
 
 {activeTab === "movimientos" && (
 <MovimientosTab
-gastos={gastos.data}
-ingresos={ingresos.data}
-cargando={gastos.cargando}
+gastos={gastos}
+ingresos={ingresos}
 categorias={categorias.data}
 cuentas={cuentas.data}
+monedaPorCuenta={monedaPorCuenta}
+dias={dias}
+onCambiarDias={setDias}
+onNuevo={abrirNuevo}
 onCambio={recargarTodo}
 />
 )}
 
-{activeTab === "cuentas" && (
-<CuentasTab
-cuentas={cuentas.data}
-cargando={cuentas.cargando}
-error={cuentas.error}
-onCambio={cuentas.recargar}
-/>
-)}
+{activeTab === "cuentas" && <CuentasTab cuentas={cuentas} onCambio={cuentas.recargar} onIrA={setActiveTab} />}
 
-{activeTab === "metas" && (
-<MetasTab metas={metas.data} cargando={metas.cargando} error={metas.error} onCambio={metas.recargar} />
-)}
+{activeTab === "metas" && <MetasTab metas={metas} onCambio={metas.recargar} onIrA={setActiveTab} />}
 
 {activeTab === "recurrentes" && (
 <RecurrentesTab
-suscripciones={suscripciones.data}
+suscripciones={suscripciones}
 categorias={categorias.data}
 cuentas={cuentas.data}
 cotizacionUsdArs={cotizacion.data}
-cargando={suscripciones.cargando}
-error={suscripciones.error}
+monedaPorCuenta={monedaPorCuenta}
 onCambio={suscripciones.recargar}
 />
 )}
 
-{activeTab === "reportes" && (
-<ReportesTab tendencia={tendencia.data} cargando={tendencia.cargando} error={tendencia.error} />
-)}
+{activeTab === "reportes" && <ReportesTab tendencia={tendencia} onNuevo={abrirNuevo} />}
 
 {activeTab === "configuracion" && (
 <ConfiguracionTab
-urlPlanilla={urlPlanilla.data}
-cargando={urlPlanilla.cargando}
-error={urlPlanilla.error}
-categorias={categorias.data}
-cargandoCategorias={categorias.cargando}
-errorCategorias={categorias.error}
+urlPlanilla={urlPlanilla}
+categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}
-theme={theme}
-onToggleTheme={toggleTheme}
+tema={tema}
+onCambiarTema={onCambiarTema}
 sonido={sonido}
 onToggleSonido={alternarSonido}
 onCerrarSesion={onCerrarSesion}
@@ -216,7 +239,7 @@ onCerrarSesion={onCerrarSesion}
 </div>
 </main>
 
-{isMobile && <BottomNav activeTab={activeTab} onSelect={setActiveTab} />}
+<BottomNav activeTab={activeTab} onSelect={setActiveTab} />
 
 {dialogOpen && (
 <NuevoMovimientoDialog

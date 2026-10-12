@@ -1,153 +1,110 @@
 import { useState } from "react";
 import { borrarSuscripcion, editarSuscripcion } from "../api";
+import { useAvisos } from "../avisos";
+import { parseMonto } from "../format";
+import { useValidacion } from "../hooks";
 import { playClick, playError, playSuccess } from "../sounds";
+import { validarSuscripcion } from "../validaciones";
+import CamposSuscripcion from "./CamposSuscripcion";
+import Dialog from "./Dialog";
 
 export default function EditarSuscripcionDialog({ suscripcion, categorias, cuentas, onClose, onGuardado }) {
-  const [nombre, setNombre] = useState(suscripcion.nombre || "");
-  const [diaCobro, setDiaCobro] = useState(String(suscripcion.diaCobro || ""));
-  const [categoria, setCategoria] = useState(suscripcion.categoria || "");
-  const [monto, setMonto] = useState(String(suscripcion.monto));
-  const [cuenta, setCuenta] = useState(suscripcion.cuenta || "");
+  const { avisar } = useAvisos();
+  const inicial = {
+    nombre: suscripcion.nombre || "",
+    diaCobro: String(suscripcion.diaCobro || ""),
+    categoria: suscripcion.categoria || "",
+    monto: String(suscripcion.monto ?? "").replace(".", ","),
+    cuenta: suscripcion.cuenta || "",
+  };
+  const [form, setForm] = useState(inicial);
   const [enviando, setEnviando] = useState(false);
   const [borrando, setBorrando] = useState(false);
   const [error, setError] = useState("");
+  const v = useValidacion(form, validarSuscripcion);
 
   // Identifica la fila original por nombre (tal como estaba cuando se cargó
   // la lista): es el único dato que la planilla usa para encontrarla.
   const nombreOriginal = suscripcion.nombre;
 
+  function campo(nombre, valor) {
+    setForm((f) => ({ ...f, [nombre]: valor }));
+  }
+
   async function guardar(e) {
     e.preventDefault();
-    const diaCobroNum = parseInt(diaCobro, 10);
-    if (!nombre.trim()) {
-      setError("Completá el nombre.");
-      return;
-    }
-    if (!diaCobroNum || diaCobroNum < 1 || diaCobroNum > 31) {
-      setError("El día de cobro tiene que ser entre 1 y 31.");
-      return;
-    }
-    const montoNum = parseFloat(monto);
-    if (!montoNum || montoNum <= 0) {
-      setError("Ingresá un monto válido.");
-      return;
-    }
+    if (!v.intentar()) return;
     setEnviando(true);
     setError("");
     try {
-      await editarSuscripcion(nombreOriginal, { nombre: nombre.trim(), diaCobro: diaCobroNum, categoria, monto: montoNum, cuenta });
+      await editarSuscripcion(nombreOriginal, {
+        nombre: form.nombre.trim(),
+        diaCobro: Number(form.diaCobro),
+        categoria: form.categoria,
+        monto: parseMonto(form.monto),
+        cuenta: form.cuenta,
+      });
       playSuccess();
+      avisar("Suscripción guardada");
       onGuardado?.();
       onClose();
     } catch (err) {
       playError();
-      setError(err.message || "No se pudo guardar el cambio.");
-    } finally {
+      setError(err.message || "No se pudo guardar el cambio. Probá de nuevo.");
       setEnviando(false);
     }
   }
 
   async function borrar() {
-    if (!window.confirm(`¿Borrar la suscripción "${suscripcion.nombre}"?`)) return;
+    if (!window.confirm(`¿Borrar la suscripción "${suscripcion.nombre}"? No se puede deshacer.`)) return;
     setBorrando(true);
     setError("");
     try {
       await borrarSuscripcion(nombreOriginal);
       playClick();
+      avisar("Suscripción borrada");
       onGuardado?.();
       onClose();
     } catch (err) {
       playError();
-      setError(err.message || "No se pudo borrar.");
+      setError(err.message || "No se pudo borrar. Probá de nuevo.");
       setBorrando(false);
     }
   }
 
+  const sucio = Object.keys(inicial).some((k) => inicial[k] !== form[k]);
+
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="dialog-title">Editar suscripción</div>
-        <form onSubmit={guardar} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div className="field">
-            <label>Nombre</label>
-            <input className="input" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-          </div>
+    <Dialog titulo="Editar suscripción" onClose={onClose} sucio={sucio && !enviando}>
+      <form className="form" onSubmit={guardar} noValidate>
+        <CamposSuscripcion form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} autoFocus />
 
-          <div className="fila-2">
-            <div className="field">
-              <label>Día de cobro</label>
-              <input
-                className="input"
-                type="number"
-                min="1"
-                max="31"
-                value={diaCobro}
-                onChange={(e) => setDiaCobro(e.target.value)}
-                required
-              />
-            </div>
-            <div className="field">
-              <label>Monto mensual</label>
-              <input
-                className="input"
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
-                required
-              />
-            </div>
-          </div>
+        {error && (
+          <p className="mensaje-error" role="alert">
+            {error}
+          </p>
+        )}
 
-          <div className="field">
-            <label>Categoría</label>
-            <select className="input" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-              <option value="">(sin categoría)</option>
-              {(categorias || []).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {cuentas && cuentas.length > 0 && (
-            <div className="field">
-              <label>Cuenta de la que se debita</label>
-              <select className="input" value={cuenta} onChange={(e) => setCuenta(e.target.value)}>
-                {cuentas.map((c) => (
-                  <option key={c.nombre} value={c.nombre}>
-                    {c.nombre} ({c.moneda})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="dialog-actions" style={{ justifyContent: "space-between" }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={borrar}
-              disabled={borrando || enviando}
-              style={{ color: "var(--error)" }}
-            >
-              {borrando ? "Borrando…" : "Borrar"}
+        <div className="dialog-actions dialog-actions--separadas">
+          <button
+            type="button"
+            className="btn btn-secondary btn-peligro"
+            onClick={borrar}
+            disabled={borrando || enviando}
+          >
+            <i className="ph ph-trash" aria-hidden="true" />
+            {borrando ? "Borrando…" : "Borrar"}
+          </button>
+          <div className="fila">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              Cancelar
             </button>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
-                Cancelar
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={enviando || borrando}>
-                {enviando ? "Guardando…" : "Guardar cambios"}
-              </button>
-            </div>
+            <button type="submit" className="btn btn-primary" disabled={enviando || borrando}>
+              {enviando ? "Guardando…" : "Guardar"}
+            </button>
           </div>
-
-          {error && <p className="mensaje-error">{error}</p>}
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Dialog>
   );
 }

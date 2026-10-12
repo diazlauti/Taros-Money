@@ -1,168 +1,154 @@
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
 import { crearSuscripcion } from "../api";
-import { fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
+import { useAvisos } from "../avisos";
+import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria, parseMonto } from "../format";
+import { useValidacion } from "../hooks";
 import { playError, playSuccess } from "../sounds";
+import { validarSuscripcion } from "../validaciones";
+import CamposSuscripcion from "./CamposSuscripcion";
 import EditarSuscripcionDialog from "./EditarSuscripcionDialog";
+import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 
-export default function RecurrentesTab({ suscripciones, categorias, cuentas, cotizacionUsdArs, cargando, error, onCambio }) {
-  const [nombre, setNombre] = useState("");
-  const [diaCobro, setDiaCobro] = useState("");
-  const [categoria, setCategoria] = useState("");
-  const [monto, setMonto] = useState("");
-  const [cuenta, setCuenta] = useState("");
+const VACIO = { nombre: "", diaCobro: "", categoria: "", monto: "", cuenta: "" };
+
+export default function RecurrentesTab({ suscripciones, categorias, cuentas, cotizacionUsdArs, monedaPorCuenta, onCambio }) {
+  const { avisar } = useAvisos();
+  const [form, setForm] = useState(VACIO);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [editando, setEditando] = useState(null);
+  const nombreRef = useRef(null);
+  const v = useValidacion(form, validarSuscripcion);
 
-  // Cada suscripción se debita de una cuenta, y cada cuenta tiene su propia
-  // moneda — sin esto, una suscripción en dólares se sumaba al total como si
-  // fueran pesos (ej: una de US$15 se sumaba como "$15" en vez de ~$20.000).
-  const monedaPorCuenta = useMemo(
-    () => Object.fromEntries((cuentas || []).map((c) => [c.nombre, c.moneda])),
-    [cuentas]
-  );
+  function campo(nombre, valor) {
+    setForm((f) => ({ ...f, [nombre]: valor }));
+  }
 
   async function agregar(e) {
     e.preventDefault();
-    const diaCobroNum = parseInt(diaCobro, 10);
-    const montoNum = parseFloat(monto);
-    if (!nombre.trim()) {
-      setErrorForm("Completá el nombre.");
-      return;
-    }
-    if (!diaCobroNum || diaCobroNum < 1 || diaCobroNum > 31) {
-      setErrorForm("El día de cobro tiene que ser entre 1 y 31.");
-      return;
-    }
-    if (!montoNum || montoNum <= 0) {
-      setErrorForm("Ingresá un monto válido.");
-      return;
-    }
+    if (!v.intentar()) return;
     setEnviando(true);
     setErrorForm("");
     try {
-      await crearSuscripcion({ nombre: nombre.trim(), diaCobro: diaCobroNum, categoria, monto: montoNum, cuenta });
+      await crearSuscripcion({
+        nombre: form.nombre.trim(),
+        diaCobro: Number(form.diaCobro),
+        categoria: form.categoria,
+        monto: parseMonto(form.monto),
+        cuenta: form.cuenta,
+      });
       playSuccess();
-      setNombre("");
-      setDiaCobro("");
-      setCategoria("");
-      setMonto("");
+      avisar("Suscripción agregada");
+      setForm(VACIO);
+      v.reiniciar();
       onCambio?.();
     } catch (err) {
       playError();
-      setErrorForm(err.message || "No se pudo crear la suscripción.");
+      setErrorForm(err.message || "No se pudo crear la suscripción. Probá de nuevo.");
     } finally {
       setEnviando(false);
     }
   }
 
-  if (cargando) return <p className="mensaje-estado">Cargando suscripciones…</p>;
-  if (error) return <p className="mensaje-estado">Todavía no está conectada esta sección ({error}).</p>;
+  const lista = suscripciones.data || [];
+  // Cada suscripción se debita de una cuenta con su propia moneda; las de
+  // USD se pasan a pesos con la cotización. Si no hay cotización se avisa
+  // en vez de sumarlas como 0 sin decir nada.
+  const faltaCotizacion = lista.some((s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizacionUsdArs) === null);
+  const total = lista.reduce((sum, s) => sum + (aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizacionUsdArs) ?? 0), 0);
 
-  const total = (suscripciones || []).reduce((sum, s) => {
-    const monto = Number(s.monto) || 0;
-    const esUsd = monedaPorCuenta[s.cuenta] === "USD";
-    return sum + (esUsd ? monto * (cotizacionUsdArs || 0) : monto);
-  }, 0);
+  let contenido;
+  if (suscripciones.cargando) {
+    contenido = (
+      <Cargando texto="Cargando suscripciones…">
+        <div className="grid-cards">
+          {[0, 1, 2].map((i) => (
+            <div className="card" key={i}>
+              <Skeleton ancho="60%" />
+              <Skeleton ancho="30%" />
+              <Skeleton variante="monto-medio" />
+            </div>
+          ))}
+        </div>
+      </Cargando>
+    );
+  } else if (suscripciones.error && !suscripciones.data) {
+    contenido = (
+      <div className="card">
+        <ErrorEstado mensaje={suscripciones.error} onReintentar={suscripciones.recargar} />
+      </div>
+    );
+  } else if (lista.length === 0) {
+    contenido = (
+      <div className="card">
+        <Vacio icono="ph ph-repeat" texto="Todavía no cargaste suscripciones. Agregá la primera (Netflix, Spotify, el gimnasio…).">
+          <button type="button" className="btn btn-secondary" onClick={() => nombreRef.current?.focus()}>
+            <i className="ph ph-plus" aria-hidden="true" />
+            Agregar suscripción
+          </button>
+        </Vacio>
+      </div>
+    );
+  } else {
+    contenido = (
+      <>
+        <section className="card" aria-labelledby="titulo-total-recurrente">
+          <div className="fila-separada">
+            <h2 className="card-kicker" id="titulo-total-recurrente">
+              Total por mes
+            </h2>
+            <span className="monto-chico">{fmtMoney(total)}</span>
+          </div>
+          {faltaCotizacion && (
+            <p className="aviso-inline">
+              <i className="ph ph-info" aria-hidden="true" />
+              No incluye las suscripciones en dólares porque no se pudo traer la cotización.
+            </p>
+          )}
+        </section>
+        <ul className="lista grid-cards">
+          {lista.map((s, i) => (
+            <li key={`${s.nombre}-${i}`}>
+              <button type="button" className="card card-tocable" onClick={() => setEditando(s)}>
+                <span className="fila-separada">
+                  <span className="fila">
+                    <i className={iconoPorCategoria(s.categoria)} aria-hidden="true" />
+                    <span className="card-title">{s.nombre}</span>
+                  </span>
+                  <i className="ph ph-pencil-simple texto-tenue" aria-hidden="true" />
+                </span>
+                {s.categoria && <span className="tag">{s.categoria}</span>}
+                {s.cuenta && <span className="texto-tenue texto-chico">{s.cuenta}</span>}
+                <span className="fila-separada">
+                  <span className="monto-chico">{fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}/mes</span>
+                  <span className="texto-tenue texto-chico">Próximo cobro: {fmtFecha(s.proximaFecha)}</span>
+                </span>
+                <span className="visualmente-oculto">Tocá para editar o borrar</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {suscripciones && suscripciones.length > 0 && (
-        <>
-          <div className="card" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <span className="card-kicker" style={{ margin: 0 }}>
-              Total mensual recurrente
-            </span>
-            <span style={{ fontSize: 18, fontWeight: 600 }}>{fmtMoney(total)}</span>
-          </div>
-          <div className="grid-cards">
-            {suscripciones.map((s, i) => (
-              <div
-                className="card"
-                key={i}
-                onClick={() => setEditando(s)}
-                style={{ cursor: "pointer" }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <i className={iconoPorCategoria(s.categoria)} />
-                  <span className="card-title">{s.nombre}</span>
-                </div>
-                <span className="tag">{s.categoria}</span>
-                <div className="text-muted" style={{ fontSize: 12 }}>{s.cuenta}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <span style={{ fontSize: 18, fontWeight: 600 }}>
-                    {fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}/mes
-                  </span>
-                  <span className="text-muted">próx. {fmtFecha(s.proximaFecha)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-      {(!suscripciones || suscripciones.length === 0) && (
-        <p className="mensaje-estado">No hay gastos recurrentes cargados en la planilla.</p>
-      )}
+    <>
+      {contenido}
 
-      <form className="card" onSubmit={agregar} style={{ maxWidth: 360 }}>
-        <span className="card-kicker">Nueva suscripción</span>
-        <div className="field">
-          <label>Nombre</label>
-          <input className="input" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Netflix" />
-        </div>
-        <div className="fila-2">
-          <div className="field">
-            <label>Día de cobro</label>
-            <input
-              className="input"
-              type="number"
-              min="1"
-              max="31"
-              value={diaCobro}
-              onChange={(e) => setDiaCobro(e.target.value)}
-              placeholder="Ej: 10"
-            />
-          </div>
-          <div className="field">
-            <label>Monto mensual</label>
-            <input
-              className="input"
-              type="number"
-              step="0.01"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              placeholder="0.00"
-            />
-          </div>
-        </div>
-        <div className="field">
-          <label>Categoría</label>
-          <select className="input" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-            <option value="">(sin categoría)</option>
-            {(categorias || []).map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-        {cuentas && cuentas.length > 0 && (
-          <div className="field">
-            <label>Cuenta de la que se debita</label>
-            <select className="input" value={cuenta} onChange={(e) => setCuenta(e.target.value)}>
-              <option value="">(elegí una cuenta)</option>
-              {cuentas.map((c) => (
-                <option key={c.nombre} value={c.nombre}>
-                  {c.nombre} ({c.moneda})
-                </option>
-              ))}
-            </select>
-          </div>
+      <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nueva-suscripcion">
+        <h2 className="card-kicker" id="titulo-nueva-suscripcion">
+          Nueva suscripción
+        </h2>
+        <CamposSuscripcion form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} nombreRef={nombreRef} />
+        {errorForm && (
+          <p className="mensaje-error" role="alert">
+            {errorForm}
+          </p>
         )}
         <button className="btn btn-primary" type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : "Agregar"}
+          {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
         </button>
-        {errorForm && <p className="mensaje-error">{errorForm}</p>}
       </form>
 
       {editando && (
@@ -174,6 +160,6 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
           onGuardado={onCambio}
         />
       )}
-    </div>
+    </>
   );
 }

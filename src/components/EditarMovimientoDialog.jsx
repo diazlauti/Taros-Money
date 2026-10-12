@@ -1,0 +1,192 @@
+import { useState } from "react";
+import { borrarGasto, borrarIngreso, editarGasto, editarIngreso } from "../api";
+import { useAvisos } from "../avisos";
+import { fmtMoney, parseMonto } from "../format";
+import { useValidacion } from "../hooks";
+import { playClick, playError, playSuccess } from "../sounds";
+import { validarMovimiento } from "../validaciones";
+import Campo from "./Campo";
+import CategoriaChips from "./CategoriaChips";
+import Dialog from "./Dialog";
+
+// Editar o borrar un gasto o un ingreso (mismo formulario; los ingresos no
+// tienen hora en la planilla).
+export default function EditarMovimientoDialog({ movimiento, tipo, categorias, cuentas, monedaPorCuenta, onClose, onGuardado }) {
+  const { avisar } = useAvisos();
+  const esGasto = tipo === "gasto";
+  const inicial = {
+    fecha: movimiento.fecha || "",
+    hora: movimiento.hora || "",
+    categoria: movimiento.categoria || "",
+    descripcion: movimiento.descripcion || "",
+    monto: String(movimiento.monto ?? "").replace(".", ","),
+    cuenta: movimiento.cuenta || "",
+  };
+  const [form, setForm] = useState(inicial);
+  const [enviando, setEnviando] = useState(false);
+  const [borrando, setBorrando] = useState(false);
+  const [error, setError] = useState("");
+  const v = useValidacion(form, (f) => validarMovimiento(f, esGasto));
+
+  // Identifica la fila original en la planilla (antes de aplicar los
+  // cambios). Gastos: fecha + hora + monto. Ingresos no tienen "hora", así
+  // que se usa fecha + monto + descripción, tal como estaban al cargar.
+  const criterio = esGasto
+    ? { fecha: movimiento.fecha, hora: movimiento.hora, monto: movimiento.monto }
+    : { fecha: movimiento.fecha, monto: movimiento.monto, descripcion: movimiento.descripcion };
+
+  function campo(nombre, valor) {
+    setForm((f) => ({ ...f, [nombre]: valor }));
+  }
+
+  async function guardar(e) {
+    e.preventDefault();
+    if (!v.intentar()) return;
+    setEnviando(true);
+    setError("");
+    const cambios = {
+      fecha: form.fecha,
+      categoria: form.categoria,
+      descripcion: form.descripcion.trim(),
+      monto: parseMonto(form.monto),
+      cuenta: form.cuenta,
+      ...(esGasto ? { hora: form.hora } : {}),
+    };
+    try {
+      await (esGasto ? editarGasto : editarIngreso)(criterio, cambios);
+      playSuccess();
+      avisar("Cambios guardados");
+      onGuardado?.();
+      onClose();
+    } catch (err) {
+      playError();
+      setError(err.message || "No se pudo guardar el cambio. Probá de nuevo.");
+      setEnviando(false);
+    }
+  }
+
+  async function borrar() {
+    const monto = fmtMoney(movimiento.monto, monedaPorCuenta?.[movimiento.cuenta] || "ARS");
+    const nombre = movimiento.descripcion || "sin descripción";
+    if (!window.confirm(`¿Borrar el ${esGasto ? "gasto" : "ingreso"} "${nombre}" de ${monto}? No se puede deshacer.`)) return;
+    setBorrando(true);
+    setError("");
+    try {
+      await (esGasto ? borrarGasto : borrarIngreso)(criterio);
+      playClick();
+      avisar(esGasto ? "Gasto borrado" : "Ingreso borrado");
+      onGuardado?.();
+      onClose();
+    } catch (err) {
+      playError();
+      setError(err.message || "No se pudo borrar. Probá de nuevo.");
+      setBorrando(false);
+    }
+  }
+
+  const sucio = Object.keys(inicial).some((k) => inicial[k] !== form[k]);
+
+  return (
+    <Dialog titulo={esGasto ? "Editar gasto" : "Editar ingreso"} onClose={onClose} sucio={sucio && !enviando}>
+      <form className="form" onSubmit={guardar} noValidate>
+        <Campo etiqueta="Monto" error={v.visible("monto")}>
+          {(p) => (
+            <input
+              {...p}
+              className="input input-monto"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={form.monto}
+              onChange={(e) => campo("monto", e.target.value)}
+              onBlur={() => v.tocar("monto")}
+            />
+          )}
+        </Campo>
+
+        <CategoriaChips categorias={categorias} valor={form.categoria} onChange={(c) => campo("categoria", c)} />
+
+        <Campo etiqueta="Descripción (opcional)">
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              type="text"
+              value={form.descripcion}
+              onChange={(e) => campo("descripcion", e.target.value)}
+            />
+          )}
+        </Campo>
+
+        {cuentas && cuentas.length > 0 && (
+          <Campo etiqueta="Cuenta">
+            {(p) => (
+              <select {...p} className="input" value={form.cuenta} onChange={(e) => campo("cuenta", e.target.value)}>
+                {cuentas.map((c) => (
+                  <option key={c.nombre} value={c.nombre}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Campo>
+        )}
+
+        <div className="fila-2">
+          <Campo etiqueta="Fecha" error={v.visible("fecha")}>
+            {(p) => (
+              <input
+                {...p}
+                className="input"
+                type="date"
+                value={form.fecha}
+                onChange={(e) => campo("fecha", e.target.value)}
+                onBlur={() => v.tocar("fecha")}
+              />
+            )}
+          </Campo>
+          {esGasto && (
+            <Campo etiqueta="Hora" error={v.visible("hora")}>
+              {(p) => (
+                <input
+                  {...p}
+                  className="input"
+                  type="time"
+                  value={form.hora}
+                  onChange={(e) => campo("hora", e.target.value)}
+                  onBlur={() => v.tocar("hora")}
+                />
+              )}
+            </Campo>
+          )}
+        </div>
+
+        {error && (
+          <p className="mensaje-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        <div className="dialog-actions dialog-actions--separadas">
+          <button
+            type="button"
+            className="btn btn-secondary btn-peligro"
+            onClick={borrar}
+            disabled={borrando || enviando}
+          >
+            <i className="ph ph-trash" aria-hidden="true" />
+            {borrando ? "Borrando…" : "Borrar"}
+          </button>
+          <div className="fila">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={enviando || borrando}>
+              {enviando ? "Guardando…" : "Guardar"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
