@@ -107,7 +107,7 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
       <div key={indice} className={`tour-cuerpo tour-cuerpo--${direccion}`}>
         <span
           className={
-            "tour-icono" + (indice % 2 === 1 ? " tour-icono--violeta" : "") + (indice === 0 ? " tour-icono--saludo" : "")
+            "tour-icono" + (indice % 2 === 1 ? " tour-icono--mostaza" : "") + (indice === 0 ? " tour-icono--saludo" : "")
           }
         >
           <i className={paso.icono} aria-hidden="true" />

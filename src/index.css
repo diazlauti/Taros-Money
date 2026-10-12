@@ -4,17 +4,17 @@
 
 :root {
 /* --- Colores (modo claro) ---
-   Sale del logo: azul noche y amarillo mostaza, con violeta de segundo
-   acento (títulos de tarjetas, links, detalles). En claro el fondo es un
-   gris azulado suave y los botones van en azul con letras mostaza, para no
-   cansar la vista. */
+   Morado como color principal (botones, selección), azul noche del logo
+   para texto y bordes, y mostaza para resaltar (íconos, detalles). En claro
+   el fondo es un gris azulado suave, para no cansar la vista. */
 --color-bg: #e9ecf4;
 --color-surface: #fbfaf6;
 --color-surface-2: #f0eee6;
 --color-text: #1a1f45;
 --color-text-dim: #4a5072;
---color-accent: #1f2654;
---color-on-accent: #f5c542;
+--color-accent: var(--color-morado);
+--color-on-accent: #ffffff;
+--color-morado: #6a4bc4;
 --color-accent-text: var(--color-violeta);
 --color-violeta: #6a4bc4;
 --color-on-violeta: #ffffff;
@@ -117,8 +117,9 @@ color-scheme: light;
 --color-surface-2: #1f2450;
 --color-text: #f4f1ff;
 --color-text-dim: #c4c2e6;
---color-accent: #f5c542;
---color-on-accent: #1a1f45;
+--color-accent: var(--color-morado);
+--color-on-accent: #ffffff;
+--color-morado: #6a4bc4;
 --color-accent-text: var(--color-violeta);
 --color-violeta: #b9a3ff;
 --color-on-violeta: #1a1f45;
@@ -140,8 +141,9 @@ color-scheme: dark;
 --color-surface-2: #1f2450;
 --color-text: #f4f1ff;
 --color-text-dim: #c4c2e6;
---color-accent: #f5c542;
---color-on-accent: #1a1f45;
+--color-accent: var(--color-morado);
+--color-on-accent: #ffffff;
+--color-morado: #6a4bc4;
 --color-accent-text: var(--color-violeta);
 --color-violeta: #b9a3ff;
 --color-on-violeta: #1a1f45;
@@ -1349,9 +1351,9 @@ background: var(--color-accent);
 color: var(--color-on-accent);
 }
 
-.tour-icono--violeta {
-background: var(--color-violeta);
-color: var(--color-on-violeta);
+.tour-icono--mostaza {
+background: var(--color-resalte);
+color: var(--color-on-resalte);
 }
 
 .login-beneficio-icono--violeta {
