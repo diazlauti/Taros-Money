@@ -35,4 +35,5 @@ export const NAV_ITEMS = [
 { id: "metas", label: "Metas", icon: "ph ph-target" },
 { id: "recurrentes", label: "Suscripciones", icon: "ph ph-repeat" },
 { id: "reportes", label: "Reportes", icon: "ph ph-chart-line" },
+{ id: "configuracion", label: "Configuración", icon: "ph ph-gear" },
 ];

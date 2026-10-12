@@ -165,3 +165,9 @@ export function getTendencia(meses = 6) {
 export function getCotizacion() {
   return scriptsRun("obtenerCotizacion");
 }
+
+// --- Link directo a tu planilla real en Google Sheets ---
+
+export function getUrlPlanilla() {
+  return scriptsRun("obtenerUrlPlanilla");
+}

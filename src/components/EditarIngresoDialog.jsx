@@ -2,7 +2,7 @@ import { useState } from "react";
 import { borrarIngreso, editarIngreso } from "../api";
 import { playClick, playError, playSuccess } from "../sounds";
 
-export default function EditarIngresoDialog({ ingreso, cuentas, onClose, onGuardado }) {
+export default function EditarIngresoDialog({ ingreso, cuentas, categorias, onClose, onGuardado }) {
   const [fecha, setFecha] = useState(ingreso.fecha || "");
   const [categoria, setCategoria] = useState(ingreso.categoria || "");
   const [descripcion, setDescripcion] = useState(ingreso.descripcion || "");
@@ -93,10 +93,16 @@ export default function EditarIngresoDialog({ ingreso, cuentas, onClose, onGuard
               <input
                 className="input"
                 type="text"
+                list="lista-categorias-editar-ingreso"
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
                 placeholder="Ej: Sueldo"
               />
+              <datalist id="lista-categorias-editar-ingreso">
+                {(categorias || []).map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
           </div>
 

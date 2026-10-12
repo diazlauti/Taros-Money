@@ -107,6 +107,7 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
         <EditarIngresoDialog
           ingreso={editando}
           cuentas={cuentas}
+          categorias={categorias}
           onClose={() => setEditando(null)}
           onGuardado={onCambio}
         />

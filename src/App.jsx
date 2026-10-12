@@ -10,6 +10,7 @@ getMetas,
 getSuscripciones,
 getTendencia,
 getCotizacion,
+getUrlPlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
@@ -22,6 +23,7 @@ import CuentasTab from "./components/CuentasTab";
 import MetasTab from "./components/MetasTab";
 import RecurrentesTab from "./components/RecurrentesTab";
 import ReportesTab from "./components/ReportesTab";
+import ConfiguracionTab from "./components/ConfiguracionTab";
 import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
 import Login from "./components/Login";
 
@@ -85,6 +87,7 @@ const metas = useSeccion(getMetas, []);
 const suscripciones = useSeccion(getSuscripciones, []);
 const tendencia = useSeccion(() => getTendencia(6), []);
 const cotizacion = useSeccion(getCotizacion, []);
+const urlPlanilla = useSeccion(getUrlPlanilla, []);
 
 const recargarTodo = useCallback(() => {
 saldo.recargar();
@@ -203,6 +206,15 @@ onCambio={suscripciones.recargar}
 
 {activeTab === "reportes" && (
 <ReportesTab tendencia={tendencia.data} cargando={tendencia.cargando} error={tendencia.error} />
+)}
+
+{activeTab === "configuracion" && (
+<ConfiguracionTab
+urlPlanilla={urlPlanilla.data}
+cargando={urlPlanilla.cargando}
+error={urlPlanilla.error}
+onCerrarSesion={onCerrarSesion}
+/>
 )}
 </div>
 </div>
