@@ -5,6 +5,7 @@ import { parseMonto } from "../format";
 import { useValidacion } from "../hooks";
 import { validarMovimiento } from "../validaciones";
 import { playError, playSuccess } from "../sounds";
+import { avisarAccionTour } from "../tour";
 import Campo from "./Campo";
 import CategoriaChips from "./CategoriaChips";
 import Dialog from "./Dialog";
@@ -75,6 +76,7 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, on
       avisar(tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado");
       onGuardado?.();
       onClose();
+      avisarAccionTour("movimiento-creado");
     } catch (err) {
       playError();
       setError(err.message || "No se pudo guardar el movimiento. Probá de nuevo.");
