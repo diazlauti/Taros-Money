@@ -1,10 +1,19 @@
 import { useState } from "react";
 import { iniciarSesionConGoogle } from "../auth";
+import { estaInstalada } from "../instalacion";
 import { playError, playSuccess } from "../sounds";
+import InstalarAppDialog from "./InstalarAppDialog";
+
+const BENEFICIOS = [
+  { icono: "ph ph-lightning", color: "var(--cat-2)", texto: "Anotá un gasto o ingreso en segundos" },
+  { icono: "ph ph-chart-pie-slice", color: "var(--cat-1)", texto: "Mirá en qué se te va la plata, por categoría" },
+  { icono: "ph ph-target", color: "var(--cat-0)", texto: "Seguí tus cuentas, metas y suscripciones" },
+];
 
 export default function Login({ onSuccess }) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
+  const [guiaAbierta, setGuiaAbierta] = useState(false);
 
   async function entrar() {
     setEnviando(true);
@@ -23,25 +32,50 @@ export default function Login({ onSuccess }) {
 
   return (
     <main className="pantalla-login">
-      <div className="card login-card">
-        <h1 className="brand brand--centrada">
-          <i className="ph ph-wallet" aria-hidden="true" />
-          Taros Money
-        </h1>
-        <p className="texto-intro">
-          Entrá con tu cuenta de Google. La primera vez te va a pedir permiso para crear tu propia planilla, que es
-          solo tuya.
-        </p>
-        <button type="button" className="btn btn-primary" onClick={entrar} disabled={enviando}>
-          <i className="ph ph-google-logo" aria-hidden="true" />
-          {enviando ? "Entrando…" : error ? "Reintentar" : "Entrar con Google"}
-        </button>
-        {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
+      <div className="login-contenido">
+        <header className="login-hero">
+          <img className="login-logo" src="/icon-192.png" alt="" width="192" height="192" />
+          <h1 className="login-titulo">Taros Money</h1>
+          <p className="login-lema">Tus gastos, ingresos y ahorros, claros y en un solo lugar.</p>
+        </header>
+
+        <div className="card login-card">
+          <ul className="login-beneficios">
+            {BENEFICIOS.map((b) => (
+              <li key={b.texto}>
+                <span className="login-beneficio-icono" style={{ "--color-icono": b.color }}>
+                  <i className={b.icono} aria-hidden="true" />
+                </span>
+                {b.texto}
+              </li>
+            ))}
+          </ul>
+
+          <button type="button" className="btn btn-primary btn-ancho" onClick={entrar} disabled={enviando}>
+            <i className="ph ph-google-logo" aria-hidden="true" />
+            {enviando ? "Entrando…" : error ? "Reintentar" : "Entrar con Google"}
+          </button>
+          {error && (
+            <p className="mensaje-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          <p className="login-privacidad">
+            <i className="ph ph-lock-simple" aria-hidden="true" />
+            La primera vez Google te pide permiso para crear tu propia planilla. Es solo tuya: nadie más ve tus datos.
           </p>
+        </div>
+
+        {!estaInstalada() && (
+          <button type="button" className="btn btn-texto login-instalar" onClick={() => setGuiaAbierta(true)}>
+            <i className="ph ph-device-mobile" aria-hidden="true" />
+            Agregala a la pantalla de inicio de tu celu
+          </button>
         )}
       </div>
+
+      {guiaAbierta && <InstalarAppDialog onClose={() => setGuiaAbierta(false)} />}
     </main>
   );
 }

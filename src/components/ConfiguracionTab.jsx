@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAvisos } from "../avisos";
+import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
@@ -21,6 +22,8 @@ export default function ConfiguracionTab({
   sonido,
   onToggleSonido,
   onCerrarSesion,
+  onVerTour,
+  onInstalar,
 }) {
   const { avisar } = useAvisos();
   const [nuevaCategoria, setNuevaCategoria] = useState("");
@@ -200,6 +203,28 @@ export default function ConfiguracionTab({
           <i className={sonido ? "ph ph-speaker-high" : "ph ph-speaker-slash"} aria-hidden="true" />
           {sonido ? "Sonidos activados" : "Sonidos apagados"}
         </button>
+      </section>
+
+      <section className="card" aria-labelledby="titulo-ayuda">
+        <h2 className="card-kicker" id="titulo-ayuda">
+          Ayuda
+        </h2>
+        <div className="pila-chica">
+          <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onVerTour}>
+            <i className="ph ph-signpost" aria-hidden="true" />
+            Ver el recorrido de nuevo
+          </button>
+          {estaInstalada() ? (
+            <p className="mensaje-estado">
+              <i className="ph ph-check-circle" aria-hidden="true" /> Ya la tenés en tu pantalla de inicio.
+            </p>
+          ) : (
+            <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onInstalar}>
+              <i className="ph ph-device-mobile" aria-hidden="true" />
+              Agregar a la pantalla de inicio
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="card" aria-labelledby="titulo-cuenta">

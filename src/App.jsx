@@ -31,6 +31,9 @@ import ReportesTab from "./components/ReportesTab";
 import ConfiguracionTab from "./components/ConfiguracionTab";
 import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
 import Login from "./components/Login";
+import Tour from "./components/Tour";
+import { tourVisto } from "./tour";
+import InstalarAppDialog from "./components/InstalarAppDialog";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
@@ -70,11 +73,9 @@ setTema(nuevo);
 if (verificando) {
 return (
 <main className="pantalla-login">
-<div className="pila brand--centrada" role="status" aria-live="polite">
-<div className="brand brand--centrada">
-<i className="ph ph-wallet" aria-hidden="true" />
-Taros Money
-</div>
+<div className="login-hero" role="status" aria-live="polite">
+<img className="login-logo login-logo--pulso" src="/icon-192.png" alt="" width="192" height="192" />
+<p className="login-titulo">Taros Money</p>
 <p className="mensaje-estado">Abriendo tu sesión…</p>
 </div>
 </main>
@@ -104,6 +105,9 @@ const [sonido, setSonido] = useState(sonidoHabilitado);
 const [activeTab, setActiveTab] = useState("resumen");
 const [dias, setDias] = useState(30);
 const [dialogOpen, setDialogOpen] = useState(false);
+// El recorrido aparece solo la primera vez; después se abre desde Configuración.
+const [tourAbierto, setTourAbierto] = useState(() => !tourVisto());
+const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
 
 const saldo = useSeccion(getSaldo, []);
 const resumen = useSeccion(() => getResumen(dias), [dias]);
@@ -233,6 +237,8 @@ onCambiarTema={onCambiarTema}
 sonido={sonido}
 onToggleSonido={alternarSonido}
 onCerrarSesion={onCerrarSesion}
+onVerTour={() => setTourAbierto(true)}
+onInstalar={() => setGuiaInstalarAbierta(true)}
 />
 )}
 </div>
@@ -249,6 +255,19 @@ onClose={() => setDialogOpen(false)}
 onGuardado={recargarTodo}
 />
 )}
+
+{tourAbierto && (
+<Tour
+onIrA={setActiveTab}
+onClose={() => setTourAbierto(false)}
+onInstalar={() => {
+setTourAbierto(false);
+setGuiaInstalarAbierta(true);
+}}
+/>
+)}
+
+{guiaInstalarAbierta && <InstalarAppDialog onClose={() => setGuiaInstalarAbierta(false)} />}
 </div>
 );
 }
