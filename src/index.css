@@ -3,35 +3,40 @@
    debería aparecer ningún color, tamaño, espacio ni duración escrito a mano. */
 
 :root {
-/* --- Colores (modo claro) --- */
---color-bg: #5ec8f0;
---color-surface: #fffdf0;
---color-surface-2: #f2eeda;
---color-text: #1c2b48;
---color-text-dim: #46516b;
---color-accent: #ff4d8d;
---color-on-accent: #0f1830;
---color-accent-text: #a8104f;
---color-divider: rgba(28, 43, 72, 0.18);
---color-backdrop: rgba(0, 0, 0, 0.45);
---color-backdrop-suave: rgba(0, 0, 0, 0.25);
---color-skeleton: rgba(28, 43, 72, 0.12);
---ink: #1c2b48;
---error: #b81f33;
---exito: #12703a;
+/* --- Colores (modo claro) ---
+   Sale del logo: azul noche y amarillo mostaza. En claro el fondo es un
+   gris azulado suave y los botones van en azul con letras mostaza, para no
+   cansar la vista. */
+--color-bg: #e9ecf4;
+--color-surface: #fbfaf6;
+--color-surface-2: #f0eee6;
+--color-text: #1a1f45;
+--color-text-dim: #4a5072;
+--color-accent: #1f2654;
+--color-on-accent: #f5c542;
+--color-accent-text: #7a5a00;
+--color-resalte: #f5c542;
+--color-on-resalte: #1a1f45;
+--color-divider: rgba(26, 31, 69, 0.15);
+--color-backdrop: rgba(10, 13, 35, 0.45);
+--color-backdrop-suave: rgba(10, 13, 35, 0.25);
+--color-skeleton: rgba(26, 31, 69, 0.1);
+--ink: #1a1f45;
+--error: #b3261e;
+--exito: #1e6b3a;
 --color-ingreso: var(--exito);
---color-gasto: #6b7590;
+--color-gasto: #5f6688;
 --color-focus: var(--ink);
 
 /* Paleta de categorías: se asigna por índice a lo que exista en la planilla real. */
---cat-0: #ff4d8d;
---cat-1: #2ee6d6;
---cat-2: #ffcc00;
---cat-3: #a55cff;
---cat-4: #6bdc4f;
---cat-5: #ff8a3d;
---cat-6: #7d93d1;
---cat-7: #ff8fbb;
+--cat-0: #e3b230;
+--cat-1: #4f6bd8;
+--cat-2: #e07a5f;
+--cat-3: #3fa796;
+--cat-4: #9b7fd4;
+--cat-5: #f2a541;
+--cat-6: #6c8ead;
+--cat-7: #c97b9a;
 
 /* --- Tipografía --- */
 --font-heading: "Fredoka", "Inter", system-ui, sans-serif;
@@ -109,9 +114,11 @@ color-scheme: light;
 --color-surface-2: #1f2450;
 --color-text: #f4f1ff;
 --color-text-dim: #c4c2e6;
---color-accent: #ffcc00;
+--color-accent: #f5c542;
 --color-on-accent: #1a1f45;
---color-accent-text: #ffcc00;
+--color-accent-text: #f5c542;
+--color-resalte: #f5c542;
+--color-on-resalte: #1a1f45;
 --color-divider: rgba(244, 241, 255, 0.16);
 --color-skeleton: rgba(244, 241, 255, 0.12);
 --ink: #f4f1ff;
@@ -128,9 +135,11 @@ color-scheme: dark;
 --color-surface-2: #1f2450;
 --color-text: #f4f1ff;
 --color-text-dim: #c4c2e6;
---color-accent: #ffcc00;
+--color-accent: #f5c542;
 --color-on-accent: #1a1f45;
---color-accent-text: #ffcc00;
+--color-accent-text: #f5c542;
+--color-resalte: #f5c542;
+--color-on-resalte: #1a1f45;
 --color-divider: rgba(244, 241, 255, 0.16);
 --color-skeleton: rgba(244, 241, 255, 0.12);
 --ink: #f4f1ff;
@@ -1267,8 +1276,8 @@ width: var(--icono-circulo);
 height: var(--icono-circulo);
 border: var(--border) solid var(--ink);
 border-radius: var(--radius-pill);
-background: var(--color-icono, var(--color-accent));
-color: var(--color-on-accent);
+background: var(--color-resalte);
+color: var(--color-on-resalte);
 }
 
 .login-beneficio-icono i {
@@ -1337,6 +1346,69 @@ color: var(--color-on-accent);
 font-size: var(--text-2xl);
 }
 
+.tour-cuerpo--adelante {
+animation: tour-desde-derecha var(--dur-slow) var(--ease-bounce);
+}
+
+.tour-cuerpo--atras {
+animation: tour-desde-izquierda var(--dur-slow) var(--ease-bounce);
+}
+
+.tour-cuerpo .tour-icono {
+position: relative;
+animation: tour-pop var(--dur-slow) var(--ease-bounce);
+}
+
+.tour-icono--saludo i {
+transform-origin: 70% 80%;
+animation: tour-saludo var(--dur-pulse) var(--ease-out) var(--dur-slow) 2;
+}
+
+/* Confeti del último paso: 8 papelitos que salen del ícono en abanico. */
+.tour-confeti span {
+position: absolute;
+top: 50%;
+left: 50%;
+width: var(--punto);
+height: var(--punto);
+border-radius: var(--radius-sm);
+background: var(--cat-0);
+opacity: 0;
+--angulo: calc(var(--i) * 45deg);
+animation: tour-confeti var(--dur-pulse) var(--ease-out) var(--dur-base) forwards;
+}
+
+.tour-confeti span:nth-child(2n) { background: var(--cat-1); }
+.tour-confeti span:nth-child(3n) { background: var(--cat-2); }
+.tour-confeti span:nth-child(4n) { background: var(--cat-3); }
+
+@keyframes tour-desde-derecha {
+from { opacity: 0; transform: translateX(var(--space-5)); }
+to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tour-desde-izquierda {
+from { opacity: 0; transform: translateX(calc(var(--space-5) * -1)); }
+to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tour-pop {
+0% { transform: scale(0.4) rotate(-12deg); }
+70% { transform: scale(1.1) rotate(4deg); }
+100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes tour-saludo {
+0%, 100% { transform: rotate(0); }
+15%, 45% { transform: rotate(18deg); }
+30%, 60% { transform: rotate(-10deg); }
+}
+
+@keyframes tour-confeti {
+0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--angulo)) translateY(0) rotate(0); }
+100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angulo)) translateY(calc(var(--tour-icono) * -1)) rotate(180deg); }
+}
+
 .tour-texto {
 margin: 0;
 font-size: var(--text-md);
@@ -1354,6 +1426,11 @@ height: var(--punto);
 border-radius: var(--radius-pill);
 background: var(--color-divider);
 transition: width var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
+}
+
+.tour-punto--hecho {
+background: var(--color-accent-text);
+opacity: 0.5;
 }
 
 .tour-punto--activo {

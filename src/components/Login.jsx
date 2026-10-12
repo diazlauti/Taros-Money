@@ -5,9 +5,9 @@ import { playError, playSuccess } from "../sounds";
 import InstalarAppDialog from "./InstalarAppDialog";
 
 const BENEFICIOS = [
-  { icono: "ph ph-lightning", color: "var(--cat-2)", texto: "Anotá un gasto o ingreso en segundos" },
-  { icono: "ph ph-chart-pie-slice", color: "var(--cat-1)", texto: "Mirá en qué se te va la plata, por categoría" },
-  { icono: "ph ph-target", color: "var(--cat-0)", texto: "Seguí tus cuentas, metas y suscripciones" },
+  { icono: "ph ph-lightning", texto: "Anotá un gasto o ingreso en segundos" },
+  { icono: "ph ph-chart-pie-slice", texto: "Mirá en qué se te va la plata, por categoría" },
+  { icono: "ph ph-target", texto: "Seguí tus cuentas, metas y suscripciones" },
 ];
 
 export default function Login({ onSuccess }) {
@@ -43,7 +43,7 @@ export default function Login({ onSuccess }) {
           <ul className="login-beneficios">
             {BENEFICIOS.map((b) => (
               <li key={b.texto}>
-                <span className="login-beneficio-icono" style={{ "--color-icono": b.color }}>
+                <span className="login-beneficio-icono">
                   <i className={b.icono} aria-hidden="true" />
                 </span>
                 {b.texto}

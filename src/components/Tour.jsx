@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { estaInstalada } from "../instalacion";
+import { playChime, playFestejo, playPaso } from "../sounds";
 import { marcarTourVisto } from "../tour";
 import Dialog from "./Dialog";
 
@@ -73,11 +74,21 @@ const PASO_INSTALAR = {
 export default function Tour({ onIrA, onInstalar, onClose }) {
   const [pasos] = useState(() => (estaInstalada() ? PASOS : [...PASOS, PASO_INSTALAR]));
   const [indice, setIndice] = useState(0);
+  // Para animar el paso nuevo entrando desde el lado correcto.
+  const [direccion, setDireccion] = useState("adelante");
   const paso = pasos[indice];
   const esUltimo = indice === pasos.length - 1;
 
+  useEffect(() => {
+    playChime();
+  }, []);
+
   function irA(nuevo) {
+    const atras = nuevo < indice;
+    setDireccion(atras ? "atras" : "adelante");
     setIndice(nuevo);
+    if (nuevo === pasos.length - 1 && !atras) playFestejo();
+    else playPaso(nuevo, atras);
     if (pasos[nuevo].tab) onIrA(pasos[nuevo].tab);
   }
 
@@ -93,16 +104,23 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
 
   return (
     <Dialog titulo={paso.titulo} onClose={cerrar} variante="tour">
-      <div className="tour-cuerpo">
-        <span className="tour-icono">
+      <div key={indice} className={`tour-cuerpo tour-cuerpo--${direccion}`}>
+        <span className={"tour-icono" + (indice === 0 ? " tour-icono--saludo" : "")}>
           <i className={paso.icono} aria-hidden="true" />
+          {esUltimo && (
+            <span className="tour-confeti" aria-hidden="true">
+              {Array.from({ length: 8 }, (_, i) => (
+                <span key={i} style={{ "--i": i }} />
+              ))}
+            </span>
+          )}
         </span>
         <p className="tour-texto">{paso.texto}</p>
       </div>
 
       <div className="tour-puntos" aria-hidden="true">
         {pasos.map((p, i) => (
-          <span key={p.titulo} className={"tour-punto" + (i === indice ? " tour-punto--activo" : "")} />
+          <span key={p.titulo} className={"tour-punto" + (i === indice ? " tour-punto--activo" : i < indice ? " tour-punto--hecho" : "")} />
         ))}
       </div>
       <p className="visualmente-oculto" aria-live="polite">
