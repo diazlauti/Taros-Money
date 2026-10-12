@@ -41,9 +41,9 @@ export default function Login({ onSuccess }) {
 
         <div className="card login-card">
           <ul className="login-beneficios">
-            {BENEFICIOS.map((b) => (
+            {BENEFICIOS.map((b, i) => (
               <li key={b.texto}>
-                <span className="login-beneficio-icono">
+                <span className={"login-beneficio-icono" + (i === 1 ? " login-beneficio-icono--violeta" : "")}>
                   <i className={b.icono} aria-hidden="true" />
                 </span>
                 {b.texto}

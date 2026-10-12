@@ -105,7 +105,11 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
   return (
     <Dialog titulo={paso.titulo} onClose={cerrar} variante="tour">
       <div key={indice} className={`tour-cuerpo tour-cuerpo--${direccion}`}>
-        <span className={"tour-icono" + (indice === 0 ? " tour-icono--saludo" : "")}>
+        <span
+          className={
+            "tour-icono" + (indice % 2 === 1 ? " tour-icono--violeta" : "") + (indice === 0 ? " tour-icono--saludo" : "")
+          }
+        >
           <i className={paso.icono} aria-hidden="true" />
           {esUltimo && (
             <span className="tour-confeti" aria-hidden="true">

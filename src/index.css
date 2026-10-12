@@ -4,7 +4,8 @@
 
 :root {
 /* --- Colores (modo claro) ---
-   Sale del logo: azul noche y amarillo mostaza. En claro el fondo es un
+   Sale del logo: azul noche y amarillo mostaza, con violeta de segundo
+   acento (títulos de tarjetas, links, detalles). En claro el fondo es un
    gris azulado suave y los botones van en azul con letras mostaza, para no
    cansar la vista. */
 --color-bg: #e9ecf4;
@@ -14,7 +15,9 @@
 --color-text-dim: #4a5072;
 --color-accent: #1f2654;
 --color-on-accent: #f5c542;
---color-accent-text: #7a5a00;
+--color-accent-text: var(--color-violeta);
+--color-violeta: #6a4bc4;
+--color-on-violeta: #ffffff;
 --color-resalte: #f5c542;
 --color-on-resalte: #1a1f45;
 --color-divider: rgba(26, 31, 69, 0.15);
@@ -33,7 +36,7 @@
 --cat-1: #4f6bd8;
 --cat-2: #e07a5f;
 --cat-3: #3fa796;
---cat-4: #9b7fd4;
+--cat-4: #8b6fe0;
 --cat-5: #f2a541;
 --cat-6: #6c8ead;
 --cat-7: #c97b9a;
@@ -116,7 +119,9 @@ color-scheme: light;
 --color-text-dim: #c4c2e6;
 --color-accent: #f5c542;
 --color-on-accent: #1a1f45;
---color-accent-text: #f5c542;
+--color-accent-text: var(--color-violeta);
+--color-violeta: #b9a3ff;
+--color-on-violeta: #1a1f45;
 --color-resalte: #f5c542;
 --color-on-resalte: #1a1f45;
 --color-divider: rgba(244, 241, 255, 0.16);
@@ -137,7 +142,9 @@ color-scheme: dark;
 --color-text-dim: #c4c2e6;
 --color-accent: #f5c542;
 --color-on-accent: #1a1f45;
---color-accent-text: #f5c542;
+--color-accent-text: var(--color-violeta);
+--color-violeta: #b9a3ff;
+--color-on-violeta: #1a1f45;
 --color-resalte: #f5c542;
 --color-on-resalte: #1a1f45;
 --color-divider: rgba(244, 241, 255, 0.16);
@@ -1342,6 +1349,16 @@ background: var(--color-accent);
 color: var(--color-on-accent);
 }
 
+.tour-icono--violeta {
+background: var(--color-violeta);
+color: var(--color-on-violeta);
+}
+
+.login-beneficio-icono--violeta {
+background: var(--color-violeta);
+color: var(--color-on-violeta);
+}
+
 .tour-icono i {
 font-size: var(--text-2xl);
 }
@@ -1381,6 +1398,7 @@ animation: tour-confeti var(--dur-pulse) var(--ease-out) var(--dur-base) forward
 .tour-confeti span:nth-child(2n) { background: var(--cat-1); }
 .tour-confeti span:nth-child(3n) { background: var(--cat-2); }
 .tour-confeti span:nth-child(4n) { background: var(--cat-3); }
+.tour-confeti span:nth-child(5n) { background: var(--color-violeta); }
 
 @keyframes tour-desde-derecha {
 from { opacity: 0; transform: translateX(var(--space-5)); }
