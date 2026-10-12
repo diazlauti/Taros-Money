@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { estaInstalada } from "../instalacion";
-import { playChime, playFestejo, playPaso } from "../sounds";
-import { marcarTourVisto } from "../tour";
+import { playChime, playFestejo, playPaso, playSuccess } from "../sounds";
+import { EVENTO_TOUR, marcarTourVisto } from "../tour";
 import Dialog from "./Dialog";
 
 // Cada paso puede llevar a una sección ("tab"): el recorrido la va abriendo
@@ -22,14 +22,30 @@ const PASOS = [
   {
     tab: "resumen",
     icono: "ph ph-plus-circle",
-    titulo: "Cargar un movimiento",
-    texto: "Con el botón «Nuevo movimiento», arriba de todo, anotás un gasto o un ingreso. Está siempre a mano en todas las secciones.",
+    titulo: "Cargá tu primer movimiento",
+    texto: "Tocá «Nuevo movimiento», arriba. Probá con algo chico, como un café: poné el monto, elegí una categoría y tocá «Guardar». Después lo borramos juntos.",
+    espera: "movimiento-creado",
+    objetivo: "nuevo-movimiento",
   },
   {
     tab: "movimientos",
-    icono: "ph ph-list-bullets",
-    titulo: "Movimientos",
-    texto: "Todo lo que cargaste, del más nuevo al más viejo. Tocá uno para corregirlo o borrarlo.",
+    icono: "ph ph-confetti",
+    titulo: "¡Bien hecho!",
+    texto: "Tu movimiento ya está guardado en tu planilla. En Movimientos ves todo lo que cargaste, del más nuevo al más viejo.",
+  },
+  {
+    tab: "movimientos",
+    icono: "ph ph-trash",
+    titulo: "Ahora borralo",
+    texto: "Tocá el movimiento que acabás de cargar (es el primero de la lista) y después «Borrar». Así se corrige cualquier error.",
+    espera: "movimiento-borrado",
+    objetivo: "borrar",
+  },
+  {
+    tab: "movimientos",
+    icono: "ph ph-check-circle",
+    titulo: "¡Perfecto!",
+    texto: "Ya sabés cargar y borrar. Si solo querés corregir algo, tocá el movimiento y cambiá lo que necesites, sin borrarlo.",
   },
   {
     tab: "cuentas",
@@ -83,6 +99,33 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
     playChime();
   }, []);
 
+  // Pasos de práctica: se resalta lo que hay que tocar y se espera a que la
+  // persona lo haga de verdad; cuando pasa, avanza solo.
+  useEffect(() => {
+    if (!paso.espera) return undefined;
+    const raiz = document.documentElement;
+    raiz.dataset.tourObjetivo = paso.objetivo;
+    const enfocar = setTimeout(() => {
+      const selector = paso.objetivo === "borrar" ? '[data-tour="primer-movimiento"]' : `[data-tour="${paso.objetivo}"]`;
+      document.querySelector(selector)?.focus();
+    }, 300);
+
+    function onAccion(e) {
+      if (e.detail !== paso.espera) return;
+      playSuccess();
+      setDireccion("adelante");
+      setIndice((i) => i + 1);
+      const siguiente = pasos[indice + 1];
+      if (siguiente?.tab) onIrA(siguiente.tab);
+    }
+    window.addEventListener(EVENTO_TOUR, onAccion);
+    return () => {
+      clearTimeout(enfocar);
+      window.removeEventListener(EVENTO_TOUR, onAccion);
+      delete raiz.dataset.tourObjetivo;
+    };
+  }, [paso, pasos, indice, onIrA]);
+
   function irA(nuevo) {
     const atras = nuevo < indice;
     setDireccion(atras ? "atras" : "adelante");
@@ -101,6 +144,51 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
     marcarTourVisto();
     onInstalar();
   }
+
+  const puntos = (
+    <div className="tour-puntos" aria-hidden="true">
+      {pasos.map((p, i) => (
+        <span key={p.titulo} className={"tour-punto" + (i === indice ? " tour-punto--activo" : i < indice ? " tour-punto--hecho" : "")} />
+      ))}
+    </div>
+  );
+
+  // Paso de práctica: cartel que no tapa la pantalla (no es modal), para
+  // poder tocar la app de verdad.
+  if (paso.espera) {
+    return (
+      <section className="tour-coach" aria-labelledby="tour-coach-titulo">
+        <div key={indice} className="tour-cuerpo tour-cuerpo--adelante">
+          <span className="tour-icono">
+            <i className={paso.icono} aria-hidden="true" />
+          </span>
+          <div className="pila-chica">
+            <span className="tour-coach-etiqueta">Practicá</span>
+            <h2 className="dialog-title" id="tour-coach-titulo">
+              {paso.titulo}
+            </h2>
+            <p className="tour-texto">{paso.texto}</p>
+          </div>
+        </div>
+        {puntos}
+        <p className="visualmente-oculto" aria-live="polite">
+          Paso {indice + 1} de {pasos.length}: {paso.titulo}. {paso.texto}
+        </p>
+        <div className="fila-separada">
+          <span className="tour-esperando">
+            <i className="ph ph-hourglass-medium" aria-hidden="true" />
+            Esperando que lo hagas…
+          </span>
+          <button type="button" className="btn btn-texto" onClick={cerrar}>
+            Saltear recorrido
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  // No se puede volver a un paso de práctica ya hecho (habría que repetirlo).
+  const puedeVolver = indice > 0 && !pasos[indice - 1].espera;
 
   return (
     <Dialog titulo={paso.titulo} onClose={cerrar} variante="tour">
@@ -122,11 +210,7 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
         <p className="tour-texto">{paso.texto}</p>
       </div>
 
-      <div className="tour-puntos" aria-hidden="true">
-        {pasos.map((p, i) => (
-          <span key={p.titulo} className={"tour-punto" + (i === indice ? " tour-punto--activo" : i < indice ? " tour-punto--hecho" : "")} />
-        ))}
-      </div>
+      {puntos}
       <p className="visualmente-oculto" aria-live="polite">
         Paso {indice + 1} de {pasos.length}: {paso.titulo}. {paso.texto}
       </p>
@@ -142,7 +226,7 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
           </button>
         )}
         <div className="fila">
-          {indice > 0 && (
+          {puedeVolver && (
             <button type="button" className="btn btn-secondary" onClick={() => irA(indice - 1)}>
               <i className="ph ph-arrow-left" aria-hidden="true" />
               <span className="visualmente-oculto">Anterior</span>
