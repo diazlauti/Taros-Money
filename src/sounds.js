@@ -70,3 +70,23 @@ export function playChime() {
   tono({ freq: 988, duracion: 0.12, delay: 0.1 });
   tono({ freq: 1318, duracion: 0.24, delay: 0.2 });
 }
+
+// Recorrido de primera vez: cada paso sube un poquito de tono, así se
+// siente que se avanza; volver atrás baja.
+const ESCALA_PASOS = [523, 587, 659, 698, 784, 880, 988, 1047, 1175, 1319];
+
+export function playPaso(indice, atras = false) {
+  const freq = ESCALA_PASOS[Math.min(indice, ESCALA_PASOS.length - 1)];
+  if (atras) {
+    tono({ freq, duracion: 0.08, tipo: "triangle", volumen: 0.05 });
+    tono({ freq: freq * 0.84, duracion: 0.1, tipo: "triangle", volumen: 0.04, delay: 0.06 });
+    return;
+  }
+  tono({ freq: freq * 0.84, duracion: 0.07, tipo: "triangle", volumen: 0.04 });
+  tono({ freq, duracion: 0.12, tipo: "triangle", volumen: 0.05, delay: 0.06 });
+}
+
+export function playFestejo() {
+  [523, 659, 784, 1047].forEach((freq, i) => tono({ freq, duracion: 0.16, tipo: "triangle", volumen: 0.05, delay: i * 0.09 }));
+  tono({ freq: 1568, duracion: 0.3, volumen: 0.03, delay: 0.38 });
+}

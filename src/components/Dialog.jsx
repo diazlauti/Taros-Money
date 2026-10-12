@@ -6,7 +6,9 @@ const ENFOCABLES =
 // Diálogo modal accesible: foco atrapado adentro, Esc para cerrar, devuelve
 // el foco a donde estaba al cerrarse. Si "sucio" es true (hay datos sin
 // guardar), pregunta antes de cerrar para no perder lo que escribiste.
-export default function Dialog({ titulo, onClose, sucio = false, children }) {
+// "variante" suma una clase (ej. "tour": en el celu va abajo y deja ver la
+// sección de atrás).
+export default function Dialog({ titulo, onClose, sucio = false, variante, children }) {
   const panelRef = useRef(null);
   const tituloId = useId();
   const sucioRef = useRef(sucio);
@@ -55,7 +57,7 @@ export default function Dialog({ titulo, onClose, sucio = false, children }) {
 
   return (
     <div
-      className="dialog-backdrop"
+      className={"dialog-backdrop" + (variante ? ` dialog-backdrop--${variante}` : "")}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) intentarCerrar();
       }}
