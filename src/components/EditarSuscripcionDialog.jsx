@@ -102,19 +102,14 @@ export default function EditarSuscripcionDialog({ suscripcion, categorias, cuent
 
           <div className="field">
             <label>Categoría</label>
-            <input
-              className="input"
-              type="text"
-              list="lista-categorias-editar-suscripcion"
-              placeholder="Ej: Entretenimiento (o escribí una nueva)"
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-            />
-            <datalist id="lista-categorias-editar-suscripcion">
+            <select className="input" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+              <option value="">(sin categoría)</option>
               {(categorias || []).map((c) => (
-                <option key={c} value={c} />
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
-            </datalist>
+            </select>
           </div>
 
           {cuentas && cuentas.length > 0 && (

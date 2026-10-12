@@ -4,6 +4,8 @@ getSaldo,
 getResumen,
 getGastos,
 getCategorias,
+agregarCategoria,
+borrarCategoria,
 getIngresos,
 getCuentas,
 getMetas,
@@ -111,40 +113,25 @@ function alternarSonido() {
 setSonido(toggleSonido());
 }
 
+async function agregarCategoriaYRecargar(nombre) {
+await agregarCategoria(nombre);
+categorias.recargar();
+}
+
+async function borrarCategoriaYRecargar(nombre) {
+await borrarCategoria(nombre);
+categorias.recargar();
+}
+
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
 <div className="app-shell" data-theme={theme}>
-{!isMobile && (
-<Sidebar
-activeTab={activeTab}
-onSelect={setActiveTab}
-theme={theme}
-onToggleTheme={toggleTheme}
-sonido={sonido}
-onToggleSonido={alternarSonido}
-onCerrarSesion={onCerrarSesion}
-/>
-)}
+{!isMobile && <Sidebar activeTab={activeTab} onSelect={setActiveTab} />}
 
 <main className="main">
 <header className="main-header">
 <h1>{activeItem.label}</h1>
-{isMobile && (
-<button className="btn btn-icon btn-secondary" onClick={toggleTheme}>
-<i className={theme === "dark" ? "ph ph-sun" : "ph ph-moon"} />
-</button>
-)}
-{isMobile && (
-<button className="btn btn-icon btn-secondary" onClick={alternarSonido} title="Sonido">
-<i className={sonido ? "ph ph-speaker-high" : "ph ph-speaker-slash"} />
-</button>
-)}
-{isMobile && (
-<button className="btn btn-icon btn-secondary" onClick={onCerrarSesion} title="Cerrar sesión">
-<i className="ph ph-sign-out" />
-</button>
-)}
 <button className="btn btn-primary" onClick={() => setDialogOpen(true)}>
 <i className="ph ph-plus" />
 Nuevo movimiento
@@ -213,6 +200,15 @@ onCambio={suscripciones.recargar}
 urlPlanilla={urlPlanilla.data}
 cargando={urlPlanilla.cargando}
 error={urlPlanilla.error}
+categorias={categorias.data}
+cargandoCategorias={categorias.cargando}
+errorCategorias={categorias.error}
+onAgregarCategoria={agregarCategoriaYRecargar}
+onBorrarCategoria={borrarCategoriaYRecargar}
+theme={theme}
+onToggleTheme={toggleTheme}
+sonido={sonido}
+onToggleSonido={alternarSonido}
 onCerrarSesion={onCerrarSesion}
 />
 )}

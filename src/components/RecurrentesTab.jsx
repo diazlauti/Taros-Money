@@ -137,19 +137,14 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
         </div>
         <div className="field">
           <label>Categoría</label>
-          <input
-            className="input"
-            type="text"
-            list="lista-categorias-recurrentes"
-            placeholder="Ej: Entretenimiento (o escribí una nueva)"
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-          />
-          <datalist id="lista-categorias-recurrentes">
+          <select className="input" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+            <option value="">(sin categoría)</option>
             {(categorias || []).map((c) => (
-              <option key={c} value={c} />
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
-          </datalist>
+          </select>
         </div>
         {cuentas && cuentas.length > 0 && (
           <div className="field">

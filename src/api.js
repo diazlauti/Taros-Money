@@ -77,7 +77,15 @@ export function getSaldo() {
 }
 
 export function getCategorias() {
-  return scriptsRun("obtenerCategoriasDelEspacio");
+  return scriptsRun("obtenerCategorias");
+}
+
+export function agregarCategoria(nombre) {
+  return scriptsRun("agregarCategoria", [nombre]);
+}
+
+export function borrarCategoria(nombre) {
+  return scriptsRun("borrarCategoria", [nombre]);
 }
 
 export function agregarGasto(gasto) {

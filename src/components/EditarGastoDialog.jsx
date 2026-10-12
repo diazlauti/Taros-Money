@@ -102,19 +102,14 @@ export default function EditarGastoDialog({ gasto, categorias, cuentas, onClose,
             </div>
             <div className="field">
               <label>Categoría</label>
-              <input
-                className="input"
-                type="text"
-                list="lista-categorias-editar-gasto"
-                placeholder="Ej: Comida (o escribí una nueva)"
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-              />
-              <datalist id="lista-categorias-editar-gasto">
+              <select className="input" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                <option value="">(sin categoría)</option>
                 {(categorias || []).map((c) => (
-                  <option key={c} value={c} />
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
           </div>
 

@@ -150,19 +150,14 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, on
             )}
             <div className="field">
               <label>Categoría</label>
-              <input
-                className="input"
-                type="text"
-                list="lista-categorias"
-                placeholder="Ej: Comida (o escribí una nueva)"
-                value={form.categoria}
-                onChange={(e) => campo("categoria", e.target.value)}
-              />
-              <datalist id="lista-categorias">
+              <select className="input" value={form.categoria} onChange={(e) => campo("categoria", e.target.value)}>
+                <option value="">(sin categoría)</option>
                 {(categorias || []).map((c) => (
-                  <option key={c} value={c} />
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
           </div>
 

@@ -90,19 +90,14 @@ export default function EditarIngresoDialog({ ingreso, cuentas, categorias, onCl
             </div>
             <div className="field">
               <label>Categoría</label>
-              <input
-                className="input"
-                type="text"
-                list="lista-categorias-editar-ingreso"
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                placeholder="Ej: Sueldo"
-              />
-              <datalist id="lista-categorias-editar-ingreso">
+              <select className="input" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                <option value="">(sin categoría)</option>
                 {(categorias || []).map((c) => (
-                  <option key={c} value={c} />
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
           </div>
 
