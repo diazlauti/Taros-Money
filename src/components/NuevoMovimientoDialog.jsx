@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { agregarGasto, agregarIngreso } from "../api";
+import { useAvisos } from "../avisos";
+import { parseMonto } from "../format";
+import { useValidacion } from "../hooks";
+import { validarMovimiento } from "../validaciones";
 import { playError, playSuccess } from "../sounds";
+import Campo from "./Campo";
+import CategoriaChips from "./CategoriaChips";
+import Dialog from "./Dialog";
 
 function fechaHoraActual() {
   const ahora = new Date();
@@ -12,6 +19,7 @@ function fechaHoraActual() {
 }
 
 export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, onGuardado }) {
+  const { avisar } = useAvisos();
   const cuentaTarjeta = (cuentas || []).find((c) => c.esTarjeta) || null;
   const primeraNoTarjeta = (cuentas || []).find((c) => !c.esTarjeta) || null;
   const [tipo, setTipo] = useState("gasto");
@@ -24,6 +32,7 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, on
   }));
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
+  const v = useValidacion(form, (f) => validarMovimiento(f, tipo === "gasto"));
 
   // Un ingreso manual casi nunca entra directo a la tarjeta (la pensión, la
   // única plata que sí llega ahí, se carga sola por mail) — si cambiás a
@@ -44,23 +53,15 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, on
 
   async function submit(e) {
     e.preventDefault();
-    const monto = parseFloat(form.monto);
-    if (!monto || monto <= 0) {
-      setError("Ingresá un monto válido.");
-      return;
-    }
-    if (tipo === "gasto" && !form.hora) {
-      setError("Completá la hora.");
-      return;
-    }
+    if (!v.intentar()) return;
     setEnviando(true);
     setError("");
     try {
       const payload = {
         fecha: form.fecha,
         hora: form.hora,
-        monto,
-        descripcion: form.descripcion,
+        monto: parseMonto(form.monto),
+        descripcion: form.descripcion.trim(),
         categoria: form.categoria,
       };
       // El backend acredita/descuenta solo de la cuenta elegida (o la deja
@@ -71,107 +72,122 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, on
         await agregarIngreso({ ...payload, cuenta: form.cuenta || undefined });
       }
       playSuccess();
+      avisar(tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado");
       onGuardado?.();
       onClose();
     } catch (err) {
       playError();
-      setError(err.message || "No se pudo guardar el movimiento.");
-    } finally {
+      setError(err.message || "No se pudo guardar el movimiento. Probá de nuevo.");
       setEnviando(false);
     }
   }
 
+  const sucio = form.monto !== "" || form.descripcion !== "";
+
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="dialog-title">Nuevo movimiento</div>
-        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div className="seg">
-            <label className="seg-opt">
-              <input type="radio" name="tipo-mov" checked={tipo === "gasto"} onChange={() => setTipo("gasto")} />
-              Gasto
-            </label>
-            <label className="seg-opt">
-              <input type="radio" name="tipo-mov" checked={tipo === "ingreso"} onChange={() => setTipo("ingreso")} />
-              Ingreso
-            </label>
-          </div>
+    <Dialog titulo="Nuevo movimiento" onClose={onClose} sucio={sucio && !enviando}>
+      <form className="form" onSubmit={submit} noValidate>
+        <div className="seg" role="radiogroup" aria-label="Tipo de movimiento">
+          <label className="seg-opt">
+            <input type="radio" name="tipo-mov" checked={tipo === "gasto"} onChange={() => setTipo("gasto")} />
+            Gasto
+          </label>
+          <label className="seg-opt">
+            <input type="radio" name="tipo-mov" checked={tipo === "ingreso"} onChange={() => setTipo("ingreso")} />
+            Ingreso
+          </label>
+        </div>
 
-          <div className="fila-2">
-            <div className="field">
-              <label>Fecha</label>
-              <input className="input" type="date" value={form.fecha} onChange={(e) => campo("fecha", e.target.value)} required />
-            </div>
-            {tipo === "gasto" && (
-              <div className="field">
-                <label>Hora</label>
-                <input className="input" type="time" value={form.hora} onChange={(e) => campo("hora", e.target.value)} required />
-              </div>
-            )}
-          </div>
-
-          <div className="field">
-            <label>Monto</label>
+        <Campo etiqueta="Monto" error={v.visible("monto")}>
+          {(p) => (
             <input
-              className="input"
-              type="number"
-              step="0.01"
-              min="0.01"
-              placeholder="0.00"
+              {...p}
+              data-autofocus
+              className="input input-monto"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="0"
               value={form.monto}
               onChange={(e) => campo("monto", e.target.value)}
-              required
+              onBlur={() => v.tocar("monto")}
             />
-          </div>
+          )}
+        </Campo>
 
-          <div className="field">
-            <label>Descripción</label>
+        <CategoriaChips categorias={categorias} valor={form.categoria} onChange={(c) => campo("categoria", c)} />
+
+        <Campo etiqueta="Descripción (opcional)">
+          {(p) => (
             <input
+              {...p}
               className="input"
               type="text"
               placeholder="Ej: Supermercado"
               value={form.descripcion}
               onChange={(e) => campo("descripcion", e.target.value)}
             />
-          </div>
+          )}
+        </Campo>
 
-          <div className="fila-2">
-            {cuentas && cuentas.length > 0 && (
-              <div className="field">
-                <label>Cuenta</label>
-                <select className="input" value={form.cuenta} onChange={(e) => campo("cuenta", e.target.value)}>
-                  {cuentas.map((c) => (
-                    <option key={c.nombre} value={c.nombre}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div className="field">
-              <label>Categoría</label>
-              <select className="input" value={form.categoria} onChange={(e) => campo("categoria", e.target.value)}>
-                <option value="">(sin categoría)</option>
-                {(categorias || []).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+        {cuentas && cuentas.length > 0 && (
+          <Campo etiqueta="Cuenta">
+            {(p) => (
+              <select {...p} className="input" value={form.cuenta} onChange={(e) => campo("cuenta", e.target.value)}>
+                {cuentas.map((c) => (
+                  <option key={c.nombre} value={c.nombre}>
+                    {c.nombre}
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
+            )}
+          </Campo>
+        )}
 
-          <div className="dialog-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={enviando}>
-              {enviando ? "Guardando…" : "Guardar"}
-            </button>
-          </div>
-          {error && <p className="mensaje-error">{error}</p>}
-        </form>
-      </div>
-    </div>
+        <div className="fila-2">
+          <Campo etiqueta="Fecha" error={v.visible("fecha")}>
+            {(p) => (
+              <input
+                {...p}
+                className="input"
+                type="date"
+                value={form.fecha}
+                onChange={(e) => campo("fecha", e.target.value)}
+                onBlur={() => v.tocar("fecha")}
+              />
+            )}
+          </Campo>
+          {tipo === "gasto" && (
+            <Campo etiqueta="Hora" error={v.visible("hora")}>
+              {(p) => (
+                <input
+                  {...p}
+                  className="input"
+                  type="time"
+                  value={form.hora}
+                  onChange={(e) => campo("hora", e.target.value)}
+                  onBlur={() => v.tocar("hora")}
+                />
+              )}
+            </Campo>
+          )}
+        </div>
+
+        {error && (
+          <p className="mensaje-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        <div className="dialog-actions">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={enviando}>
+            {enviando ? "Guardando…" : error ? "Reintentar" : "Guardar"}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }

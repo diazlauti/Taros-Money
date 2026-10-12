@@ -23,7 +23,7 @@ let resolverPendiente = null;
 function obtenerTokenClient() {
   if (tokenClient) return tokenClient;
   if (!window.google?.accounts?.oauth2) {
-    throw new Error("Todavía no cargó el login de Google — esperá un segundo y probá de nuevo.");
+    throw new Error("Todavía no cargó el login de Google. Esperá un segundo y probá de nuevo.");
   }
   tokenClient = window.google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
@@ -31,6 +31,15 @@ function obtenerTokenClient() {
     callback: (respuesta) => {
       if (resolverPendiente) {
         resolverPendiente(respuesta);
+        resolverPendiente = null;
+      }
+    },
+    // Si se cierra la ventana de Google (o el navegador la bloquea), el
+    // callback de arriba nunca se llama: sin esto, el botón se quedaba
+    // "Entrando…" para siempre.
+    error_callback: (falla) => {
+      if (resolverPendiente) {
+        resolverPendiente({ error: falla?.type || "popup_failed_to_open" });
         resolverPendiente = null;
       }
     },
@@ -82,6 +91,16 @@ export function obtenerTokenActual() {
   return datos && datos.vencimiento > Date.now() ? datos.token : null;
 }
 
+// Pasa los códigos de error de Google a algo entendible.
+function mensajeDeLogin(codigo) {
+  if (codigo === "popup_closed") return "Se cerró la ventana de Google antes de terminar. Probá de nuevo.";
+  if (codigo === "popup_failed_to_open") {
+    return "El navegador bloqueó la ventana de Google. Permití las ventanas emergentes para este sitio y probá de nuevo.";
+  }
+  if (codigo === "access_denied") return "Para usar la app hace falta que aceptes los permisos de Google.";
+  return "No se pudo iniciar sesión con Google. Probá de nuevo.";
+}
+
 // Login interactivo: abre el selector de cuenta de Google (y el cartel de
 // permisos, la primera vez que esa cuenta entra). Tiene que dispararlo un
 // click del usuario — los navegadores bloquean el popup si se llama solo.
@@ -91,7 +110,7 @@ export function iniciarSesionConGoogle() {
       const client = obtenerTokenClient();
       resolverPendiente = (respuesta) => {
         if (respuesta.error) {
-          reject(new Error(respuesta.error_description || respuesta.error));
+          reject(new Error(mensajeDeLogin(respuesta.error)));
           return;
         }
         resolve(guardarToken(respuesta));

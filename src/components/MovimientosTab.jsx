@@ -1,27 +1,33 @@
 import { useMemo, useState } from "react";
 import { fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
-import EditarGastoDialog from "./EditarGastoDialog";
-import EditarIngresoDialog from "./EditarIngresoDialog";
+import { PERIODOS } from "../theme";
+import Campo from "./Campo";
+import EditarMovimientoDialog from "./EditarMovimientoDialog";
+import { Cargando, ErrorEstado, SkeletonFilas, Vacio } from "./Estado";
+import PeriodoSelector from "./PeriodoSelector";
 
-export default function MovimientosTab({ gastos, ingresos, cargando, categorias, cuentas, onCambio }) {
+export default function MovimientosTab({
+  gastos,
+  ingresos,
+  categorias,
+  cuentas,
+  monedaPorCuenta,
+  dias,
+  onCambiarDias,
+  onNuevo,
+  onCambio,
+}) {
   const [filtro, setFiltro] = useState("todos");
   const [busqueda, setBusqueda] = useState("");
   const [editando, setEditando] = useState(null);
 
-  // Cada movimiento viene con la cuenta de la que salió/entró, y cada cuenta
-  // tiene su propia moneda (Cuscatlán es USD, el resto suele ser ARS) — sin
-  // esto, un gasto en dólares se mostraba como si fueran pesos (ej: un gasto
-  // de US$64 se veía como "$64", cuando en pesos son casi $87.000).
-  const monedaPorCuenta = useMemo(
-    () => Object.fromEntries((cuentas || []).map((c) => [c.nombre, c.moneda])),
-    [cuentas]
-  );
-
   const combinados = useMemo(() => {
-    const g = (gastos || []).map((x) => ({ ...x, tipo: "gasto" }));
-    const i = (ingresos || []).map((x) => ({ ...x, tipo: "ingreso" }));
-    return [...g, ...i].sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
-  }, [gastos, ingresos]);
+    const g = (gastos.data || []).map((x) => ({ ...x, tipo: "gasto" }));
+    const i = (ingresos.data || []).map((x) => ({ ...x, tipo: "ingreso" }));
+    return [...g, ...i].sort((a, b) =>
+      `${b.fecha || ""} ${b.hora || ""}`.localeCompare(`${a.fecha || ""} ${a.hora || ""}`)
+    );
+  }, [gastos.data, ingresos.data]);
 
   const textoBusqueda = busqueda.trim().toLowerCase();
   const filtrados = combinados.filter((t) => {
@@ -32,86 +38,132 @@ export default function MovimientosTab({ gastos, ingresos, cargando, categorias,
     return descripcion.includes(textoBusqueda) || categoria.includes(textoBusqueda);
   });
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div className="seg">
-        <label className="seg-opt">
-          <input type="radio" name="filtro-mov" checked={filtro === "todos"} onChange={() => setFiltro("todos")} />
-          Todos
-        </label>
-        <label className="seg-opt">
-          <input
-            type="radio"
-            name="filtro-mov"
-            checked={filtro === "ingreso"}
-            onChange={() => setFiltro("ingreso")}
-          />
-          Ingresos
-        </label>
-        <label className="seg-opt">
-          <input type="radio" name="filtro-mov" checked={filtro === "gasto"} onChange={() => setFiltro("gasto")} />
-          Gastos
-        </label>
-      </div>
+  const cargando = gastos.cargando || ingresos.cargando;
+  const error = (gastos.error && !gastos.data) || (ingresos.error && !ingresos.data) ? gastos.error || ingresos.error : "";
+  const periodoMasLargo = PERIODOS[PERIODOS.length - 1];
 
-      <input
-        className="input"
-        type="text"
-        placeholder="Buscar por descripción o categoría…"
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
+  let contenido;
+  if (cargando) {
+    contenido = (
+      <Cargando texto="Cargando movimientos…">
+        <SkeletonFilas cantidad={6} />
+      </Cargando>
+    );
+  } else if (error) {
+    contenido = (
+      <ErrorEstado
+        mensaje={error}
+        onReintentar={() => {
+          gastos.recargar();
+          ingresos.recargar();
+        }}
       />
-
-      <div className="card">
-        {cargando ? (
-          <p className="mensaje-estado">Cargando movimientos…</p>
-        ) : filtrados.length === 0 ? (
-          <p className="mensaje-estado">
-            {textoBusqueda ? "No hay movimientos que coincidan con la búsqueda." : "No hay movimientos en este período."}
-          </p>
-        ) : (
-          filtrados.map((t, i) => (
-            <div
-              className="movimiento movimiento--clicable"
-              key={i}
-              onClick={() => setEditando(t)}
-              title="Tocar para editar o borrar"
-            >
-              <i className={iconoPorCategoria(t.categoria)} />
-              <div style={{ minWidth: 0 }}>
-                <div className="movimiento-desc">{t.descripcion || "(sin descripción)"}</div>
-                <div className="text-muted">
-                  {t.categoria || "sin categoría"} · {fmtFecha(t.fecha)}
-                  {t.cuenta ? ` · ${t.cuenta}` : ""}
-                </div>
-              </div>
-              <div className={"movimiento-monto" + (t.tipo === "ingreso" ? " es-ingreso" : "")}>
-                {t.tipo === "ingreso" ? "+" : "-"}
-                {fmtMoney(t.monto, monedaPorCuenta[t.cuenta] || "ARS")}
-              </div>
-            </div>
-          ))
+    );
+  } else if (filtrados.length === 0) {
+    contenido = textoBusqueda ? (
+      <Vacio icono="ph ph-magnifying-glass" texto={`No hay movimientos que coincidan con "${busqueda.trim()}".`}>
+        <button type="button" className="btn btn-secondary" onClick={() => setBusqueda("")}>
+          Borrar búsqueda
+        </button>
+      </Vacio>
+    ) : (
+      <Vacio texto={`No hay movimientos en los últimos ${dias} días.`}>
+        {dias < periodoMasLargo && (
+          <button type="button" className="btn btn-secondary" onClick={() => onCambiarDias(periodoMasLargo)}>
+            Ver {periodoMasLargo} días
+          </button>
         )}
+        <button type="button" className="btn btn-secondary" onClick={onNuevo}>
+          <i className="ph ph-plus" aria-hidden="true" />
+          Cargar un movimiento
+        </button>
+      </Vacio>
+    );
+  } else {
+    contenido = (
+      <>
+        <p className="visualmente-oculto" aria-live="polite">
+          {filtrados.length} movimientos
+        </p>
+        <ul className="lista">
+          {filtrados.map((t, i) => {
+            const monto = fmtMoney(t.monto, monedaPorCuenta[t.cuenta] || "ARS");
+            const esIngreso = t.tipo === "ingreso";
+            return (
+              <li key={`${t.tipo}-${t.fecha}-${t.hora || ""}-${t.monto}-${i}`}>
+                <button
+                  type="button"
+                  className="movimiento"
+                  onClick={() => setEditando(t)}
+                  aria-label={`Editar ${esIngreso ? "ingreso" : "gasto"}: ${t.descripcion || "sin descripción"}, ${esIngreso ? "más" : "menos"} ${monto}, ${fmtFecha(t.fecha)}`}
+                >
+                  <i className={iconoPorCategoria(t.categoria)} aria-hidden="true" />
+                  <span className="movimiento-texto">
+                    <span className="movimiento-desc">{t.descripcion || "Sin descripción"}</span>
+                    <span className="texto-tenue texto-chico">
+                      {t.categoria || "Sin categoría"} · {fmtFecha(t.fecha)}
+                      {t.cuenta ? ` · ${t.cuenta}` : ""}
+                    </span>
+                  </span>
+                  <span className={"movimiento-monto" + (esIngreso ? " es-ingreso" : "")}>
+                    {esIngreso ? "+" : "-"}
+                    {monto}
+                  </span>
+                  <i className="ph ph-pencil-simple icono-editar" aria-hidden="true" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PeriodoSelector dias={dias} onCambiar={onCambiarDias} />
+
+      <div className="seg" role="radiogroup" aria-label="Mostrar">
+        {[
+          ["todos", "Todos"],
+          ["ingreso", "Ingresos"],
+          ["gasto", "Gastos"],
+        ].map(([valor, texto]) => (
+          <label className="seg-opt" key={valor}>
+            <input type="radio" name="filtro-mov" checked={filtro === valor} onChange={() => setFiltro(valor)} />
+            {texto}
+          </label>
+        ))}
       </div>
 
-      {editando && editando.tipo === "gasto" && (
-        <EditarGastoDialog
-          gasto={editando}
+      <Campo etiqueta="Buscar">
+        {(p) => (
+          <input
+            {...p}
+            className="input"
+            type="search"
+            placeholder="Descripción o categoría"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+        )}
+      </Campo>
+
+      <section className="card" aria-label="Movimientos" aria-busy={gastos.actualizando || ingresos.actualizando || undefined}>
+        {contenido}
+      </section>
+
+      {editando && (
+        <EditarMovimientoDialog
+          movimiento={editando}
+          tipo={editando.tipo}
           categorias={categorias}
           cuentas={cuentas}
+          monedaPorCuenta={monedaPorCuenta}
           onClose={() => setEditando(null)}
           onGuardado={onCambio}
         />
       )}
-      {editando && editando.tipo === "ingreso" && (
-        <EditarIngresoDialog
-          ingreso={editando}
-          cuentas={cuentas}
-          categorias={categorias}
-          onClose={() => setEditando(null)}
-          onGuardado={onCambio}
-        />
-      )}
-    </div>
+    </>
   );
 }

@@ -15,32 +15,33 @@ export default function Login({ onSuccess }) {
       onSuccess?.();
     } catch (err) {
       playError();
-      setError(err.message || "No se pudo iniciar sesión.");
+      setError(err.message || "No se pudo iniciar sesión. Probá de nuevo.");
     } finally {
       setEnviando(false);
     }
   }
 
   return (
-    <div className="pantalla-login">
+    <main className="pantalla-login">
       <div className="card login-card">
-        <div className="brand" style={{ justifyContent: "center", marginBottom: 8 }}>
-          <i className="ph ph-wallet" />
+        <h1 className="brand brand--centrada">
+          <i className="ph ph-wallet" aria-hidden="true" />
           Taros Money
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <p className="mensaje-estado" style={{ padding: 0 }}>
-            Entrá con tu cuenta de Google. La primera vez te va a pedir permiso para crear tu propia planilla —
-            es tuya, separada de la de cualquier otra persona que use esta misma app.
+        </h1>
+        <p className="texto-intro">
+          Entrá con tu cuenta de Google. La primera vez te va a pedir permiso para crear tu propia planilla, que es
+          solo tuya.
+        </p>
+        <button type="button" className="btn btn-primary" onClick={entrar} disabled={enviando}>
+          <i className="ph ph-google-logo" aria-hidden="true" />
+          {enviando ? "Entrando…" : error ? "Reintentar" : "Entrar con Google"}
+        </button>
+        {error && (
+          <p className="mensaje-error" role="alert">
+            {error}
           </p>
-          <button className="btn btn-primary" onClick={entrar} disabled={enviando}>
-            <i className="ph ph-google-logo" />
-            {enviando ? "Entrando…" : "Iniciar sesión con Google"}
-          </button>
-          {error && <p className="mensaje-error">{error}</p>}
-        </div>
+        )}
       </div>
-    </div>
+    </main>
   );
 }
