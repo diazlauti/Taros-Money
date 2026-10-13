@@ -3,6 +3,7 @@ import { iniciarSesionConGoogle } from "../auth";
 import { estaInstalada } from "../instalacion";
 import { playError, playSuccess } from "../sounds";
 import InstalarAppDialog from "./InstalarAppDialog";
+import ListaEsperaDialog from "./ListaEsperaDialog";
 
 const BENEFICIOS = [
   { icono: "ph ph-lightning", texto: "Anotá un gasto o ingreso en segundos" },
@@ -14,6 +15,7 @@ export default function Login({ onSuccess }) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const [guiaAbierta, setGuiaAbierta] = useState(false);
+  const [esperaAbierta, setEsperaAbierta] = useState(false);
 
   async function entrar() {
     setEnviando(true);
@@ -65,6 +67,13 @@ export default function Login({ onSuccess }) {
             <i className="ph ph-lock-simple" aria-hidden="true" />
             La primera vez Google te pide permiso para crear tu propia planilla. Es solo tuya: nadie más ve tus datos.
           </p>
+
+          <p className="login-espera">
+            ¿Google no te deja entrar?
+            <button type="button" className="btn btn-texto" onClick={() => setEsperaAbierta(true)}>
+              Pedí acceso
+            </button>
+          </p>
         </div>
 
         {!estaInstalada() && (
@@ -76,6 +85,7 @@ export default function Login({ onSuccess }) {
       </div>
 
       {guiaAbierta && <InstalarAppDialog onClose={() => setGuiaAbierta(false)} />}
+      {esperaAbierta && <ListaEsperaDialog onClose={() => setEsperaAbierta(false)} />}
     </main>
   );
 }

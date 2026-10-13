@@ -1314,6 +1314,29 @@ font-size: var(--icon-sm);
 color: var(--color-text);
 }
 
+.login-espera {
+margin: 0;
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+justify-content: center;
+column-gap: var(--space-2);
+font-size: var(--text-sm);
+}
+
+textarea.input {
+resize: vertical;
+}
+
+/* Campo trampa para bots del formulario de lista de espera. */
+.campo-trampa {
+position: absolute;
+left: -9999px;
+width: 1px;
+height: 1px;
+opacity: 0;
+}
+
 /* --- Recorrido y guía de instalación --- */
 
 .dialog-backdrop--tour {
