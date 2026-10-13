@@ -28,6 +28,12 @@ export default defineConfig({
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: '/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // Mantener apretado el ícono de la app (Android, y escritorio en
+        // Chrome/Edge) muestra estos atajos: abren el formulario directo.
+        shortcuts: [
+          { name: 'Nuevo gasto', short_name: 'Gasto', url: '/?nuevo=gasto', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+          { name: 'Nuevo ingreso', short_name: 'Ingreso', url: '/?nuevo=ingreso', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+        ],
       },
     }),
   ],

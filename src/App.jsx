@@ -33,6 +33,7 @@ import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
 import Login from "./components/Login";
 import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
+import { leerNuevoDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
 
 export default function App() {
@@ -104,10 +105,17 @@ function PanelPrincipal({ tema, onCambiarTema, onCerrarSesion }) {
 const [sonido, setSonido] = useState(sonidoHabilitado);
 const [activeTab, setActiveTab] = useState("resumen");
 const [dias, setDias] = useState(30);
-const [dialogOpen, setDialogOpen] = useState(false);
+// Si se entró por un atajo del ícono o un link (?nuevo=gasto&monto=…), se
+// abre directo el formulario completo y el recorrido queda para otra vez.
+const [inicialNuevo, setInicialNuevo] = useState(leerNuevoDeUrl);
+const [dialogOpen, setDialogOpen] = useState(() => inicialNuevo !== null);
 // El recorrido aparece solo la primera vez; después se abre desde Configuración.
-const [tourAbierto, setTourAbierto] = useState(() => !tourVisto());
+const [tourAbierto, setTourAbierto] = useState(() => !tourVisto() && inicialNuevo === null);
 const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
+
+useEffect(() => {
+if (inicialNuevo) limpiarNuevoDeUrl();
+}, [inicialNuevo]);
 
 const saldo = useSeccion(getSaldo, []);
 const resumen = useSeccion(() => getResumen(dias), [dias]);
@@ -161,7 +169,10 @@ await borrarCategoria(nombre);
 categorias.recargar();
 }
 
-const abrirNuevo = () => setDialogOpen(true);
+const abrirNuevo = () => {
+setInicialNuevo(null);
+setDialogOpen(true);
+};
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
@@ -251,6 +262,10 @@ onInstalar={() => setGuiaInstalarAbierta(true)}
 <NuevoMovimientoDialog
 categorias={categorias.data}
 cuentas={cuentas.data}
+gastos={gastos.data}
+ingresos={ingresos.data}
+inicial={inicialNuevo}
+monedaPorCuenta={monedaPorCuenta}
 onClose={() => setDialogOpen(false)}
 onGuardado={recargarTodo}
 />
