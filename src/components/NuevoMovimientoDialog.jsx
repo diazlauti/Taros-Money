@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { agregarGasto, agregarIngreso } from "../api";
 import { useAvisos } from "../avisos";
-import { parseMonto } from "../format";
+import { movimientosFrecuentes } from "../cargaRapida";
+import { fmtMoney, parseMonto } from "../format";
 import { useValidacion } from "../hooks";
 import { validarMovimiento } from "../validaciones";
-import { playError, playSuccess } from "../sounds";
+import { playClick, playError, playSuccess } from "../sounds";
 import { avisarAccionTour } from "../tour";
 import Campo from "./Campo";
 import CategoriaChips from "./CategoriaChips";
@@ -19,18 +20,26 @@ function fechaHoraActual() {
   };
 }
 
-export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, onGuardado }) {
+// "inicial" llega de un atajo o link (?nuevo=gasto&monto=…); "gastos" e
+// "ingresos" son los ya cargados, para ofrecer los frecuentes de un toque.
+export default function NuevoMovimientoDialog({ categorias, cuentas, gastos, ingresos, inicial, monedaPorCuenta, onClose, onGuardado }) {
   const { avisar } = useAvisos();
   const cuentaTarjeta = (cuentas || []).find((c) => c.esTarjeta) || null;
   const primeraNoTarjeta = (cuentas || []).find((c) => !c.esTarjeta) || null;
-  const [tipo, setTipo] = useState("gasto");
+  const [tipo, setTipo] = useState(inicial?.tipo || "gasto");
   const [form, setForm] = useState(() => ({
     ...fechaHoraActual(),
-    monto: "",
-    descripcion: "",
-    categoria: "",
+    monto: inicial?.monto || "",
+    descripcion: inicial?.descripcion || "",
+    // Las categorías pueden no haber llegado todavía (el atajo abre el
+    // formulario apenas carga la app): el chip se marca solo cuando llegan.
+    categoria: inicial?.categoria || "",
     cuenta: (cuentaTarjeta || primeraNoTarjeta)?.nombre || "",
   }));
+  const frecuentes = useMemo(
+    () => movimientosFrecuentes(tipo === "gasto" ? gastos : ingresos),
+    [tipo, gastos, ingresos],
+  );
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const v = useValidacion(form, (f) => validarMovimiento(f, tipo === "gasto"));
@@ -50,6 +59,24 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, on
 
   function campo(nombre, valor) {
     setForm((f) => ({ ...f, [nombre]: valor }));
+  }
+
+  // Un toque en un frecuente completa monto, descripción, categoría y cuenta;
+  // la fecha y la hora quedan en ahora. Después se toca Guardar.
+  function usarFrecuente(fr) {
+    playClick();
+    const existeCuenta = (cuentas || []).some((c) => c.nombre === fr.cuenta);
+    setForm((f) => ({
+      ...f,
+      monto: String(fr.monto),
+      descripcion: fr.descripcion,
+      categoria: fr.categoria,
+      cuenta: existeCuenta ? fr.cuenta : f.cuenta,
+    }));
+  }
+
+  function esElegido(fr) {
+    return form.descripcion === fr.descripcion && form.categoria === fr.categoria && parseMonto(form.monto) === Number(fr.monto);
   }
 
   async function submit(e) {
@@ -99,6 +126,28 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, onClose, on
             Ingreso
           </label>
         </div>
+
+        {frecuentes.length > 0 && (
+          <fieldset className="field">
+            <legend>{tipo === "gasto" ? "Tus gastos frecuentes" : "Tus ingresos frecuentes"}</legend>
+            <div className="chips">
+              {frecuentes.map((fr) => (
+                <button
+                  type="button"
+                  key={`${fr.descripcion}|${fr.categoria}`}
+                  className="chip chip-frecuente"
+                  aria-pressed={esElegido(fr)}
+                  onClick={() => usarFrecuente(fr)}
+                >
+                  <i className="ph ph-lightning" aria-hidden="true" />
+                  {fr.descripcion}
+                  <span className="chip-frecuente-monto">{fmtMoney(fr.monto, monedaPorCuenta?.[fr.cuenta] || "ARS")}</span>
+                </button>
+              ))}
+            </div>
+            <p className="field-ayuda">Tocá uno para completar el formulario y después «Guardar».</p>
+          </fieldset>
+        )}
 
         <Campo etiqueta="Monto" error={v.visible("monto")}>
           {(p) => (
