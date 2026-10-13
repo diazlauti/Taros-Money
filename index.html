@@ -17,6 +17,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Copia estática del formulario de lista de espera: Netlify la lee al
+         publicar para registrar los campos. El que se usa es ListaEsperaDialog. -->
+    <form name="lista-espera" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="text" name="nombre" />
+      <input type="email" name="email" />
+      <textarea name="mensaje"></textarea>
+      <input type="text" name="bot-field" />
+    </form>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
