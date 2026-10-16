@@ -19,12 +19,15 @@ const SCOPES = [
 
 // Permisos extra, solo para quien activa "Gastos desde tus mails": leer el
 // Gmail, escribir los gastos que encuentra en su planilla y, en el modo
-// "siempre", programar la revisión automática. Van en otro token (y otro
+// "siempre", programar la revisión automática y mandarse a sí mismo el
+// aviso por mail (con su dirección, de ahí userinfo.email). Van en otro token (y otro
 // proyecto de Apps Script) para no pedírselos a todo el que entra.
 const SCOPES_MAILS = [
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/spreadsheets",
   "https://www.googleapis.com/auth/script.scriptapp",
+  "https://www.googleapis.com/auth/script.send_mail",
+  "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
 const TOKEN_MAILS_KEY = "taros-google-token-mails";
 

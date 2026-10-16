@@ -19,8 +19,9 @@ export default function MovimientosTab({
   mailsActivos,
   revisandoMails,
   onRevisarMails,
+  filtroInicial = "todos",
 }) {
-  const [filtro, setFiltro] = useState("todos");
+  const [filtro, setFiltro] = useState(filtroInicial);
   const [busqueda, setBusqueda] = useState("");
   const [editando, setEditando] = useState(null);
 

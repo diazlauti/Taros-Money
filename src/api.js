@@ -307,6 +307,17 @@ export function revisarMails(planillaId, dias, { interactivo = false } = {}) {
   return llamarUnaVez("revisarMails", [planillaId, dias], apiMails(interactivo));
 }
 
+// Remitentes y palabras propios de cada persona, y si quiere el aviso por
+// mail del modo "siempre". Viven en el proyecto de mails porque los usa la
+// revisión automática.
+export function getAjustesMails({ interactivo = false } = {}) {
+  return llamarUnaVez("obtenerAjustesMails", [], apiMails(interactivo));
+}
+
+export function guardarAjustesMails(ajustes, { interactivo = false } = {}) {
+  return llamarUnaVez("guardarAjustesMails", [ajustes], apiMails(interactivo));
+}
+
 // El ID de la planilla sale del link que ya devuelve la API.
 export function idDePlanilla(url) {
   const match = String(url || "").match(/\/d\/([a-zA-Z0-9_-]+)/);

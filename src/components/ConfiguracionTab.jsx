@@ -3,6 +3,7 @@ import { useAvisos } from "../avisos";
 import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
+import AjustesMails from "./AjustesMails";
 import Campo from "./Campo";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
@@ -180,6 +181,7 @@ export default function ConfiguracionTab({
               {errorMails}
             </p>
           )}
+          {modoMails !== "apagado" && <AjustesMails modo={modoMails} />}
         </>
       );
     }

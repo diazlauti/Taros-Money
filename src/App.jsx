@@ -22,7 +22,8 @@ idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
-import { mapaMonedas } from "./format";
+import { fmtMoney, mapaMonedas } from "./format";
+import { notificar } from "./notificaciones";
 import { useSeccion } from "./hooks";
 import { useAvisos } from "./avisos";
 import { sonidoHabilitado, toggleSonido } from "./sounds";
@@ -156,8 +157,12 @@ tendencia.recargar();
 
 // --- Gastos desde tus mails ---
 const [revisandoMails, setRevisandoMails] = useState(false);
+// Desde la tarjeta del Resumen se puede abrir Movimientos ya filtrado.
+const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
 const modoMails = configMails.data?.modo || "apagado";
 const planillaId = idDePlanilla(urlPlanilla.data);
+
+const cantidadARevisar = (gastos.data || []).filter((g) => g.aRevisar).length;
 
 // interactivo=true solo desde un click: si hace falta, abre la ventana de
 // permisos de Google. Devuelve el resultado o tira el error.
@@ -167,6 +172,9 @@ if (!planillaId) throw new Error("Todavía no se encontró tu planilla. Probá d
 setRevisandoMails(true);
 try {
 const resultado = await revisarMails(planillaId, dias, { interactivo });
+// Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
+// como "mientras no estabas".
+marcarVistos((resultado?.encontrados || []).map(claveGasto));
 if (resultado?.nuevos > 0) {
 gastos.recargar();
 resumen.recargar();
@@ -182,19 +190,43 @@ setRevisandoMails(false);
 [planillaId, gastos, resumen, cuentas, tendencia]
 );
 
+// Aviso dentro de la app + notificación del sistema (si se dio permiso).
+// Con siempreAvisar=false no dice nada cuando no encontró nada (al abrir).
 const avisarResultadoMails = useCallback(
-(resultado) => {
-const n = resultado?.nuevos || 0;
-avisar(
-n === 0
-? "No hay gastos nuevos en tus mails."
-: n === 1
-? "Encontré 1 gasto nuevo en tus mails. Revisalo en Movimientos."
-: `Encontré ${n} gastos nuevos en tus mails. Revisalos en Movimientos.`
-);
+(resultado, { siempreAvisar = true } = {}) => {
+const encontrados = resultado?.encontrados || [];
+const n = resultado?.nuevos || encontrados.length;
+if (n === 0) {
+if (!siempreAvisar) return;
+avisar("No encontré gastos nuevos en tus mails.");
+notificar("Taros Money", "Revisé tus mails: no hay gastos nuevos.");
+return;
+}
+const detalle = encontrados
+.slice(0, 3)
+.map((g) => `${g.descripcion || "Sin descripción"} ${fmtMoney(g.monto)}`)
+.join(", ");
+const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
+const titulo = n === 1 ? "Encontré 1 gasto en tus mails" : `Encontré ${n} gastos en tus mails`;
+avisar(`${titulo}: ${detalle}${resto}. Revisalos en Movimientos.`);
+notificar(titulo, `${detalle}${resto}. Tocá para revisarlos.`);
 },
 [avisar]
 );
+
+// Modo "siempre": lo que se cargó solo con la app cerrada se avisa al
+// volver a abrirla. Se recuerda qué gastos "A revisar" ya se avisaron.
+useEffect(() => {
+if (modoMails !== "siempre" || !gastos.data) return;
+const claves = gastos.data.filter((g) => g.aRevisar).map(claveGasto);
+const { vistos, primeraVez } = leerVistos();
+const nuevos = claves.filter((c) => !vistos.has(c));
+marcarVistos(claves, { aunqueSeaVacio: primeraVez });
+if (primeraVez || nuevos.length === 0) return;
+const titulo = nuevos.length === 1 ? "Mientras no estabas encontré 1 gasto" : `Mientras no estabas encontré ${nuevos.length} gastos`;
+avisar(`${titulo} en tus mails. Revisalos en Movimientos.`);
+notificar(titulo, "Están en Movimientos con la etiqueta \"A revisar\".");
+}, [modoMails, gastos.data, avisar]);
 
 async function revisarMailsConBoton() {
 try {
@@ -212,7 +244,7 @@ if (modoMails !== "al_abrir" || !planillaId || yaRevisoAlAbrir.current) return;
 yaRevisoAlAbrir.current = true;
 revisarMisMails()
 .then((resultado) => {
-if (resultado?.nuevos > 0) avisarResultadoMails(resultado);
+avisarResultadoMails(resultado, { siempreAvisar: false });
 })
 .catch((err) => avisar(`No se pudieron revisar tus mails: ${err.message}`, "error"));
 }, [modoMails, planillaId, revisarMisMails, avisar, avisarResultadoMails]);
@@ -255,11 +287,16 @@ categorias.recargar();
 }
 
 const abrirNuevo = () => setDialogOpen(true);
+// Navegar desde el menú abre Movimientos sin filtro.
+function irA(tab) {
+setFiltroMovimientos("todos");
+setActiveTab(tab);
+}
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
 <div className="app-shell">
-<Sidebar activeTab={activeTab} onSelect={setActiveTab} />
+<Sidebar activeTab={activeTab} onSelect={irA} />
 
 <main className="main">
 <header className="main-header">
@@ -285,6 +322,21 @@ dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
 onIrA={setActiveTab}
+mails={
+mailsDisponible()
+? {
+config: configMails,
+cantidadARevisar,
+revisando: revisandoMails,
+onRevisar: revisarMailsConBoton,
+onVerARevisar: () => {
+setFiltroMovimientos("revisar");
+setActiveTab("movimientos");
+},
+onActivar: () => setActiveTab("configuracion"),
+}
+: null
+}
 />
 )}
 
@@ -300,6 +352,7 @@ onCambiarDias={setDias}
 onNuevo={abrirNuevo}
 onCambio={recargarTodo}
 mailsActivos={modoMails !== "apagado"}
+filtroInicial={filtroMovimientos}
 revisandoMails={revisandoMails}
 onRevisarMails={revisarMailsConBoton}
 />
@@ -345,7 +398,7 @@ onInstalar={() => setGuiaInstalarAbierta(true)}
 </div>
 </main>
 
-<BottomNav activeTab={activeTab} onSelect={setActiveTab} />
+<BottomNav activeTab={activeTab} onSelect={irA} />
 
 {dialogOpen && (
 <NuevoMovimientoDialog
@@ -370,4 +423,32 @@ setGuiaInstalarAbierta(true);
 {guiaInstalarAbierta && <InstalarAppDialog onClose={() => setGuiaInstalarAbierta(false)} />}
 </div>
 );
+}
+
+// --- Qué gastos detectados ya se avisaron (por dispositivo) ---
+const VISTOS_KEY = "taros-mails-vistos";
+
+function claveGasto(g) {
+return `${g.fecha}|${g.hora}|${Number(g.monto).toFixed(2)}`;
+}
+
+function leerVistos() {
+try {
+const crudo = localStorage.getItem(VISTOS_KEY);
+return { vistos: new Set(crudo ? JSON.parse(crudo) : []), primeraVez: crudo === null };
+} catch {
+return { vistos: new Set(), primeraVez: true };
+}
+}
+
+function marcarVistos(claves, { aunqueSeaVacio = false } = {}) {
+if (claves.length === 0 && !aunqueSeaVacio) return;
+try {
+const { vistos } = leerVistos();
+claves.forEach((c) => vistos.add(c));
+// Solo los últimos 200: alcanza para no repetir avisos.
+localStorage.setItem(VISTOS_KEY, JSON.stringify([...vistos].slice(-200)));
+} catch {
+/* sin storage: a lo sumo se repite algún aviso */
+}
 }
