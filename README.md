@@ -49,6 +49,7 @@ Copiá `.env.example` a `.env` y completá:
 ```
 VITE_GOOGLE_CLIENT_ID=...apps.googleusercontent.com
 VITE_APPS_SCRIPT_ID=...
+VITE_APPS_SCRIPT_ID_MAILS=...   # opcional, ver "Gastos desde tus mails"
 ```
 
 ## 4. Desarrollo local
@@ -63,11 +64,33 @@ npm run dev
 1. Conectá este repo en Netlify (New site from Git).
 2. Build command: `npm run build` — Publish directory: `dist` (ya está en
    `netlify.toml`).
-3. Site settings > Environment variables: cargá `VITE_GOOGLE_CLIENT_ID` y
-   `VITE_APPS_SCRIPT_ID`.
+3. Site settings > Environment variables: cargá `VITE_GOOGLE_CLIENT_ID`,
+   `VITE_APPS_SCRIPT_ID` y, si usás la detección de mails,
+   `VITE_APPS_SCRIPT_ID_MAILS`.
 4. Deploy. Para instalarla en el celu: abrí el sitio en Chrome/Safari — al
    tener manifest + service worker (vite-plugin-pwa), el navegador ofrece
    instalarla sola, o usá "Agregar a pantalla de inicio" a mano.
+
+## Gastos desde tus mails (opcional)
+
+Un segundo proyecto de Apps Script, "Taros Money Mails", lee el Gmail de
+quien lo activa en Configuración y carga sus compras en Movimientos con la
+etiqueta "A revisar". Va aparte de la API para que el permiso de leer Gmail
+se le pida solo a quien usa esto. Instalación:
+
+1. script.new → pegá `taros-money-mails.gs` y, en el manifiesto
+   (`appsscript.json`), el de `taros-money-mails.appsscript.json`.
+2. Vinculalo al mismo proyecto de Google Cloud que la API.
+3. En la pantalla de consentimiento de OAuth agregá el permiso
+   `https://www.googleapis.com/auth/gmail.readonly`. Es un permiso
+   "restringido": anda para los usuarios de prueba, pero para abrirlo a
+   cualquiera Google pide una auditoría de seguridad.
+4. Implementar → Ejecutable de API → "Cualquier persona que tenga una
+   Cuenta de Google", y cargá su Script ID en `VITE_APPS_SCRIPT_ID_MAILS`.
+
+Cada persona elige en Configuración si se revisan al abrir la app, solo con
+el botón "Revisar mails" o siempre (cada media hora, con un activador que
+corre con sus permisos).
 
 ## Sumar gente nueva
 

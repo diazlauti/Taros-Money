@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 getSaldo,
 getResumen,
@@ -13,6 +13,12 @@ getSuscripciones,
 getTendencia,
 getCotizacion,
 getUrlPlanilla,
+getConfigMails,
+guardarModoMails,
+activarMails,
+revisarMails,
+mailsDisponible,
+idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
@@ -120,6 +126,7 @@ const suscripciones = useSeccion(getSuscripciones, []);
 const tendencia = useSeccion(() => getTendencia(6), []);
 const cotizacion = useSeccion(getCotizacion, []);
 const urlPlanilla = useSeccion(getUrlPlanilla, []);
+const configMails = useSeccion(() => (mailsDisponible() ? getConfigMails() : Promise.resolve(null)), []);
 
 // Si una recarga falla pero ya había datos en pantalla, se siguen mostrando
 // los anteriores y se avisa (antes no se enteraba nadie).
@@ -146,6 +153,92 @@ suscripciones.recargar();
 tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, tendencia]);
+
+// --- Gastos desde tus mails ---
+const [revisandoMails, setRevisandoMails] = useState(false);
+const modoMails = configMails.data?.modo || "apagado";
+const planillaId = idDePlanilla(urlPlanilla.data);
+
+// interactivo=true solo desde un click: si hace falta, abre la ventana de
+// permisos de Google. Devuelve el resultado o tira el error.
+const revisarMisMails = useCallback(
+async ({ interactivo = false, dias } = {}) => {
+if (!planillaId) throw new Error("Todavía no se encontró tu planilla. Probá de nuevo en un momento.");
+setRevisandoMails(true);
+try {
+const resultado = await revisarMails(planillaId, dias, { interactivo });
+if (resultado?.nuevos > 0) {
+gastos.recargar();
+resumen.recargar();
+cuentas.recargar();
+tendencia.recargar();
+}
+return resultado;
+} finally {
+setRevisandoMails(false);
+}
+},
+// eslint-disable-next-line react-hooks/exhaustive-deps
+[planillaId, gastos, resumen, cuentas, tendencia]
+);
+
+const avisarResultadoMails = useCallback(
+(resultado) => {
+const n = resultado?.nuevos || 0;
+avisar(
+n === 0
+? "No hay gastos nuevos en tus mails."
+: n === 1
+? "Encontré 1 gasto nuevo en tus mails. Revisalo en Movimientos."
+: `Encontré ${n} gastos nuevos en tus mails. Revisalos en Movimientos.`
+);
+},
+[avisar]
+);
+
+async function revisarMailsConBoton() {
+try {
+avisarResultadoMails(await revisarMisMails({ interactivo: true }));
+} catch (err) {
+avisar(err.message || "No se pudieron revisar tus mails. Probá de nuevo.", "error");
+}
+}
+
+// Modo "al abrir": una sola vez por apertura de la app, sin ventanas. Si
+// el permiso de Gmail venció, avisa y se puede revisar con el botón.
+const yaRevisoAlAbrir = useRef(false);
+useEffect(() => {
+if (modoMails !== "al_abrir" || !planillaId || yaRevisoAlAbrir.current) return;
+yaRevisoAlAbrir.current = true;
+revisarMisMails()
+.then((resultado) => {
+if (resultado?.nuevos > 0) avisarResultadoMails(resultado);
+})
+.catch((err) => avisar(`No se pudieron revisar tus mails: ${err.message}`, "error"));
+}, [modoMails, planillaId, revisarMisMails, avisar, avisarResultadoMails]);
+
+// Cambiar el modo desde Configuración. Se llama directo desde el click: la
+// primera vez, activarMails abre la ventana de permisos de Google.
+async function cambiarModoMails(modo) {
+if (modo !== "apagado" && !planillaId) {
+throw new Error("Todavía no se encontró tu planilla. Probá de nuevo en un momento.");
+}
+const anterior = modoMails;
+yaRevisoAlAbrir.current = true;
+// Para apagar no hace falta pedir permisos: si el automático estaba
+// prendido se intenta frenar, pero si no se puede igual se apaga acá.
+if (modo === "apagado") {
+if (anterior === "siempre") await activarMails(planillaId, "apagado").catch(() => {});
+} else {
+await activarMails(planillaId, modo, { interactivo: true });
+}
+await guardarModoMails(modo);
+configMails.recargar();
+if (anterior === "apagado" && modo !== "apagado") {
+// Primera vez: mira dos semanas para atrás, así ya ves algo.
+avisarResultadoMails(await revisarMisMails({ interactivo: true, dias: 14 }));
+}
+}
 
 function alternarSonido() {
 setSonido(toggleSonido());
@@ -206,6 +299,9 @@ dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
 onCambio={recargarTodo}
+mailsActivos={modoMails !== "apagado"}
+revisandoMails={revisandoMails}
+onRevisarMails={revisarMailsConBoton}
 />
 )}
 
@@ -229,6 +325,10 @@ onCambio={suscripciones.recargar}
 {activeTab === "configuracion" && (
 <ConfiguracionTab
 urlPlanilla={urlPlanilla}
+configMails={mailsDisponible() ? configMails : null}
+onCambiarModoMails={cambiarModoMails}
+revisandoMails={revisandoMails}
+onRevisarMails={revisarMailsConBoton}
 categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}

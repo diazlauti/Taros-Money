@@ -12,8 +12,19 @@ const OPCIONES_TEMA = [
   ["dark", "Oscuro"],
 ];
 
+const OPCIONES_MAILS = [
+  ["apagado", "Apagado", "No se lee ningún mail."],
+  ["al_abrir", "Al abrir la app", "Cada vez que entrás, se fija si hay compras nuevas."],
+  ["boton", "Con un botón", "Solo cuando tocás \"Revisar mails\" en Movimientos."],
+  ["siempre", "Siempre", "Se revisa sola cada media hora, aunque no abras la app."],
+];
+
 export default function ConfiguracionTab({
   urlPlanilla,
+  configMails,
+  onCambiarModoMails,
+  revisandoMails,
+  onRevisarMails,
   categorias,
   onAgregarCategoria,
   onBorrarCategoria,
@@ -97,6 +108,83 @@ export default function ConfiguracionTab({
     );
   }
 
+  const [guardandoMails, setGuardandoMails] = useState(false);
+  const [errorMails, setErrorMails] = useState("");
+
+  // Se llama directo desde el click: la primera vez abre la ventana de
+  // Google para dar permiso de leer el Gmail.
+  async function cambiarModoMails(modo) {
+    setGuardandoMails(true);
+    setErrorMails("");
+    try {
+      await onCambiarModoMails(modo);
+      playSuccess();
+      if (modo === "apagado") avisar("Listo, ya no se revisan tus mails");
+    } catch (err) {
+      playError();
+      setErrorMails(err.message || "No se pudo cambiar. Probá de nuevo.");
+    } finally {
+      setGuardandoMails(false);
+    }
+  }
+
+  let mails = null;
+  if (configMails) {
+    const modoMails = configMails.data?.modo || "apagado";
+    if (configMails.cargando) {
+      mails = (
+        <Cargando texto="Cargando cómo se revisan tus mails…">
+          <Skeleton ancho="60%" />
+        </Cargando>
+      );
+    } else if (configMails.error && !configMails.data) {
+      mails = <ErrorEstado mensaje={configMails.error} onReintentar={configMails.recargar} />;
+    } else {
+      mails = (
+        <>
+          <fieldset className="field" disabled={guardandoMails}>
+            <legend>Cuándo revisarlos</legend>
+            <div className="seg seg-vertical">
+              {OPCIONES_MAILS.map(([valor, texto, ayuda]) => (
+                <label className="seg-opt" key={valor}>
+                  <input
+                    type="radio"
+                    name="modo-mails"
+                    checked={modoMails === valor}
+                    onChange={() => cambiarModoMails(valor)}
+                  />
+                  <span className="seg-opt-texto">
+                    {texto}
+                    <span className="seg-opt-ayuda">{ayuda}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <p className="field-ayuda" aria-live="polite">
+              {guardandoMails ? "Guardando…" : ""}
+            </p>
+          </fieldset>
+          {modoMails !== "apagado" && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-alinear-inicio"
+              onClick={onRevisarMails}
+              disabled={revisandoMails || guardandoMails}
+            >
+              <i className="ph ph-envelope-simple" aria-hidden="true" />
+              {revisandoMails ? "Revisando mails…" : "Revisar mails ahora"}
+            </button>
+          )}
+          {errorMails && (
+            <p className="mensaje-error" role="alert">
+              {errorMails}
+            </p>
+          )}
+        </>
+      );
+    }
+  }
+
   let chips;
   if (categorias.cargando) {
     chips = (
@@ -145,6 +233,20 @@ export default function ConfiguracionTab({
         </p>
         {planilla}
       </section>
+
+      {mails && (
+        <section className="card" aria-labelledby="titulo-mails">
+          <h2 className="card-kicker" id="titulo-mails">
+            Gastos desde tus mails
+          </h2>
+          <p className="texto-intro">
+            Buscamos en tu Gmail los mails de compras, pagos y transferencias (Mercado Pago, Cuscatlán y otros bancos) y
+            los cargamos solos en Movimientos con la etiqueta "A revisar", para que confirmes o corrijas cada uno. La
+            primera vez Google te va a pedir permiso para leer tus mails. Solo se leen, nunca se borran ni se mandan.
+          </p>
+          {mails}
+        </section>
+      )}
 
       <section className="card" aria-labelledby="titulo-categorias-config">
         <h2 className="card-kicker" id="titulo-categorias-config">

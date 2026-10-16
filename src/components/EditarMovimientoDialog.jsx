@@ -55,7 +55,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
     try {
       await (esGasto ? editarGasto : editarIngreso)(criterio, cambios);
       playSuccess();
-      avisar("Cambios guardados");
+      avisar(movimiento.aRevisar ? "Gasto confirmado" : "Cambios guardados");
       onGuardado?.();
       onClose();
     } catch (err) {
@@ -87,8 +87,19 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   const sucio = Object.keys(inicial).some((k) => inicial[k] !== form[k]);
 
   return (
-    <Dialog titulo={esGasto ? "Editar gasto" : "Editar ingreso"} onClose={onClose} sucio={sucio && !enviando}>
+    <Dialog
+      titulo={movimiento.aRevisar ? "Revisar gasto" : esGasto ? "Editar gasto" : "Editar ingreso"}
+      onClose={onClose}
+      sucio={sucio && !enviando}
+    >
       <form className="form" onSubmit={guardar} noValidate>
+        {movimiento.aRevisar && (
+          <p className="aviso-inline">
+            <i className="ph ph-envelope-simple" aria-hidden="true" />
+            Lo encontramos en un mail de {movimiento.origenMail}. Revisá el monto, elegí la categoría y la cuenta, y
+            confirmalo.
+          </p>
+        )}
         <Campo etiqueta="Monto" error={v.visible("monto")}>
           {(p) => (
             <input
@@ -182,7 +193,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary" disabled={enviando || borrando}>
-              {enviando ? "Guardando…" : "Guardar"}
+              {enviando ? "Guardando…" : movimiento.aRevisar ? "Confirmar" : "Guardar"}
             </button>
           </div>
         </div>
