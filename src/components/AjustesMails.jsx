@@ -10,6 +10,23 @@ import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 // Búsqueda personalizada (remitentes y palabras), aviso por mail del modo
 // "siempre" y notificaciones en este dispositivo. Solo se muestra con la
 // detección de mails prendida.
+// Para agregar el banco sin saber de qué mail escribe. Algunos mandan desde
+// más de un dominio, por eso cada uno puede sumar varios.
+const BANCOS = [
+  { nombre: "Galicia", dominios: ["galicia.com.ar", "bancogalicia.com.ar"] },
+  { nombre: "Santander", dominios: ["santander.com.ar"] },
+  { nombre: "BBVA", dominios: ["bbva.com.ar"] },
+  { nombre: "Macro", dominios: ["macro.com.ar"] },
+  { nombre: "Nación", dominios: ["bna.com.ar"] },
+  { nombre: "Provincia", dominios: ["bancoprovincia.com.ar"] },
+  { nombre: "ICBC", dominios: ["icbc.com.ar"] },
+  { nombre: "Naranja X", dominios: ["naranjax.com"] },
+  { nombre: "Ualá", dominios: ["uala.com.ar"] },
+  { nombre: "Brubank", dominios: ["brubank.com"] },
+  { nombre: "Personal Pay", dominios: ["personalpay.com.ar"] },
+  { nombre: "MODO", dominios: ["modo.com.ar"] },
+];
+
 export default function AjustesMails({ modo }) {
   const { avisar } = useAvisos();
   const ajustes = useSeccion(() => getAjustesMails(), []);
@@ -103,9 +120,10 @@ export default function AjustesMails({ modo }) {
       <>
         <ListaReglas
           titulo="Remitentes de tus bancos o billeteras"
-          ayuda="El mail o el dominio que te manda los avisos. Ej: alertas@galicia.com.ar o uala.com.ar"
+          ayuda="¿Tu banco no está? Escribí el mail o el dominio que te manda los avisos. Ej: alertas@tubanco.com.ar o tubanco.com.ar"
           placeholder="alertas@tubanco.com.ar"
           tipo="email"
+          sugeridos={BANCOS}
           lista={data.remitentes}
           deshabilitado={guardando}
           onCambiar={(remitentes, mensaje) => guardar({ remitentes }, mensaje)}
@@ -159,7 +177,7 @@ export default function AjustesMails({ modo }) {
   );
 }
 
-function ListaReglas({ titulo, ayuda, placeholder, tipo, lista, deshabilitado, onCambiar }) {
+function ListaReglas({ titulo, ayuda, placeholder, tipo, sugeridos, lista, deshabilitado, onCambiar }) {
   const [nueva, setNueva] = useState("");
   const [error, setError] = useState("");
 
@@ -182,9 +200,46 @@ function ListaReglas({ titulo, ayuda, placeholder, tipo, lista, deshabilitado, o
     if (await onCambiar([...lista, valor], `"${valor}" agregado`)) setNueva("");
   }
 
+  const tiene = (dominio) => lista.some((x) => x.toLowerCase() === dominio);
+  function alternarSugerido({ nombre, dominios }) {
+    if (dominios.every(tiene)) {
+      onCambiar(
+        lista.filter((x) => !dominios.includes(x.toLowerCase())),
+        `${nombre} sacado`
+      );
+      return;
+    }
+    const nuevos = dominios.filter((d) => !tiene(d));
+    if (lista.length + nuevos.length > 20) {
+      setError("Llegaste al máximo de 20. Sacá alguno para sumar otro.");
+      return;
+    }
+    setError("");
+    onCambiar([...lista, ...nuevos], `${nombre} agregado`);
+  }
+
   return (
     <fieldset className="field">
       <legend>{titulo}</legend>
+      {sugeridos && (
+        <div className="pila-chica">
+          <p className="field-ayuda">Tocá los que usás:</p>
+          <div className="chips">
+            {sugeridos.map((s) => (
+              <button
+                key={s.nombre}
+                type="button"
+                className="chip"
+                aria-pressed={s.dominios.every(tiene)}
+                disabled={deshabilitado}
+                onClick={() => alternarSugerido(s)}
+              >
+                {s.nombre}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {lista.length > 0 ? (
         <ul className="lista chips">
           {lista.map((r) => (
