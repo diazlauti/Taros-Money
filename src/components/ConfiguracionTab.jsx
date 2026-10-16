@@ -242,7 +242,7 @@ export default function ConfiguracionTab({
             Gastos desde tus mails
           </h2>
           <p className="texto-intro">
-            Buscamos en tu Gmail los mails de compras, pagos y transferencias (Mercado Pago, Cuscatlán y otros bancos) y
+            Buscamos en tu Gmail los mails de compras, pagos y transferencias (Mercado Pago y los bancos que elijas) y
             los cargamos solos en Movimientos con la etiqueta "A revisar", para que confirmes o corrijas cada uno. La
             primera vez Google te va a pedir permiso para leer tus mails. Solo se leen, nunca se borran ni se mandan.
           </p>
