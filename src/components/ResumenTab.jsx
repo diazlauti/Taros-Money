@@ -1,4 +1,4 @@
-import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
+import { aPesos, fmtMoney, fmtFecha, haceCuanto, iconoPorCategoria } from "../format";
 import { colorPorCategoria } from "../theme";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
 import PeriodoSelector from "./PeriodoSelector";
@@ -14,10 +14,13 @@ dias,
 onCambiarDias,
 onNuevo,
 onIrA,
+mails,
 }) {
 return (
 <>
 <SaldoCard saldo={saldo} cuentas={cuentas} cotizacionUsdArs={cotizacionUsdArs} onIrA={onIrA} />
+
+{mails && <MailsCard {...mails} />}
 
 <PeriodoSelector dias={dias} onCambiar={onCambiarDias} />
 
@@ -189,7 +192,8 @@ Gastos por categoría
 }
 
 function UltimosGastosCard({ gastos, dias, monedaPorCuenta, onNuevo, onIrA }) {
-const lista = gastos.data || [];
+// Los de mails sin confirmar no son gastos todavía: se ven en Movimientos.
+const lista = (gastos.data || []).filter((g) => !g.sinConfirmar);
 let contenido;
 
 if (gastos.cargando) {
@@ -239,6 +243,75 @@ return (
 <section className="card" aria-labelledby="titulo-ultimos" aria-busy={gastos.actualizando || undefined}>
 <h2 className="card-kicker" id="titulo-ultimos">
 Últimos gastos
+</h2>
+{contenido}
+</section>
+);
+}
+
+// La detección de gastos en los mails, a mano en el Resumen: si está apagada
+// invita a activarla; si está prendida muestra qué falta revisar.
+function MailsCard({ config, cantidadARevisar, revisando, onRevisar, onVerARevisar, onActivar }) {
+const modo = config.data?.modo || "apagado";
+let contenido;
+
+if (config.cargando) {
+contenido = (
+<Cargando texto="Cargando la detección de mails…">
+<Skeleton ancho="60%" />
+</Cargando>
+);
+} else if (config.error && !config.data) {
+contenido = <ErrorEstado mensaje={config.error} onReintentar={config.recargar} />;
+} else if (modo === "apagado") {
+contenido = (
+<>
+<p className="texto-intro">
+Dejá que Taros Money lea los mails de tus compras y pagos y los cargue solo. Vos solo confirmás.
+</p>
+<button type="button" className="btn btn-primary btn-alinear-inicio" onClick={onActivar}>
+<i className="ph ph-sparkle" aria-hidden="true" />
+Activar
+</button>
+</>
+);
+} else {
+contenido = (
+<>
+<p className="mails-card-cuenta" aria-live="polite">
+{cantidadARevisar === 0 ? (
+"Todo revisado. No hay movimientos de tus mails esperando."
+) : (
+<>
+<strong>{cantidadARevisar}</strong>{" "}
+{cantidadARevisar === 1 ? "movimiento de tus mails para revisar" : "movimientos de tus mails para revisar"}
+</>
+)}
+</p>
+{config.data?.ultimaRevision && (
+<p className="texto-tenue texto-chico">
+<i className="ph ph-clock" aria-hidden="true" /> Última revisión: {haceCuanto(config.data.ultimaRevision)}
+</p>
+)}
+<div className="fila">
+{cantidadARevisar > 0 && (
+<button type="button" className="btn btn-primary" onClick={onVerARevisar}>
+Revisarlos
+</button>
+)}
+<button type="button" className="btn btn-secondary" onClick={onRevisar} disabled={revisando}>
+<i className="ph ph-envelope-simple" aria-hidden="true" />
+{revisando ? "Revisando mails…" : "Revisar ahora"}
+</button>
+</div>
+</>
+);
+}
+
+return (
+<section className="card mails-card" aria-labelledby="titulo-mails-resumen">
+<h2 className="card-kicker" id="titulo-mails-resumen">
+<i className="ph ph-envelope-simple-open" aria-hidden="true" /> Gastos desde tus mails
 </h2>
 {contenido}
 </section>

@@ -19,6 +19,19 @@ export function fmtFecha(fecha) {
 
 // Lee un monto escrito como lo escribe cualquiera acá: "1500", "1500,50",
 // "1.500", "1.500,50", "$ 1.500". Devuelve NaN si no es un número.
+// "2026-10-16 05:30" (hora de Argentina) → "hace 5 min", "hace 2 h", "ayer a las 21:10".
+export function haceCuanto(texto, ahora = new Date()) {
+  const m = String(texto || "").match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+  if (!m) return "";
+  const fecha = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00-03:00`);
+  const minutos = Math.round((ahora - fecha) / 60000);
+  if (minutos < 1) return "recién";
+  if (minutos < 60) return `hace ${minutos} min`;
+  if (minutos < 24 * 60) return `hace ${Math.round(minutos / 60)} h`;
+  if (minutos < 48 * 60) return `ayer a las ${m[4]}:${m[5]}`;
+  return `el ${Number(m[3])}/${Number(m[2])} a las ${m[4]}:${m[5]}`;
+}
+
 export function parseMonto(texto) {
   let t = String(texto ?? "").replace(/[\s$]/g, "");
   if (!t) return NaN;
