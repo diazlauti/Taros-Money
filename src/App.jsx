@@ -162,7 +162,7 @@ const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
 const modoMails = configMails.data?.modo || "apagado";
 const planillaId = idDePlanilla(urlPlanilla.data);
 
-const cantidadARevisar = (gastos.data || []).filter((g) => g.aRevisar).length;
+const cantidadARevisar = [...(gastos.data || []), ...(ingresos.data || [])].filter((g) => g.aRevisar).length;
 
 // interactivo=true solo desde un click: si hace falta, abre la ventana de
 // permisos de Google. Devuelve el resultado o tira el error.
@@ -175,8 +175,10 @@ const resultado = await revisarMails(planillaId, dias, { interactivo });
 // Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
 // como "mientras no estabas".
 marcarVistos((resultado?.encontrados || []).map(claveGasto));
+configMails.recargar();
 if (resultado?.nuevos > 0) {
 gastos.recargar();
+ingresos.recargar();
 resumen.recargar();
 cuentas.recargar();
 tendencia.recargar();
@@ -187,7 +189,7 @@ setRevisandoMails(false);
 }
 },
 // eslint-disable-next-line react-hooks/exhaustive-deps
-[planillaId, gastos, resumen, cuentas, tendencia]
+[planillaId, gastos, ingresos, resumen, cuentas, tendencia, configMails]
 );
 
 // Aviso dentro de la app + notificación del sistema (si se dio permiso).
@@ -198,16 +200,16 @@ const encontrados = resultado?.encontrados || [];
 const n = resultado?.nuevos || encontrados.length;
 if (n === 0) {
 if (!siempreAvisar) return;
-avisar("No encontré gastos nuevos en tus mails.");
-notificar("Taros Money", "Revisé tus mails: no hay gastos nuevos.");
+avisar("No encontré movimientos nuevos en tus mails.");
+notificar("Taros Money", "Revisé tus mails: no hay nada nuevo.");
 return;
 }
 const detalle = encontrados
 .slice(0, 3)
-.map((g) => `${g.descripcion || "Sin descripción"} ${fmtMoney(g.monto)}`)
+.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto)}`)
 .join(", ");
 const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
-const titulo = n === 1 ? "Encontré 1 gasto en tus mails" : `Encontré ${n} gastos en tus mails`;
+const titulo = n === 1 ? "Encontré 1 movimiento en tus mails" : `Encontré ${n} movimientos en tus mails`;
 avisar(`${titulo}: ${detalle}${resto}. Revisalos en Movimientos.`);
 notificar(titulo, `${detalle}${resto}. Tocá para revisarlos.`);
 },

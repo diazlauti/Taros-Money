@@ -137,6 +137,17 @@ export default function AjustesMails({ modo }) {
           deshabilitado={guardando}
           onCambiar={(palabras, mensaje) => guardar({ palabras }, mensaje)}
         />
+        {data.ignorados?.length > 0 && (
+          <ListaReglas
+            titulo="Remitentes ignorados"
+            ayuda="Sus mails no se revisan. Sacalos de la lista para volver a verlos."
+            placeholder="Nombre del remitente"
+            tipo="text"
+            lista={data.ignorados}
+            deshabilitado={guardando}
+            onCambiar={(ignorados, mensaje) => guardar({ ignorados }, mensaje)}
+          />
+        )}
         <label className="check">
           <input
             type="checkbox"

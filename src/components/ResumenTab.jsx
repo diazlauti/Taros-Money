@@ -1,4 +1,4 @@
-import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
+import { aPesos, fmtMoney, fmtFecha, haceCuanto, iconoPorCategoria } from "../format";
 import { colorPorCategoria } from "../theme";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
 import PeriodoSelector from "./PeriodoSelector";
@@ -280,14 +280,19 @@ contenido = (
 <>
 <p className="mails-card-cuenta" aria-live="polite">
 {cantidadARevisar === 0 ? (
-"Todo revisado. No hay gastos de tus mails esperando."
+"Todo revisado. No hay movimientos de tus mails esperando."
 ) : (
 <>
 <strong>{cantidadARevisar}</strong>{" "}
-{cantidadARevisar === 1 ? "gasto de tus mails para revisar" : "gastos de tus mails para revisar"}
+{cantidadARevisar === 1 ? "movimiento de tus mails para revisar" : "movimientos de tus mails para revisar"}
 </>
 )}
 </p>
+{config.data?.ultimaRevision && (
+<p className="texto-tenue texto-chico">
+<i className="ph ph-clock" aria-hidden="true" /> Última revisión: {haceCuanto(config.data.ultimaRevision)}
+</p>
+)}
 <div className="fila">
 {cantidadARevisar > 0 && (
 <button type="button" className="btn btn-primary" onClick={onVerARevisar}>

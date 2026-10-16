@@ -204,6 +204,10 @@ export function confirmarGastoDeMail(idMail, gasto) {
   return escribir("confirmarGastoDeMail", [idMail, gasto]);
 }
 
+export function confirmarTodosLosDeMails() {
+  return escribir("confirmarTodosLosDeMails");
+}
+
 export function descartarGastoDeMail(idMail) {
   return escribir("descartarGastoDeMail", [idMail]);
 }
@@ -320,6 +324,11 @@ export function revisarMails(planillaId, dias, { interactivo = false } = {}) {
 // Remitentes y palabras propios de cada persona, y si quiere el aviso por
 // mail del modo "siempre". Viven en el proyecto de mails porque los usa la
 // revisión automática.
+// Sin permiso de Gmail a mano no hace falta: lo usa el diálogo después de borrar.
+export function ignorarRemitenteMail(nombre) {
+  return llamarUnaVez("ignorarRemitenteMail", [nombre], apiMails(false));
+}
+
 export function getAjustesMails({ interactivo = false } = {}) {
   return llamarUnaVez("obtenerAjustesMails", [], apiMails(interactivo));
 }

@@ -6,6 +6,7 @@ import {
   descartarGastoDeMail,
   editarGasto,
   editarIngreso,
+  ignorarRemitenteMail,
 } from "../api";
 import { useAvisos } from "../avisos";
 import { fmtMoney, parseMonto } from "../format";
@@ -38,6 +39,9 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   const [enviando, setEnviando] = useState(false);
   const [borrando, setBorrando] = useState(false);
   const [error, setError] = useState("");
+  // Mercado Pago no se ofrece: ignorarlo cortaría todos sus gastos.
+  const puedeIgnorar = movimiento.aRevisar && movimiento.origenMail && movimiento.origenMail !== "Mercado Pago";
+  const [ignorar, setIgnorar] = useState(false);
   const v = useValidacion(form, (f) => validarMovimiento(f, esGasto));
 
   // Identifica la fila original en la planilla (antes de aplicar los
@@ -68,7 +72,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       if (sinConfirmar) await confirmarGastoDeMail(movimiento.idMail, cambios);
       else await (esGasto ? editarGasto : editarIngreso)(criterio, cambios);
       playSuccess();
-      avisar(movimiento.aRevisar ? "Gasto confirmado" : "Cambios guardados");
+      avisar(movimiento.aRevisar ? (esGasto ? "Gasto confirmado" : "Ingreso confirmado") : "Cambios guardados");
       onGuardado?.();
       onClose();
     } catch (err) {
@@ -92,6 +96,11 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       else await (esGasto ? borrarGasto : borrarIngreso)(criterio);
       playClick();
       avisar(sinConfirmar ? "Gasto descartado" : esGasto ? "Gasto borrado" : "Ingreso borrado");
+      if (puedeIgnorar && ignorar) {
+        ignorarRemitenteMail(movimiento.origenMail)
+          .then(() => avisar(`Listo: no vamos a mostrar más mails de ${movimiento.origenMail}`))
+          .catch(() => avisar(`No pude guardar que ignores a ${movimiento.origenMail}. Probá desde Configuración.`));
+      }
       onGuardado?.();
       onClose();
     } catch (err) {
@@ -105,7 +114,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
 
   return (
     <Dialog
-      titulo={movimiento.aRevisar ? "Revisar gasto" : esGasto ? "Editar gasto" : "Editar ingreso"}
+      titulo={movimiento.aRevisar ? (esGasto ? "Revisar gasto" : "Revisar ingreso") : esGasto ? "Editar gasto" : "Editar ingreso"}
       onClose={onClose}
       sucio={sucio && !enviando}
     >
@@ -190,6 +199,16 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
             </Campo>
           )}
         </div>
+
+        {puedeIgnorar && (
+          <label className="check">
+            <input type="checkbox" checked={ignorar} onChange={(e) => setIgnorar(e.target.checked)} />
+            <span>
+              Si lo {sinConfirmar ? "descarto" : "borro"}, ignorar los mails de {movimiento.origenMail}
+              <span className="field-ayuda">Lo podés deshacer en Configuración.</span>
+            </span>
+          </label>
+        )}
 
         {error && (
           <p className="mensaje-error" role="alert">

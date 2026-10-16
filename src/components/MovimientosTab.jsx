@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { confirmarTodosLosDeMails } from "../api";
+import { useAvisos } from "../avisos";
+import { playError, playSuccess } from "../sounds";
 import { fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
 import { PERIODOS } from "../theme";
 import Campo from "./Campo";
@@ -24,6 +27,9 @@ export default function MovimientosTab({
   const [filtro, setFiltro] = useState(filtroInicial);
   const [busqueda, setBusqueda] = useState("");
   const [editando, setEditando] = useState(null);
+  const [confirmando, setConfirmando] = useState(false);
+  const [errorConfirmar, setErrorConfirmar] = useState("");
+  const { avisar } = useAvisos();
 
   const combinados = useMemo(() => {
     const g = (gastos.data || []).map((x) => ({ ...x, tipo: "gasto" }));
@@ -46,6 +52,26 @@ export default function MovimientosTab({
     const categoria = (t.categoria || "").toLowerCase();
     return descripcion.includes(textoBusqueda) || categoria.includes(textoBusqueda);
   });
+
+  async function confirmarTodos() {
+    const sinConfirmar = combinados.filter((t) => t.sinConfirmar).length;
+    const aclaracion = sinConfirmar > 0 ? ` ${sinConfirmar} sin confirmar se suman a tus gastos.` : "";
+    if (!window.confirm(`¿Confirmar los ${cantidadARevisar} movimientos tal como están?${aclaracion}`)) return;
+    setConfirmando(true);
+    setErrorConfirmar("");
+    try {
+      const { confirmados } = await confirmarTodosLosDeMails();
+      playSuccess();
+      avisar(confirmados === 1 ? "1 movimiento confirmado" : `${confirmados} movimientos confirmados`);
+      setFiltro("todos");
+      onCambio?.();
+    } catch (err) {
+      playError();
+      setErrorConfirmar(err.message || "No se pudieron confirmar. Probá de nuevo.");
+    } finally {
+      setConfirmando(false);
+    }
+  }
 
   const cargando = gastos.cargando || ingresos.cargando;
   const error = (gastos.error && !gastos.data) || (ingresos.error && !ingresos.data) ? gastos.error || ingresos.error : "";
@@ -159,6 +185,25 @@ export default function MovimientosTab({
           </button>
         )}
       </div>
+
+      {filtroActivo === "revisar" && (
+        <div className="pila-chica">
+          <button
+            type="button"
+            className="btn btn-primary btn-alinear-inicio"
+            onClick={confirmarTodos}
+            disabled={confirmando}
+          >
+            <i className="ph ph-checks" aria-hidden="true" />
+            {confirmando ? "Confirmando…" : `Confirmar todos (${cantidadARevisar})`}
+          </button>
+          {errorConfirmar && (
+            <p className="mensaje-error" role="alert">
+              {errorConfirmar}
+            </p>
+          )}
+        </div>
+      )}
 
       <Campo etiqueta="Buscar">
         {(p) => (
