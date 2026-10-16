@@ -198,6 +198,16 @@ export function borrarGasto(criterio) {
   return escribir("borrarGasto", [criterio]);
 }
 
+// Gastos de mails de remitentes desconocidos: no están en la planilla de
+// gastos hasta que la persona los confirma.
+export function confirmarGastoDeMail(idMail, gasto) {
+  return escribir("confirmarGastoDeMail", [idMail, gasto]);
+}
+
+export function descartarGastoDeMail(idMail) {
+  return escribir("descartarGastoDeMail", [idMail]);
+}
+
 export function agregarIngreso(ingreso) {
   return escribir("agregarIngresoManual", [ingreso]);
 }

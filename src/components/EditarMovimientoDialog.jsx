@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { borrarGasto, borrarIngreso, editarGasto, editarIngreso } from "../api";
+import {
+  borrarGasto,
+  borrarIngreso,
+  confirmarGastoDeMail,
+  descartarGastoDeMail,
+  editarGasto,
+  editarIngreso,
+} from "../api";
 import { useAvisos } from "../avisos";
 import { fmtMoney, parseMonto } from "../format";
 import { useValidacion } from "../hooks";
@@ -14,6 +21,8 @@ import Dialog from "./Dialog";
 export default function EditarMovimientoDialog({ movimiento, tipo, categorias, cuentas, monedaPorCuenta, onClose, onGuardado }) {
   const { avisar } = useAvisos();
   const esGasto = tipo === "gasto";
+  // Vino de un remitente desconocido: todavía no está en la planilla.
+  const sinConfirmar = esGasto && movimiento.sinConfirmar;
   const inicial = {
     fecha: movimiento.fecha || "",
     hora: movimiento.hora || "",
@@ -53,7 +62,8 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       ...(esGasto ? { hora: form.hora } : {}),
     };
     try {
-      await (esGasto ? editarGasto : editarIngreso)(criterio, cambios);
+      if (sinConfirmar) await confirmarGastoDeMail(movimiento.idMail, cambios);
+      else await (esGasto ? editarGasto : editarIngreso)(criterio, cambios);
       playSuccess();
       avisar(movimiento.aRevisar ? "Gasto confirmado" : "Cambios guardados");
       onGuardado?.();
@@ -68,13 +78,17 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   async function borrar() {
     const monto = fmtMoney(movimiento.monto, monedaPorCuenta?.[movimiento.cuenta] || "ARS");
     const nombre = movimiento.descripcion || "sin descripción";
-    if (!window.confirm(`¿Borrar el ${esGasto ? "gasto" : "ingreso"} "${nombre}" de ${monto}? No se puede deshacer.`)) return;
+    const pregunta = sinConfirmar
+      ? `¿Descartar "${nombre}" de ${monto}? No se va a sumar a tus gastos.`
+      : `¿Borrar el ${esGasto ? "gasto" : "ingreso"} "${nombre}" de ${monto}? No se puede deshacer.`;
+    if (!window.confirm(pregunta)) return;
     setBorrando(true);
     setError("");
     try {
-      await (esGasto ? borrarGasto : borrarIngreso)(criterio);
+      if (sinConfirmar) await descartarGastoDeMail(movimiento.idMail);
+      else await (esGasto ? borrarGasto : borrarIngreso)(criterio);
       playClick();
-      avisar(esGasto ? "Gasto borrado" : "Ingreso borrado");
+      avisar(sinConfirmar ? "Gasto descartado" : esGasto ? "Gasto borrado" : "Ingreso borrado");
       onGuardado?.();
       onClose();
     } catch (err) {
@@ -98,6 +112,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
             <i className="ph ph-envelope-simple" aria-hidden="true" />
             Lo encontramos en un mail de {movimiento.origenMail}. Revisá el monto, elegí la categoría y la cuenta, y
             confirmalo.
+            {sinConfirmar && " Como no conocemos a ese remitente, no lo sumamos a tus gastos hasta que lo confirmes."}
           </p>
         )}
         <Campo etiqueta="Monto" error={v.visible("monto")}>
@@ -186,7 +201,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
             disabled={borrando || enviando}
           >
             <i className="ph ph-trash" aria-hidden="true" />
-            {borrando ? "Borrando…" : "Borrar"}
+            {borrando ? (sinConfirmar ? "Descartando…" : "Borrando…") : sinConfirmar ? "Descartar" : "Borrar"}
           </button>
           <div className="fila">
             <button type="button" className="btn btn-secondary" onClick={onClose}>

@@ -115,7 +115,8 @@ export default function MovimientosTab({
                     </span>
                     {t.aRevisar && (
                       <span className="tag tag-revisar">
-                        <i className="ph ph-envelope-simple" aria-hidden="true" />A revisar
+                        <i className="ph ph-envelope-simple" aria-hidden="true" />
+                        {t.sinConfirmar ? "Sin confirmar" : "A revisar"}
                       </span>
                     )}
                   </span>

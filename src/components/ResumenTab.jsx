@@ -192,7 +192,8 @@ Gastos por categoría
 }
 
 function UltimosGastosCard({ gastos, dias, monedaPorCuenta, onNuevo, onIrA }) {
-const lista = gastos.data || [];
+// Los de mails sin confirmar no son gastos todavía: se ven en Movimientos.
+const lista = (gastos.data || []).filter((g) => !g.sinConfirmar);
 let contenido;
 
 if (gastos.cargando) {
