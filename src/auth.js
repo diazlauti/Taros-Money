@@ -64,16 +64,37 @@ function obtenerCliente(scopes) {
   return cliente;
 }
 
+// Dos pedidos a la vez con los mismos permisos: antes el segundo pisaba al
+// primero y ese quedaba colgado para siempre. Ahora uno silencioso espera al
+// que ya está en curso, y uno con ventana (un click) reemplaza al anterior,
+// que termina enseguida sin token en vez de quedar esperando.
 function pedirToken(scopes, prompt) {
-  return new Promise((resolve, reject) => {
+  let cliente;
+  try {
+    cliente = obtenerCliente(scopes);
+  } catch (err) {
+    return Promise.reject(err);
+  }
+  if (cliente.enCurso) {
+    if (prompt === "none") return cliente.enCurso.promesa;
+    const anterior = cliente.resolverPendiente;
+    cliente.resolverPendiente = null;
+    anterior?.({ error: cliente.enCurso.prompt === "none" ? "interaction_required" : "popup_closed" });
+  }
+  const pedido = { prompt };
+  pedido.promesa = new Promise((resolve, reject) => {
+    cliente.resolverPendiente = resolve;
     try {
-      const cliente = obtenerCliente(scopes);
-      cliente.resolverPendiente = resolve;
       cliente.tokenClient.requestAccessToken({ prompt });
     } catch (err) {
+      cliente.resolverPendiente = null;
       reject(err);
     }
+  }).finally(() => {
+    if (cliente.enCurso === pedido) cliente.enCurso = null;
   });
+  cliente.enCurso = pedido;
+  return pedido.promesa;
 }
 
 function guardarToken(respuesta, clave = TOKEN_KEY) {
