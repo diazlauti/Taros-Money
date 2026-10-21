@@ -10,6 +10,7 @@ getIngresos,
 getCuentas,
 getMetas,
 getSuscripciones,
+getServicios,
 getTendencia,
 getCotizacion,
 getUrlPlanilla,
@@ -27,6 +28,7 @@ import MovimientosTab from "./components/MovimientosTab";
 import CuentasTab from "./components/CuentasTab";
 import MetasTab from "./components/MetasTab";
 import RecurrentesTab from "./components/RecurrentesTab";
+import ServiciosTab from "./components/ServiciosTab";
 import ReportesTab from "./components/ReportesTab";
 import ConfiguracionTab from "./components/ConfiguracionTab";
 import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
@@ -117,6 +119,7 @@ const categorias = useSeccion(getCategorias, []);
 const cuentas = useSeccion(getCuentas, []);
 const metas = useSeccion(getMetas, []);
 const suscripciones = useSeccion(getSuscripciones, []);
+const servicios = useSeccion(getServicios, []);
 const tendencia = useSeccion(() => getTendencia(6), []);
 const cotizacion = useSeccion(getCotizacion, []);
 const urlPlanilla = useSeccion(getUrlPlanilla, []);
@@ -124,7 +127,7 @@ const urlPlanilla = useSeccion(getUrlPlanilla, []);
 // Si una recarga falla pero ya había datos en pantalla, se siguen mostrando
 // los anteriores y se avisa (antes no se enteraba nadie).
 const { avisar } = useAvisos();
-const erroresConDatos = [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, tendencia]
+const erroresConDatos = [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, servicios, tendencia]
 .filter((s) => s.error && s.data !== null)
 .map((s) => s.error);
 const primerError = erroresConDatos[0] || "";
@@ -143,9 +146,10 @@ ingresos.recargar();
 cuentas.recargar();
 metas.recargar();
 suscripciones.recargar();
+servicios.recargar();
 tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, tendencia]);
+}, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, servicios, tendencia]);
 
 function alternarSonido() {
 setSonido(toggleSonido());
@@ -186,6 +190,7 @@ saldo={saldo}
 resumen={resumen}
 gastos={gastos}
 cuentas={cuentas}
+servicios={servicios}
 cotizacionUsdArs={cotizacion.data}
 monedaPorCuenta={monedaPorCuenta}
 dias={dias}
@@ -209,9 +214,21 @@ onCambio={recargarTodo}
 />
 )}
 
-{activeTab === "cuentas" && <CuentasTab cuentas={cuentas} onCambio={cuentas.recargar} onIrA={setActiveTab} />}
+{activeTab === "cuentas" && <CuentasTab cuentas={cuentas} onCambio={cuentas.recargar} onCambioGeneral={recargarTodo} />}
 
-{activeTab === "metas" && <MetasTab metas={metas} onCambio={metas.recargar} onIrA={setActiveTab} />}
+{activeTab === "metas" && <MetasTab metas={metas} onCambio={metas.recargar} />}
+
+{activeTab === "servicios" && (
+<ServiciosTab
+servicios={servicios}
+categorias={categorias.data}
+cuentas={cuentas.data}
+cotizacionUsdArs={cotizacion.data}
+monedaPorCuenta={monedaPorCuenta}
+onCambio={servicios.recargar}
+onCambioConGasto={recargarTodo}
+/>
+)}
 
 {activeTab === "recurrentes" && (
 <RecurrentesTab

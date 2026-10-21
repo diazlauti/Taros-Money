@@ -1581,3 +1581,79 @@ animation: none;
 transform: none;
 }
 }
+
+/* --- Servicios del mes --- */
+
+.tag-estado {
+font-weight: var(--weight-bold);
+}
+
+.tag-estado i {
+font-size: var(--icon-sm);
+}
+
+.tag-estado--pagado {
+color: var(--exito);
+}
+
+.tag-estado--vencido {
+color: var(--error);
+}
+
+.tag-estado--pronto {
+background: var(--color-resalte);
+color: var(--color-on-resalte);
+}
+
+.servicio--vencido {
+border-color: var(--error);
+}
+
+.servicio--pagado .card-title {
+color: var(--color-text-dim);
+}
+
+.servicio .btn {
+align-self: stretch;
+}
+
+.servicio .fila-separada .btn-icono {
+margin: calc(var(--space-2) * -1);
+}
+
+/* Checkbox con toda la fila tocable (44px) */
+.check {
+display: flex;
+align-items: flex-start;
+gap: var(--space-2);
+min-height: var(--tap);
+padding: var(--space-2) 0;
+cursor: pointer;
+font-size: var(--text-sm);
+}
+
+.check input {
+flex: none;
+width: var(--icon-md);
+height: var(--icon-md);
+margin: 0;
+accent-color: var(--color-violeta);
+}
+
+.check-ayuda {
+display: block;
+}
+
+.lista-servicios-resumen {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+}
+
+.lista-servicios-resumen li {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: var(--space-2);
+font-size: var(--text-sm);
+}

@@ -244,3 +244,47 @@ export function getCotizacion() {
 export function getUrlPlanilla() {
   return leer("obtenerUrlPlanilla");
 }
+
+export function renombrarCuenta(nombreViejo, nombreNuevo) {
+  return escribir("renombrarCuenta", [nombreViejo, nombreNuevo]);
+}
+
+export function borrarCuenta(nombre) {
+  return escribir("borrarCuenta", [nombre]);
+}
+
+export function editarMeta(nombreOriginal, cambios) {
+  return escribir("editarMeta", [nombreOriginal, cambios]);
+}
+
+export function borrarMeta(nombre) {
+  return escribir("borrarMeta", [nombre]);
+}
+
+// --- Servicios del mes (pestaña "Servicios"): luz, gas, internet… ---
+// Cada uno guarda el último mes en que se pagó; si no es el mes actual,
+// está pendiente.
+
+export function getServicios() {
+  return leer("obtenerServicios");
+}
+
+export function crearServicio(servicio) {
+  return escribir("crearServicio", [servicio]);
+}
+
+export function editarServicio(nombreOriginal, cambios) {
+  return escribir("editarServicio", [nombreOriginal, cambios]);
+}
+
+export function borrarServicio(nombre) {
+  return escribir("borrarServicio", [nombre]);
+}
+
+export function pagarServicio(nombre, pago) {
+  return escribir("pagarServicio", [nombre, pago]);
+}
+
+export function desmarcarServicio(nombre) {
+  return escribir("desmarcarServicio", [nombre]);
+}
