@@ -2,7 +2,7 @@ import Campo from "./Campo";
 import CategoriaChips from "./CategoriaChips";
 
 // Campos compartidos entre "Nuevo servicio" y "Editar servicio".
-export default function CamposServicio({ form, campo, v, categorias, cuentas, autoFocus = false, nombreRef }) {
+export default function CamposServicio({ form, campo, v, categorias, cuentas, autoFocus = false, nombreRef, diaRef }) {
   return (
     <>
       <Campo etiqueta="Nombre" error={v.visible("nombre")}>
@@ -40,6 +40,7 @@ export default function CamposServicio({ form, campo, v, categorias, cuentas, au
           {(p) => (
             <input
               {...p}
+              ref={diaRef}
               className="input"
               type="text"
               inputMode="numeric"

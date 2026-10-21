@@ -18,6 +18,8 @@ getUrlPlanilla,
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { mapaMonedas } from "./format";
+import { avisarServiciosUrgentes } from "./recordatorios";
+import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
 import { useAvisos } from "./avisos";
 import { sonidoHabilitado, toggleSonido } from "./sounds";
@@ -134,6 +136,12 @@ const primerError = erroresConDatos[0] || "";
 useEffect(() => {
 if (primerError) avisar(`No se pudo actualizar: ${primerError}`, "error");
 }, [primerError, avisar]);
+
+// Al abrir la app, si dio permiso, avisa con una notificación los servicios
+// vencidos o que vencen pronto (una vez por día).
+useEffect(() => {
+if (servicios.data) avisarServiciosUrgentes(serviciosConEstado(servicios.data));
+}, [servicios.data]);
 
 // Única fuente de verdad para "en qué moneda está cada cuenta".
 const monedaPorCuenta = useMemo(() => mapaMonedas(cuentas.data), [cuentas.data]);

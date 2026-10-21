@@ -3,7 +3,8 @@ import { crearServicio, desmarcarServicio } from "../api";
 import { useAvisos } from "../avisos";
 import { aPesos, fmtFecha, fmtMoney, iconoPorCategoria, nombreMes, parseMonto } from "../format";
 import { useValidacion } from "../hooks";
-import { ICONO_ESTADO, serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
+import { linkCalendario, notificacionesDisponibles, pedirPermisoNotificaciones, permisoNotificaciones } from "../recordatorios";
+import { ICONO_ESTADO, iconoServicio, SERVICIOS_TIPICOS, serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
 import { playClick, playError, playSuccess } from "../sounds";
 import { validarServicio } from "../validaciones";
 import CamposServicio from "./CamposServicio";
@@ -21,8 +22,27 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   const [editando, setEditando] = useState(null);
   const [pagando, setPagando] = useState(null);
   const [desmarcando, setDesmarcando] = useState("");
+  const [permiso, setPermiso] = useState(permisoNotificaciones);
   const nombreRef = useRef(null);
+  const diaRef = useRef(null);
   const v = useValidacion(form, validarServicio);
+
+  // Atajo: completa el nombre (y la categoría Servicios si existe) y lleva
+  // al día de vencimiento, que es lo único que cambia de casa en casa.
+  function usarAtajo(nombre) {
+    const categoria = (categorias || []).find((c) => c.toLowerCase() === "servicios") || "";
+    setForm((f) => ({ ...f, nombre, categoria: f.categoria || categoria }));
+    diaRef.current?.focus();
+  }
+
+  async function activarAvisos() {
+    const r = await pedirPermisoNotificaciones();
+    setPermiso(r);
+    if (r === "granted") {
+      playSuccess();
+      avisar("Listo: cuando abras la app te aviso si algo vence");
+    }
+  }
 
   function campo(nombre, valor) {
     setForm((f) => ({ ...f, [nombre]: valor }));
@@ -78,6 +98,8 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   }
 
   const lista = serviciosConEstado(servicios.data);
+  const yaCargados = new Set(lista.map((s) => s.nombre.toLowerCase()));
+  const atajos = SERVICIOS_TIPICOS.filter((t) => !yaCargados.has(t.nombre.toLowerCase()));
   const pendientes = lista.filter((s) => s.estado !== "pagado");
   const pagados = lista.length - pendientes.length;
   const enPesos = (s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizacionUsdArs);
@@ -108,7 +130,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   } else if (lista.length === 0) {
     contenido = (
       <div className="card">
-        <Vacio icono="ph ph-receipt" texto="Cargá los servicios que pagás todos los meses (luz, gas, internet, alquiler…) y acá ves cuáles ya pagaste y cuáles te faltan.">
+        <Vacio icono="ph ph-receipt" texto="Cargá los servicios que pagás todos los meses (luz, agua, internet, teléfono…) y acá ves cuáles ya pagaste y cuáles te faltan. Abajo tenés atajos para no escribir.">
           <button type="button" className="btn btn-secondary" onClick={() => nombreRef.current?.focus()}>
             <i className="ph ph-plus" aria-hidden="true" />
             Agregar servicio
@@ -146,6 +168,18 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
               No incluye los servicios en dólares porque no se pudo traer la cotización.
             </p>
           )}
+          {permiso === "default" && notificacionesDisponibles() && (
+            <button type="button" className="btn btn-secondary" onClick={activarAvisos}>
+              <i className="ph ph-bell-ringing" aria-hidden="true" />
+              Avisarme cuando algo esté por vencer
+            </button>
+          )}
+          {permiso === "granted" && (
+            <p className="aviso-inline">
+              <i className="ph ph-bell" aria-hidden="true" />
+              Cuando abras la app te aviso si algo vence en los próximos días.
+            </p>
+          )}
         </section>
         <ul className="lista grid-cards">
           {lista.map((s) => {
@@ -154,7 +188,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
               <li className={`card servicio servicio--${s.estado}`} key={s.nombre}>
                 <div className="fila-separada">
                   <span className="fila">
-                    <i className={iconoPorCategoria(s.categoria)} aria-hidden="true" />
+                    <i className={iconoServicio(s.nombre) || iconoPorCategoria(s.categoria)} aria-hidden="true" />
                     <h2 className="card-title">{s.nombre}</h2>
                   </span>
                   <button
@@ -199,6 +233,11 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
                     Marcar pagado
                   </button>
                 )}
+                <a className="link texto-chico" href={linkCalendario(s)} target="_blank" rel="noopener noreferrer">
+                  <i className="ph ph-calendar-plus" aria-hidden="true" />
+                  Recordármelo todos los meses en Google Calendar
+                  <span className="visualmente-oculto">(se abre en otra pestaña)</span>
+                </a>
               </li>
             );
           })}
@@ -215,7 +254,28 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
         <h2 className="card-kicker" id="titulo-nuevo-servicio">
           Nuevo servicio
         </h2>
-        <CamposServicio form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} nombreRef={nombreRef} />
+        {atajos.length > 0 && (
+          <div className="field">
+            <span className="field-etiqueta" id="titulo-atajos-servicio">
+              Atajos
+            </span>
+            <div className="chips" role="group" aria-labelledby="titulo-atajos-servicio">
+              {atajos.map((t) => (
+                <button
+                  type="button"
+                  className="chip"
+                  key={t.nombre}
+                  aria-pressed={form.nombre === t.nombre}
+                  onClick={() => usarAtajo(t.nombre)}
+                >
+                  <i className={t.icono} aria-hidden="true" />
+                  {t.nombre}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <CamposServicio form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} nombreRef={nombreRef} diaRef={diaRef} />
         {errorForm && (
           <p className="mensaje-error" role="alert">
             {errorForm}

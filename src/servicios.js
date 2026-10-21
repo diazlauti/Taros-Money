@@ -59,3 +59,32 @@ export function serviciosConEstado(lista, ahora = new Date()) {
     .map((s) => ({ ...s, ...estadoServicio(s, ahora) }))
     .sort((a, b) => ORDEN[a.estado] - ORDEN[b.estado] || a.diasRestantes - b.diasRestantes);
 }
+
+// Atajos para crear los servicios de siempre con un toque.
+export const SERVICIOS_TIPICOS = [
+  { nombre: "Luz", icono: "ph ph-lightbulb" },
+  { nombre: "Agua", icono: "ph ph-drop" },
+  { nombre: "Gas", icono: "ph ph-flame" },
+  { nombre: "Internet", icono: "ph ph-wifi-high" },
+  { nombre: "Teléfono", icono: "ph ph-device-mobile" },
+  { nombre: "Alquiler", icono: "ph ph-house" },
+  { nombre: "Expensas", icono: "ph ph-buildings" },
+  { nombre: "ABL", icono: "ph ph-bank" },
+  { nombre: "Seguro", icono: "ph ph-shield-check" },
+];
+
+const ICONO_POR_NOMBRE = {
+  ...Object.fromEntries(SERVICIOS_TIPICOS.map((t) => [t.nombre.toLowerCase(), t.icono])),
+  wifi: "ph ph-wifi-high",
+  celular: "ph ph-device-mobile",
+  telefono: "ph ph-device-mobile",
+  cable: "ph ph-television",
+  municipal: "ph ph-bank",
+};
+
+// Ícono del servicio por su nombre (Luz → lamparita); si no es uno de los
+// típicos, null para usar el de la categoría.
+export function iconoServicio(nombre) {
+  const clave = String(nombre || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return ICONO_POR_NOMBRE[clave] || ICONO_POR_NOMBRE[String(nombre || "").trim().toLowerCase()] || null;
+}
