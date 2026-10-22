@@ -1726,7 +1726,7 @@ color: var(--color-text-dim);
 }
 
 .landing-autor {
-flex-direction: row;
+flex-direction: column;
 align-items: flex-start;
 gap: var(--space-3);
 padding: var(--space-4) var(--space-3);
@@ -1854,6 +1854,7 @@ font-size: var(--text-xs);
 .landing-grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .landing-publico { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .landing-pasos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.landing-autor { flex-direction: row; }
 }
 
 @media (min-width: 781px) {
