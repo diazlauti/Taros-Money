@@ -41,6 +41,21 @@ const FUNCIONES = [
   },
 ];
 
+const OTROS_PROYECTOS = [
+  {
+    nombre: "TaroFits",
+    icono: "ph ph-barbell",
+    texto: "Tus rutinas de gimnasio o de calistenia en casa, con la técnica de cada ejercicio, historial, progreso y cronómetro.",
+    url: "https://tarosfit.netlify.app",
+  },
+  {
+    nombre: "Taro's Tools",
+    icono: "ph ph-toolbox",
+    texto: "Herramientas online que siempre necesitás: comprimir imágenes, traducir, generar un QR y más. Sin virus, sin drama.",
+    url: "https://tarotools.is-a.dev",
+  },
+];
+
 const PUBLICO = [
   { icono: "ph ph-student", texto: "Estás arrancando a manejar tu plata y querés entender en qué se va." },
   { icono: "ph ph-currency-dollar", texto: "Tenés pesos y dólares repartidos en varias cuentas." },
@@ -52,7 +67,7 @@ const ANIO = new Date().getFullYear();
 
 const PASOS = [
   {
-    titulo: "Tocá «Entrar con Google»",
+    titulo: 'Tocá "Entrar con Google"',
     texto: "Usá la cuenta de Google que tengas en el celu o la compu.",
   },
   {
@@ -118,6 +133,38 @@ export default function Login({ onSuccess }) {
       <p className="mensaje-error landing-error" role="alert">
         {error}
       </p>
+    );
+  }
+
+  // Con la app instalada en el celu no hace falta presentarla: se muestra
+  // el login cortito de siempre.
+  if (instalada) {
+    return (
+      <main className="pantalla-login">
+        <div className="login-contenido">
+          <header className="login-hero">
+            <img className="login-logo" src="/icon-192.png" alt="" width="192" height="192" />
+            <h1 className="login-titulo">Taros Money</h1>
+            <p className="login-lema">Tus gastos, ingresos y ahorros, claros y en un solo lugar.</p>
+          </header>
+
+          <div className="card login-card">
+            {botonEntrar("hero")}
+            {errorEntrar("hero")}
+            <p className="login-privacidad">
+              <i className="ph ph-lock-simple" aria-hidden="true" />
+              La primera vez Google te pide permiso para crear tu propia planilla. Es solo tuya: nadie más ve tus datos.
+            </p>
+            <p className="login-espera">
+              ¿Google no te deja entrar?
+              <button type="button" className="btn btn-texto" onClick={() => setEsperaAbierta(true)}>
+                Pedí acceso
+              </button>
+            </p>
+          </div>
+        </div>
+        {esperaAbierta && <ListaEsperaDialog onClose={() => setEsperaAbierta(false)} />}
+      </main>
     );
   }
 
@@ -207,6 +254,20 @@ export default function Login({ onSuccess }) {
           <h2 id="titulo-que-es" className="landing-h2">
             Todo lo que necesitás para ordenarte, nada más
           </h2>
+          <div className="card landing-destacado">
+            <span className="landing-icono landing-icono--grande">
+              <i className="ph ph-envelope-simple-open" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="landing-etiqueta landing-etiqueta--violeta">Lo más nuevo</p>
+              <h3 className="landing-destacado-titulo">Tus gastos salen solos de tu Gmail</h3>
+              <p className="landing-texto">
+                Si querés, Taros Money lee los mails de tus compras (por ejemplo, los de Mercado Pago) y te arma el gasto
+                con monto, comercio y categoría. Vos solo lo revisás y lo confirmás. Y va aprendiendo: la próxima vez que
+                compres en el mismo lugar, ya sabe dónde va.
+              </p>
+            </div>
+          </div>
           <ul className="landing-grilla">
             {FUNCIONES.map((f, i) => (
               <li key={f.titulo} className="card landing-funcion">
@@ -251,19 +312,20 @@ export default function Login({ onSuccess }) {
             </span>
             <div>
               <p className="landing-texto">
-                Todo arrancó con una pregunta que seguro te hiciste alguna vez: <em>¿en qué se me va la plata?</em>{" "}
-                Lauti quería saberlo y ser un poco más consciente con sus gastos, pero no tenía un home banking donde
-                ver sus movimientos.
+                Todo arrancó con una pregunta que seguro te hiciste alguna vez: <em>"¿en qué se me va la plata?"</em>{" "}
+                Yo quería saberlo y ser un poco más consciente con mis gastos, pero no tenía un home banking donde ver
+                mis movimientos.
               </p>
               <p className="landing-texto">
-                Así que hizo lo que haría cualquiera: se armó una planilla en Google Sheets y empezó a anotar todo.
-                Le sirvió tanto que quiso mejorarla, y ahí se metió con Apps Script para automatizarla. Una mejora
-                llevó a la otra y, casi sin darse cuenta, la planilla se convirtió en una app.
+                Así que hice lo que haría cualquiera: me armé una planilla en Google Sheets y empecé a anotar todo. Me
+                sirvió tanto que quise mejorarla, y ahí me metí con Apps Script para automatizarla. Una mejora llevó a la
+                otra y, casi sin darme cuenta, la planilla se convirtió en una app.
               </p>
               <p className="landing-texto">
-                Cuando amigos y familia la vieron, empezaron a pedirle: «che, ¿me la pasás?». Y así nació Taros
+                Cuando mis amigos y mi familia la vieron, empezaron a pedirme: "che, ¿me la pasás?". Y así nació Taros
                 Money como la conocés hoy: una app para que vos también sepas a dónde va tu plata, sin vueltas.
               </p>
+              <p className="landing-firma">— Lauti</p>
               <p className="landing-texto landing-texto--dim">
                 Es un proyecto personal: no hay un banco ni una empresa atrás, y nadie más que vos ve tus datos.
               </p>
@@ -309,6 +371,29 @@ export default function Login({ onSuccess }) {
             )}
           </div>
         </section>
+        <section id="proyectos" className="landing-seccion" aria-labelledby="titulo-proyectos">
+          <p className="landing-kicker">Otros proyectos</p>
+          <h2 id="titulo-proyectos" className="landing-h2">
+            Si te gustó Taros Money, probá estos
+          </h2>
+          <ul className="landing-proyectos">
+            {OTROS_PROYECTOS.map((p, i) => (
+              <li key={p.nombre}>
+                <a className="card landing-proyecto" href={p.url} target="_blank" rel="noopener noreferrer">
+                  <span className={"landing-icono" + (i % 2 ? "" : " landing-icono--violeta")}>
+                    <i className={p.icono} aria-hidden="true" />
+                  </span>
+                  <span className="landing-proyecto-texto">
+                    <span className="card-title">{p.nombre}</span>
+                    <span className="landing-texto--dim">{p.texto}</span>
+                  </span>
+                  <i className="ph ph-arrow-up-right landing-proyecto-flecha" aria-hidden="true" />
+                  <span className="visualmente-oculto">(se abre en otra pestaña)</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
 
       <footer className="landing-footer">
@@ -324,6 +409,7 @@ export default function Login({ onSuccess }) {
             <a href="#que-es">Qué es</a>
             <a href="#para-quien">Para quién</a>
             <a href="#quien">Quién la hizo</a>
+            <a href="#proyectos">Otros proyectos</a>
             <button type="button" className="btn btn-texto" onClick={() => setEsperaAbierta(true)}>
               Pedí acceso
             </button>
