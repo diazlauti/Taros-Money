@@ -243,7 +243,7 @@ export default function Login({ onSuccess }) {
         <section id="quien" className="landing-seccion" aria-labelledby="titulo-quien">
           <p className="landing-kicker">Quién la hizo</p>
           <h2 id="titulo-quien" className="landing-h2">
-            Hecha a pulmón, para uso propio primero
+            Taros Money es el principio de una idea
           </h2>
           <div className="card landing-autor">
             <span className="landing-autor-avatar" aria-hidden="true">
@@ -251,8 +251,18 @@ export default function Login({ onSuccess }) {
             </span>
             <div>
               <p className="landing-texto">
-                Taros Money la hizo Lauti. Empezó como una planilla para llevar sus propios gastos y, de tanto
-                usarla, terminó siendo una app. Ahora la comparte para que a otros también les sirva.
+                Todo arrancó con una pregunta que seguro te hiciste alguna vez: <em>¿en qué se me va la plata?</em>{" "}
+                Lauti quería saberlo y ser un poco más consciente con sus gastos, pero no tenía un home banking donde
+                ver sus movimientos.
+              </p>
+              <p className="landing-texto">
+                Así que hizo lo que haría cualquiera: se armó una planilla en Google Sheets y empezó a anotar todo.
+                Le sirvió tanto que quiso mejorarla, y ahí se metió con Apps Script para automatizarla. Una mejora
+                llevó a la otra y, casi sin darse cuenta, la planilla se convirtió en una app.
+              </p>
+              <p className="landing-texto">
+                Cuando amigos y familia la vieron, empezaron a pedirle: «che, ¿me la pasás?». Y así nació Taros
+                Money como la conocés hoy: una app para que vos también sepas a dónde va tu plata, sin vueltas.
               </p>
               <p className="landing-texto landing-texto--dim">
                 Es un proyecto personal: no hay un banco ni una empresa atrás, y nadie más que vos ve tus datos.
