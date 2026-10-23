@@ -4,17 +4,17 @@
 
 :root {
 /* --- Colores (modo claro) ---
-   Sale del logo: azul noche y amarillo mostaza, con violeta de segundo
-   acento (títulos de tarjetas, links, detalles). En claro el fondo es un
-   gris azulado suave y los botones van en azul con letras mostaza, para no
-   cansar la vista. */
+   Morado como color principal (botones, selección), azul noche del logo
+   para texto y bordes, y mostaza para resaltar (íconos, detalles). En claro
+   el fondo es un gris azulado suave, para no cansar la vista. */
 --color-bg: #e9ecf4;
 --color-surface: #fbfaf6;
 --color-surface-2: #f0eee6;
 --color-text: #1a1f45;
 --color-text-dim: #4a5072;
---color-accent: #1f2654;
---color-on-accent: #f5c542;
+--color-accent: var(--color-morado);
+--color-on-accent: #ffffff;
+--color-morado: #6a4bc4;
 --color-accent-text: var(--color-violeta);
 --color-violeta: #6a4bc4;
 --color-on-violeta: #ffffff;
@@ -113,6 +113,7 @@
 --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
 --z-nav: 5;
+--z-tour: 12;
 --z-aviso: 15;
 --z-dialog: 20;
 
@@ -129,8 +130,9 @@ color-scheme: light;
 --color-surface-2: #1f2450;
 --color-text: #f4f1ff;
 --color-text-dim: #c4c2e6;
---color-accent: #f5c542;
---color-on-accent: #1a1f45;
+--color-accent: var(--color-morado);
+--color-on-accent: #ffffff;
+--color-morado: #6a4bc4;
 --color-accent-text: var(--color-violeta);
 --color-violeta: #b9a3ff;
 --color-on-violeta: #1a1f45;
@@ -152,8 +154,9 @@ color-scheme: dark;
 --color-surface-2: #1f2450;
 --color-text: #f4f1ff;
 --color-text-dim: #c4c2e6;
---color-accent: #f5c542;
---color-on-accent: #1a1f45;
+--color-accent: var(--color-morado);
+--color-on-accent: #ffffff;
+--color-morado: #6a4bc4;
 --color-accent-text: var(--color-violeta);
 --color-violeta: #b9a3ff;
 --color-on-violeta: #1a1f45;
@@ -2159,9 +2162,9 @@ background: var(--color-accent);
 color: var(--color-on-accent);
 }
 
-.tour-icono--violeta {
-background: var(--color-violeta);
-color: var(--color-on-violeta);
+.tour-icono--mostaza {
+background: var(--color-resalte);
+color: var(--color-on-resalte);
 }
 
 .login-beneficio-icono--violeta {
@@ -2171,6 +2174,75 @@ color: var(--color-on-violeta);
 
 .tour-icono i {
 font-size: var(--text-2xl);
+}
+
+/* Paso de práctica del recorrido: cartel fijo abajo que no bloquea la app,
+   y lo que hay que tocar late con un anillo morado. */
+.tour-coach {
+position: fixed;
+left: var(--space-3);
+right: var(--space-3);
+bottom: calc(var(--tap) + var(--space-4) + env(safe-area-inset-bottom));
+z-index: var(--z-tour);
+margin: 0 auto;
+max-width: var(--dialog-max);
+background: var(--color-surface);
+color: var(--color-text);
+border: var(--border) solid var(--ink);
+border-radius: var(--radius-lg);
+box-shadow: var(--shadow-md);
+padding: var(--space-3);
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+animation: dialog-in var(--dur-slow) var(--ease-bounce);
+}
+
+@media (min-width: 781px) {
+.tour-coach { bottom: var(--space-4); }
+}
+
+.tour-coach .tour-texto {
+font-size: var(--text-sm);
+}
+
+.tour-coach-etiqueta {
+align-self: flex-start;
+padding: 0 var(--space-2);
+border-radius: var(--radius-pill);
+background: var(--color-resalte);
+color: var(--color-on-resalte);
+font-size: var(--text-xs);
+font-weight: var(--weight-bold);
+text-transform: uppercase;
+}
+
+.tour-esperando {
+display: inline-flex;
+align-items: center;
+gap: var(--space-1);
+color: var(--color-text-dim);
+font-size: var(--text-xs);
+}
+
+.tour-esperando i {
+font-size: var(--icon-sm);
+animation: pulso var(--dur-pulse) var(--ease-out) infinite;
+}
+
+:root[data-tour-objetivo="nuevo-movimiento"] [data-tour="nuevo-movimiento"],
+:root[data-tour-objetivo="borrar"] [data-tour="primer-movimiento"],
+:root[data-tour-objetivo="borrar"] [data-tour="borrar-movimiento"] {
+position: relative;
+z-index: 1;
+outline: var(--focus-ring) solid var(--color-accent);
+outline-offset: var(--border);
+animation: tour-latido var(--dur-pulse) var(--ease-out) infinite;
+}
+
+@keyframes tour-latido {
+0%, 100% { box-shadow: 0 0 0 0 var(--color-accent); }
+50% { box-shadow: 0 0 0 var(--space-2) transparent; }
 }
 
 .tour-cuerpo--adelante {

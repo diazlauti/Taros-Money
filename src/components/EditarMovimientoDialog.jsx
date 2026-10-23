@@ -12,6 +12,7 @@ import { useAvisos } from "../avisos";
 import { fmtMoney, parseMonto } from "../format";
 import { useValidacion } from "../hooks";
 import { playClick, playError, playSuccess } from "../sounds";
+import { avisarAccionTour } from "../tour";
 import { validarMovimiento } from "../validaciones";
 import Campo from "./Campo";
 import CategoriaChips from "./CategoriaChips";
@@ -103,6 +104,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       }
       onGuardado?.();
       onClose();
+      avisarAccionTour("movimiento-borrado");
     } catch (err) {
       playError();
       setError(err.message || "No se pudo borrar. Probá de nuevo.");
@@ -220,6 +222,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
           <button
             type="button"
             className="btn btn-secondary btn-peligro"
+            data-tour="borrar-movimiento"
             onClick={borrar}
             disabled={borrando || enviando}
           >

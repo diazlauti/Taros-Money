@@ -348,7 +348,7 @@ return (
 <header className="main-header">
 <i className="ph ph-wallet brand-icono" role="img" aria-label="Taros Money" />
 <h1>{activeItem.label}</h1>
-<button type="button" className="btn btn-primary" onClick={abrirNuevo}>
+<button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento">
 <i className="ph ph-plus" aria-hidden="true" />
 Nuevo movimiento
 </button>

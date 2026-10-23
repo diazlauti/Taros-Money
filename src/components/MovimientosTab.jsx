@@ -129,6 +129,7 @@ export default function MovimientosTab({
                 <button
                   type="button"
                   className="movimiento"
+                  data-tour={i === 0 ? "primer-movimiento" : undefined}
                   onClick={() => setEditando(t)}
                   aria-label={`${t.aRevisar ? "Revisar" : "Editar"} ${esIngreso ? "ingreso" : "gasto"}${t.aRevisar ? " detectado en tus mails" : ""}: ${t.descripcion || "sin descripción"}, ${esIngreso ? "más" : "menos"} ${monto}, ${fmtFecha(t.fecha)}`}
                 >
