@@ -6,3 +6,16 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Cabeceras de seguridad. El token de Google vive en localStorage, así que la
+# CSP solo deja correr scripts propios y el login de Google, y solo deja
+# conectarse a Apps Script y a dolarapi.com (cotizaciones). Si se suma otro
+# servicio externo, hay que agregarlo acá o el navegador lo bloquea.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; connect-src 'self' https://script.googleapis.com https://dolarapi.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com https://unpkg.com; img-src 'self' data:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

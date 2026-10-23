@@ -11,7 +11,7 @@ import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 
 const VACIO = { nombre: "", diaCobro: "", categoria: "", monto: "", cuenta: "" };
 
-export default function RecurrentesTab({ suscripciones, categorias, cuentas, cotizacionUsdArs, monedaPorCuenta, onCambio }) {
+export default function RecurrentesTab({ suscripciones, categorias, cuentas, cotizaciones, monedaPorCuenta, onCambio }) {
   const { avisar } = useAvisos();
   const [form, setForm] = useState(VACIO);
   const [enviando, setEnviando] = useState(false);
@@ -52,10 +52,10 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
 
   const lista = suscripciones.data || [];
   // Cada suscripción se debita de una cuenta con su propia moneda; las de
-  // USD se pasan a pesos con la cotización. Si no hay cotización se avisa
+  // otras monedas se pasan a pesos con la cotización. Si no hay cotización se avisa
   // en vez de sumarlas como 0 sin decir nada.
-  const faltaCotizacion = lista.some((s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizacionUsdArs) === null);
-  const total = lista.reduce((sum, s) => sum + (aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizacionUsdArs) ?? 0), 0);
+  const faltaCotizacion = lista.some((s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizaciones) === null);
+  const total = lista.reduce((sum, s) => sum + (aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizaciones) ?? 0), 0);
 
   let contenido;
   if (suscripciones.cargando) {
@@ -102,7 +102,7 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
           {faltaCotizacion && (
             <p className="aviso-inline">
               <i className="ph ph-info" aria-hidden="true" />
-              No incluye las suscripciones en dólares porque no se pudo traer la cotización.
+              No incluye las suscripciones en otras monedas porque falta su cotización (fijala en Configuración › Monedas).
             </p>
           )}
         </section>

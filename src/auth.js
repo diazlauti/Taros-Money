@@ -8,74 +8,139 @@
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const TOKEN_KEY = "taros-google-token";
 
-// Spreadsheets (leer/escribir los gastos) + Drive (crear la planilla "Taros
-// Money" la primera vez que alguien entra — igual que DriveApp.createFile
-// necesitaba el permiso amplio de Drive y no el restringido "drive.file",
-// SpreadsheetApp.create() lo necesita también).
+// Spreadsheets: leer/escribir los gastos y también crear la planilla "Taros
+// Money" la primera vez (SpreadsheetApp.create() no necesita Drive). Antes se
+// pedía además "drive", que da acceso a TODO el Drive de la persona; la API
+// no lo usa y si un token se filtraba, alcanzaba para leer o borrar
+// cualquier archivo.
+//
+// Los otros tres son para el aviso por mail de servicios por vencer: mandarse
+// el mail a uno mismo, programar que corra solo una vez por día y saber a
+// qué mail mandarlo. La API de Apps Script exige que el token cubra TODOS los
+// permisos del proyecto, así que se piden siempre (aunque el aviso esté
+// apagado).
 const SCOPES = [
   "https://www.googleapis.com/auth/spreadsheets",
-  "https://www.googleapis.com/auth/drive",
+  "https://www.googleapis.com/auth/script.send_mail",
+  "https://www.googleapis.com/auth/script.scriptapp",
+  "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
 
-let tokenClient = null;
-let resolverPendiente = null;
+// Permisos extra, solo para quien activa "Gastos desde tus mails": leer el
+// Gmail, escribir los gastos que encuentra en su planilla y, en el modo
+// "siempre", programar la revisión automática y mandarse a sí mismo el
+// aviso por mail (con su dirección, de ahí userinfo.email). Van en otro token (y otro
+// proyecto de Apps Script) para no pedírselos a todo el que entra.
+const SCOPES_MAILS = [
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/script.scriptapp",
+  "https://www.googleapis.com/auth/script.send_mail",
+  "https://www.googleapis.com/auth/userinfo.email",
+].join(" ");
+const TOKEN_MAILS_KEY = "taros-google-token-mails";
 
-function obtenerTokenClient() {
-  if (tokenClient) return tokenClient;
+// Un cliente de Google por cada juego de permisos, cada uno con su propia
+// promesa pendiente.
+const clientes = {};
+
+function obtenerCliente(scopes) {
+  if (clientes[scopes]) return clientes[scopes];
   if (!window.google?.accounts?.oauth2) {
     throw new Error("Todavía no cargó el login de Google. Esperá un segundo y probá de nuevo.");
   }
-  tokenClient = window.google.accounts.oauth2.initTokenClient({
+  const cliente = { resolverPendiente: null };
+  cliente.tokenClient = window.google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
-    scope: SCOPES,
+    scope: scopes,
     callback: (respuesta) => {
-      if (resolverPendiente) {
-        resolverPendiente(respuesta);
-        resolverPendiente = null;
+      if (cliente.resolverPendiente) {
+        cliente.resolverPendiente(respuesta);
+        cliente.resolverPendiente = null;
       }
     },
     // Si se cierra la ventana de Google (o el navegador la bloquea), el
     // callback de arriba nunca se llama: sin esto, el botón se quedaba
     // "Entrando…" para siempre.
     error_callback: (falla) => {
-      if (resolverPendiente) {
-        resolverPendiente({ error: falla?.type || "popup_failed_to_open" });
-        resolverPendiente = null;
+      if (cliente.resolverPendiente) {
+        cliente.resolverPendiente({ error: falla?.type || "popup_failed_to_open" });
+        cliente.resolverPendiente = null;
       }
     },
   });
-  return tokenClient;
+  clientes[scopes] = cliente;
+  return cliente;
 }
 
-function guardarToken(respuesta) {
+// Dos pedidos a la vez con los mismos permisos: antes el segundo pisaba al
+// primero y ese quedaba colgado para siempre. Ahora uno silencioso espera al
+// que ya está en curso, y uno con ventana (un click) reemplaza al anterior,
+// que termina enseguida sin token en vez de quedar esperando.
+function pedirToken(scopes, prompt) {
+  let cliente;
+  try {
+    cliente = obtenerCliente(scopes);
+  } catch (err) {
+    return Promise.reject(err);
+  }
+  if (cliente.enCurso) {
+    if (prompt === "none") return cliente.enCurso.promesa;
+    const anterior = cliente.resolverPendiente;
+    cliente.resolverPendiente = null;
+    anterior?.({ error: cliente.enCurso.prompt === "none" ? "interaction_required" : "popup_closed" });
+  }
+  const pedido = { prompt };
+  pedido.promesa = new Promise((resolve, reject) => {
+    cliente.resolverPendiente = resolve;
+    try {
+      cliente.tokenClient.requestAccessToken({ prompt });
+    } catch (err) {
+      cliente.resolverPendiente = null;
+      reject(err);
+    }
+  }).finally(() => {
+    if (cliente.enCurso === pedido) cliente.enCurso = null;
+  });
+  cliente.enCurso = pedido;
+  return pedido.promesa;
+}
+
+function guardarToken(respuesta, clave = TOKEN_KEY) {
   // Un minuto de margen antes del vencimiento real, para no mandar un
   // pedido con un token que expira a mitad de camino.
   const vencimiento = Date.now() + (Number(respuesta.expires_in) || 3600) * 1000 - 60000;
   const datos = { token: respuesta.access_token, vencimiento };
   try {
-    localStorage.setItem(TOKEN_KEY, JSON.stringify(datos));
+    localStorage.setItem(clave, JSON.stringify(datos));
   } catch {
     /* modo privado o storage bloqueado: la sesión no persiste, pero no rompe nada */
   }
   return datos;
 }
 
-function leerTokenGuardado() {
+function leerTokenGuardado(clave = TOKEN_KEY) {
   try {
-    const crudo = localStorage.getItem(TOKEN_KEY);
+    const crudo = localStorage.getItem(clave);
     return crudo ? JSON.parse(crudo) : null;
   } catch {
     return null;
   }
 }
 
-export function cerrarSesion() {
-  const datos = leerTokenGuardado();
+function borrarToken(clave) {
+  const datos = leerTokenGuardado(clave);
   try {
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(clave);
   } catch {
     /* ignorar */
   }
+  return datos;
+}
+
+export function cerrarSesion() {
+  borrarToken(TOKEN_MAILS_KEY);
+  const datos = borrarToken(TOKEN_KEY);
   if (datos?.token && window.google?.accounts?.oauth2) {
     window.google.accounts.oauth2.revoke(datos.token);
   }
@@ -104,22 +169,10 @@ function mensajeDeLogin(codigo) {
 // Login interactivo: abre el selector de cuenta de Google (y el cartel de
 // permisos, la primera vez que esa cuenta entra). Tiene que dispararlo un
 // click del usuario — los navegadores bloquean el popup si se llama solo.
-export function iniciarSesionConGoogle() {
-  return new Promise((resolve, reject) => {
-    try {
-      const client = obtenerTokenClient();
-      resolverPendiente = (respuesta) => {
-        if (respuesta.error) {
-          reject(new Error(mensajeDeLogin(respuesta.error)));
-          return;
-        }
-        resolve(guardarToken(respuesta));
-      };
-      client.requestAccessToken({ prompt: "" });
-    } catch (err) {
-      reject(err);
-    }
-  });
+export async function iniciarSesionConGoogle() {
+  const respuesta = await pedirToken(SCOPES, "");
+  if (respuesta.error) throw new Error(mensajeDeLogin(respuesta.error));
+  return guardarToken(respuesta);
 }
 
 // Intenta renovar el token SIN mostrar nada (sirve para cuando se vuelve a
@@ -127,16 +180,38 @@ export function iniciarSesionConGoogle() {
 // tocar "Iniciar sesión" cada vez que vence la hora del token. Si hace
 // falta interacción (primera vez, o permiso revocado), devuelve null en vez
 // de fallar, y la app muestra el botón de login normal.
-export function intentarSesionSilenciosa() {
-  return new Promise((resolve) => {
-    try {
-      const client = obtenerTokenClient();
-      resolverPendiente = (respuesta) => {
-        resolve(respuesta.error ? null : guardarToken(respuesta));
-      };
-      client.requestAccessToken({ prompt: "none" });
-    } catch {
-      resolve(null);
+export async function intentarSesionSilenciosa() {
+  try {
+    const respuesta = await pedirToken(SCOPES, "none");
+    return respuesta.error ? null : guardarToken(respuesta);
+  } catch {
+    return null;
+  }
+}
+
+// Token para "Gastos desde tus mails". Con interactivo=true abre la ventana
+// de Google (la primera vez pide el permiso de leer el Gmail; tiene que
+// dispararlo un click). Sin interacción solo usa el guardado o intenta
+// renovarlo en silencio, y devuelve null si hace falta volver a dar permiso.
+export async function obtenerTokenMails({ interactivo = false } = {}) {
+  const guardado = leerTokenGuardado(TOKEN_MAILS_KEY);
+  if (guardado && guardado.vencimiento > Date.now()) return guardado.token;
+  try {
+    const respuesta = await pedirToken(SCOPES_MAILS, interactivo ? "" : "none");
+    if (respuesta.error) {
+      if (!interactivo) return null;
+      if (respuesta.error === "access_denied") {
+        throw new Error("Para revisar tus mails hace falta que aceptes el permiso de leer tu Gmail.");
+      }
+      throw new Error(mensajeDeLogin(respuesta.error));
     }
-  });
+    return guardarToken(respuesta, TOKEN_MAILS_KEY).token;
+  } catch (err) {
+    if (!interactivo) return null;
+    throw err;
+  }
+}
+
+export function olvidarTokenMails() {
+  borrarToken(TOKEN_MAILS_KEY);
 }

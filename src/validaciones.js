@@ -36,3 +36,19 @@ export function errorNombreNuevo(nombre, existentes, cosa) {
   const repetido = (existentes || []).some((e) => e.toLowerCase() === limpio.toLowerCase());
   return repetido ? `Ya tenés una ${cosa} con ese nombre. Elegí otro.` : "";
 }
+
+export function errorEmail(texto) {
+  const valor = String(texto ?? "").trim();
+  if (!valor) return "Escribí tu mail de Google.";
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor) ? "" : "Revisá el mail, por ejemplo nombre@gmail.com.";
+}
+
+export function validarServicio({ nombre, diaVencimiento, monto }) {
+  return {
+    nombre: nombre.trim() ? "" : "Escribí un nombre, por ejemplo Luz.",
+    diaVencimiento: String(diaVencimiento ?? "").trim()
+      ? errorDiaCobro(diaVencimiento).replace("en que te cobran", "en que vence")
+      : "Escribí el día del mes en que vence.",
+    monto: errorMonto(monto, { permitirVacio: true }),
+  };
+}
