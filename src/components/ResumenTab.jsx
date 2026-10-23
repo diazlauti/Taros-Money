@@ -1,4 +1,5 @@
-import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
+import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria, nombreMes } from "../format";
+import { serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
 import { colorPorCategoria } from "../theme";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
 import PeriodoSelector from "./PeriodoSelector";
@@ -8,6 +9,7 @@ saldo,
 resumen,
 gastos,
 cuentas,
+servicios,
 cotizacionUsdArs,
 monedaPorCuenta,
 dias,
@@ -18,6 +20,8 @@ onIrA,
 return (
 <>
 <SaldoCard saldo={saldo} cuentas={cuentas} cotizacionUsdArs={cotizacionUsdArs} onIrA={onIrA} />
+
+<ServiciosCard servicios={servicios} cotizacionUsdArs={cotizacionUsdArs} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
 
 <PeriodoSelector dias={dias} onCambiar={onCambiarDias} />
 
@@ -106,6 +110,79 @@ return (
 <section className="card" aria-labelledby="titulo-saldo">
 <h2 className="card-kicker" id="titulo-saldo">
 Saldo estimado
+</h2>
+{contenido}
+</section>
+);
+}
+
+// Los servicios del mes que faltan pagar, los más urgentes primero.
+function ServiciosCard({ servicios, cotizacionUsdArs, monedaPorCuenta, onIrA }) {
+const lista = serviciosConEstado(servicios.data);
+const pendientes = lista.filter((s) => s.estado !== "pagado");
+const enPesos = (s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizacionUsdArs) ?? 0;
+const faltaPagar = pendientes.reduce((sum, s) => sum + enPesos(s), 0);
+const verTodos = (
+<button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={() => onIrA("servicios")}>
+<i className="ph ph-receipt" aria-hidden="true" />
+{lista.length === 0 ? "Agregar servicios" : "Ver servicios"}
+</button>
+);
+
+let contenido;
+if (servicios.cargando) {
+contenido = (
+<Cargando texto="Cargando servicios…">
+<Skeleton ancho="60%" />
+<Skeleton ancho="80%" />
+<Skeleton ancho="70%" />
+</Cargando>
+);
+} else if (servicios.error && !servicios.data) {
+contenido = <ErrorEstado mensaje={servicios.error} onReintentar={servicios.recargar} />;
+} else if (lista.length === 0) {
+contenido = <Vacio icono="ph ph-receipt" texto="Cargá la luz, el gas, internet o el alquiler y acá ves cuáles te faltan pagar este mes.">{verTodos}</Vacio>;
+} else if (pendientes.length === 0) {
+contenido = (
+<>
+<p className="fila es-ingreso negrita">
+<i className="ph ph-check-circle" aria-hidden="true" />
+Ya pagaste todos los servicios de {nombreMes()}.
+</p>
+{verTodos}
+</>
+);
+} else {
+contenido = (
+<>
+<div className="fila-separada">
+<span>
+Te {pendientes.length === 1 ? "falta 1" : `faltan ${pendientes.length}`} de {lista.length}
+</span>
+<span className="monto-chico">{fmtMoney(faltaPagar)}</span>
+</div>
+<ul className="lista lista-servicios-resumen">
+{pendientes.slice(0, 3).map((s) => (
+<li key={s.nombre}>
+<span className="fila">
+<span className={`tag tag-estado tag-estado--${s.estado}`}>{TEXTO_ESTADO[s.estado]}</span>
+{s.nombre}
+</span>
+<span className="texto-tenue texto-chico">
+{textoVencimiento(s)} ({fmtFecha(s.vencimiento)})
+</span>
+</li>
+))}
+</ul>
+{verTodos}
+</>
+);
+}
+
+return (
+<section className="card" aria-labelledby="titulo-servicios-resumen">
+<h2 className="card-kicker" id="titulo-servicios-resumen">
+Servicios de {nombreMes()}
 </h2>
 {contenido}
 </section>

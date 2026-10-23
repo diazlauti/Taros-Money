@@ -65,3 +65,24 @@ const ICONOS_CATEGORIA = {
 export function iconoPorCategoria(categoria) {
   return ICONOS_CATEGORIA[(categoria || "").toLowerCase()] || "ph ph-dots-three-circle";
 }
+
+const pad2 = (n) => String(n).padStart(2, "0");
+
+// Fecha y hora de este momento, en el formato que usa la planilla.
+export function fechaHoraActual(ahora = new Date()) {
+  return {
+    fecha: `${ahora.getFullYear()}-${pad2(ahora.getMonth() + 1)}-${pad2(ahora.getDate())}`,
+    hora: `${pad2(ahora.getHours())}:${pad2(ahora.getMinutes())}`,
+  };
+}
+
+// "2026-10": el mes de un servicio pagado se guarda así.
+export function mesActual(ahora = new Date()) {
+  return `${ahora.getFullYear()}-${pad2(ahora.getMonth() + 1)}`;
+}
+
+const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+export function nombreMes(ahora = new Date()) {
+  return NOMBRES_MES[ahora.getMonth()];
+}
