@@ -229,7 +229,7 @@ export default function ConfiguracionTab({
   }
 
   return (
-    <div className="pila ancho-contenido">
+    <div className="pila ancho-contenido config-columnas">
       <section className="card" aria-labelledby="titulo-planilla">
         <h2 className="card-kicker" id="titulo-planilla">
           Tu planilla
