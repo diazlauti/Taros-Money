@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
-import { crearServicio, desmarcarServicio } from "../api";
+import { activarAvisoServicios, crearServicio, desmarcarServicio, getAvisoServicios } from "../api";
 import { useAvisos } from "../avisos";
 import { aPesos, fmtFecha, fmtMoney, iconoPorCategoria, nombreMes, parseMonto } from "../format";
-import { useValidacion } from "../hooks";
+import { useSeccion, useValidacion } from "../hooks";
 import { linkCalendario, notificacionesDisponibles, pedirPermisoNotificaciones, permisoNotificaciones } from "../recordatorios";
 import { ICONO_ESTADO, iconoServicio, SERVICIOS_TIPICOS, serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
 import { playClick, playError, playSuccess } from "../sounds";
@@ -23,6 +23,8 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   const [pagando, setPagando] = useState(null);
   const [desmarcando, setDesmarcando] = useState("");
   const [permiso, setPermiso] = useState(permisoNotificaciones);
+  const avisoMail = useSeccion(getAvisoServicios, []);
+  const [guardandoAviso, setGuardandoAviso] = useState(false);
   const nombreRef = useRef(null);
   const diaRef = useRef(null);
   const v = useValidacion(form, validarServicio);
@@ -33,6 +35,21 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
     const categoria = (categorias || []).find((c) => c.toLowerCase() === "servicios") || "";
     setForm((f) => ({ ...f, nombre, categoria: f.categoria || categoria }));
     diaRef.current?.focus();
+  }
+
+  async function cambiarAvisoMail(activo) {
+    setGuardandoAviso(true);
+    try {
+      await activarAvisoServicios(activo);
+      playSuccess();
+      avisar(activo ? "Listo: si algo está por vencer, te llega un mail a la mañana" : "Aviso por mail apagado");
+      avisoMail.recargar();
+    } catch (err) {
+      playError();
+      avisar(err.message || "No se pudo cambiar el aviso. Probá de nuevo.", "error");
+    } finally {
+      setGuardandoAviso(false);
+    }
   }
 
   async function activarAvisos() {
@@ -168,10 +185,11 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
               No incluye los servicios en dólares porque no se pudo traer la cotización.
             </p>
           )}
+          <AvisoMail estado={avisoMail} guardando={guardandoAviso} onCambiar={cambiarAvisoMail} />
           {permiso === "default" && notificacionesDisponibles() && (
             <button type="button" className="btn btn-secondary" onClick={activarAvisos}>
               <i className="ph ph-bell-ringing" aria-hidden="true" />
-              Avisarme cuando algo esté por vencer
+              Avisarme también con notificaciones en este celu
             </button>
           )}
           {permiso === "granted" && (
@@ -310,5 +328,35 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
         />
       )}
     </>
+  );
+}
+
+// Interruptor del aviso diario por mail. Si el backend todavía no tiene la
+// función (falta pegar avisos-mail.gs), no se muestra nada.
+function AvisoMail({ estado, guardando, onCambiar }) {
+  if (estado.cargando) {
+    return (
+      <Cargando texto="Cargando aviso por mail…">
+        <Skeleton ancho="70%" />
+      </Cargando>
+    );
+  }
+  if (estado.error && !estado.data) {
+    if (/todavía no está disponible/.test(estado.error)) return null;
+    return <ErrorEstado mensaje={estado.error} onReintentar={estado.recargar} />;
+  }
+  const activo = !!estado.data?.activo;
+  return (
+    <label className="check">
+      <input type="checkbox" checked={activo} disabled={guardando} onChange={(e) => onCambiar(e.target.checked)} />
+      <span>
+        {guardando ? "Guardando…" : "Avisarme por mail si algo está por vencer"}
+        <span className="texto-tenue texto-chico check-ayuda">
+          {activo && estado.data?.mail
+            ? `Te llega a ${estado.data.mail} a la mañana, solo si hay algo vencido o que vence en 3 días.`
+            : "Un mail a la mañana, solo cuando hay algo vencido o que vence en 3 días."}
+        </span>
+      </span>
+    </label>
   );
 }

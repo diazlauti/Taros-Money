@@ -12,9 +12,18 @@ const TOKEN_KEY = "taros-google-token";
 // Money" la primera vez que alguien entra — igual que DriveApp.createFile
 // necesitaba el permiso amplio de Drive y no el restringido "drive.file",
 // SpreadsheetApp.create() lo necesita también).
+//
+// Los otros tres son para el aviso por mail de servicios por vencer: mandarse
+// el mail a uno mismo, programar que corra solo una vez por día y saber a
+// qué mail mandarlo. La API de Apps Script exige que el token cubra TODOS los
+// permisos del proyecto, así que se piden siempre (aunque el aviso esté
+// apagado).
 const SCOPES = [
   "https://www.googleapis.com/auth/spreadsheets",
   "https://www.googleapis.com/auth/drive",
+  "https://www.googleapis.com/auth/script.send_mail",
+  "https://www.googleapis.com/auth/script.scriptapp",
+  "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
 
 let tokenClient = null;

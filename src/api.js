@@ -288,3 +288,12 @@ export function pagarServicio(nombre, pago) {
 export function desmarcarServicio(nombre) {
   return escribir("desmarcarServicio", [nombre]);
 }
+
+// Aviso diario por mail de servicios vencidos o por vencer.
+export function getAvisoServicios() {
+  return leer("obtenerAvisoServicios");
+}
+
+export function activarAvisoServicios(activo) {
+  return escribir("activarAvisoServicios", [activo, window.location.origin]);
+}
