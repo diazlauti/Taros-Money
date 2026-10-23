@@ -27,7 +27,14 @@ const ESPERAS_REINTENTO_MS = [800, 2000];
 
 const MENSAJE_SIN_RED = "No hay conexión o Google no respondió. Revisá tu internet y probá de nuevo.";
 const MENSAJE_LENTO = "Google está tardando demasiado en responder. Probá de nuevo.";
+export const MENSAJE_FALTA_PERMISO = "Falta que aceptes un permiso nuevo de Google. Volvé a entrar para aceptarlo.";
 const MENSAJE_GOOGLE = "Google tuvo un problema al responder. Probá de nuevo en un rato.";
+
+// Cierra la sesión y vuelve al login, que pide todos los permisos de nuevo.
+export function volverAEntrar() {
+  cerrarSesion();
+  dispararSesionVencida();
+}
 
 // Error que vale la pena reintentar solo (red caída, tiempo agotado, Google
 // devolvió un 5xx). Los errores del propio backend (validaciones, "no existe
@@ -49,6 +56,11 @@ function mensajeDelBackend(data) {
   const crudo = detalle?.errorMessage || data.error.message || "";
   if (/script function not found|not found/i.test(crudo)) {
     return "Esta sección todavía no está disponible en tu planilla.";
+  }
+  // La sesión se abrió antes de que la app pidiera un permiso nuevo (ej: el
+  // del aviso por mail): Google responde con un error técnico en inglés.
+  if (/required permissions|do not have permission/i.test(crudo)) {
+    return MENSAJE_FALTA_PERMISO;
   }
   return crudo || "No se pudo completar. Probá de nuevo.";
 }

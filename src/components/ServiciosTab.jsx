@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { activarAvisoServicios, crearServicio, desmarcarServicio, getAvisoServicios } from "../api";
+import { activarAvisoServicios, crearServicio, desmarcarServicio, getAvisoServicios, MENSAJE_FALTA_PERMISO, volverAEntrar } from "../api";
 import { useAvisos } from "../avisos";
 import { aPesos, fmtFecha, fmtMoney, iconoPorCategoria, nombreMes, parseMonto } from "../format";
 import { useSeccion, useValidacion } from "../hooks";
@@ -343,6 +343,20 @@ function AvisoMail({ estado, guardando, onCambiar }) {
   }
   if (estado.error && !estado.data) {
     if (/todavía no está disponible/.test(estado.error)) return null;
+    if (estado.error === MENSAJE_FALTA_PERMISO) {
+      return (
+        <div className="pila-chica">
+          <p className="aviso-inline">
+            <i className="ph ph-envelope-simple" aria-hidden="true" />
+            Para recibir el aviso por mail, Google te tiene que pedir un permiso nuevo.
+          </p>
+          <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={volverAEntrar}>
+            <i className="ph ph-sign-in" aria-hidden="true" />
+            Volver a entrar para aceptarlo
+          </button>
+        </div>
+      );
+    }
     return <ErrorEstado mensaje={estado.error} onReintentar={estado.recargar} />;
   }
   const activo = !!estado.data?.activo;
