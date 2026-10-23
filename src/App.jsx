@@ -15,11 +15,18 @@ getTendencia,
 getMonedas,
 guardarCotizacionesAuto,
 getUrlPlanilla,
+getConfigMails,
+guardarModoMails,
+activarMails,
+revisarMails,
+mailsDisponible,
+idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
-import { mapaMonedas } from "./format";
+import { fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, resolverCotizaciones, traerCotizaciones } from "./monedas";
+import { notificar } from "./notificaciones";
 import { avisarServiciosUrgentes } from "./recordatorios";
 import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
@@ -128,6 +135,7 @@ const tendencia = useSeccion(() => getTendencia(6), []);
 const monedas = useSeccion(getMonedas, []);
 const cotizacionesHoy = useSeccion(traerCotizaciones, []);
 const urlPlanilla = useSeccion(getUrlPlanilla, []);
+const configMails = useSeccion(() => (mailsDisponible() ? getConfigMails() : Promise.resolve(null)), []);
 
 // Si una recarga falla pero ya había datos en pantalla, se siguen mostrando
 // los anteriores y se avisa (antes no se enteraba nadie).
@@ -191,6 +199,125 @@ tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, servicios, tendencia]);
 
+// --- Gastos desde tus mails ---
+const [revisandoMails, setRevisandoMails] = useState(false);
+// Desde la tarjeta del Resumen se puede abrir Movimientos ya filtrado.
+const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
+const modoMails = configMails.data?.modo || "apagado";
+const planillaId = idDePlanilla(urlPlanilla.data);
+
+const cantidadARevisar = [...(gastos.data || []), ...(ingresos.data || [])].filter((g) => g.aRevisar).length;
+
+// interactivo=true solo desde un click: si hace falta, abre la ventana de
+// permisos de Google. Devuelve el resultado o tira el error.
+const revisarMisMails = useCallback(
+async ({ interactivo = false, dias } = {}) => {
+if (!planillaId) throw new Error("Todavía no se encontró tu planilla. Probá de nuevo en un momento.");
+setRevisandoMails(true);
+try {
+const resultado = await revisarMails(planillaId, dias, { interactivo });
+// Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
+// como "mientras no estabas".
+marcarVistos((resultado?.encontrados || []).map(claveGasto));
+configMails.recargar();
+if (resultado?.nuevos > 0) {
+gastos.recargar();
+ingresos.recargar();
+resumen.recargar();
+cuentas.recargar();
+tendencia.recargar();
+}
+return resultado;
+} finally {
+setRevisandoMails(false);
+}
+},
+// eslint-disable-next-line react-hooks/exhaustive-deps
+[planillaId, gastos, ingresos, resumen, cuentas, tendencia, configMails]
+);
+
+// Aviso dentro de la app + notificación del sistema (si se dio permiso).
+// Con siempreAvisar=false no dice nada cuando no encontró nada (al abrir).
+const avisarResultadoMails = useCallback(
+(resultado, { siempreAvisar = true } = {}) => {
+const encontrados = resultado?.encontrados || [];
+const n = resultado?.nuevos || encontrados.length;
+if (n === 0) {
+if (!siempreAvisar) return;
+avisar("No encontré movimientos nuevos en tus mails.");
+notificar("Taros Money", "Revisé tus mails: no hay nada nuevo.");
+return;
+}
+const detalle = encontrados
+.slice(0, 3)
+.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto)}`)
+.join(", ");
+const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
+const titulo = n === 1 ? "Encontré 1 movimiento en tus mails" : `Encontré ${n} movimientos en tus mails`;
+avisar(`${titulo}: ${detalle}${resto}. Revisalos en Movimientos.`);
+notificar(titulo, `${detalle}${resto}. Tocá para revisarlos.`);
+},
+[avisar]
+);
+
+// Modo "siempre": lo que se cargó solo con la app cerrada se avisa al
+// volver a abrirla. Se recuerda qué gastos "A revisar" ya se avisaron.
+useEffect(() => {
+if (modoMails !== "siempre" || !gastos.data) return;
+const claves = gastos.data.filter((g) => g.aRevisar).map(claveGasto);
+const { vistos, primeraVez } = leerVistos();
+const nuevos = claves.filter((c) => !vistos.has(c));
+marcarVistos(claves, { aunqueSeaVacio: primeraVez });
+if (primeraVez || nuevos.length === 0) return;
+const titulo = nuevos.length === 1 ? "Mientras no estabas encontré 1 gasto" : `Mientras no estabas encontré ${nuevos.length} gastos`;
+avisar(`${titulo} en tus mails. Revisalos en Movimientos.`);
+notificar(titulo, "Están en Movimientos con la etiqueta \"A revisar\".");
+}, [modoMails, gastos.data, avisar]);
+
+async function revisarMailsConBoton() {
+try {
+avisarResultadoMails(await revisarMisMails({ interactivo: true }));
+} catch (err) {
+avisar(err.message || "No se pudieron revisar tus mails. Probá de nuevo.", "error");
+}
+}
+
+// Modo "al abrir": una sola vez por apertura de la app, sin ventanas. Si
+// el permiso de Gmail venció, avisa y se puede revisar con el botón.
+const yaRevisoAlAbrir = useRef(false);
+useEffect(() => {
+if (modoMails !== "al_abrir" || !planillaId || yaRevisoAlAbrir.current) return;
+yaRevisoAlAbrir.current = true;
+revisarMisMails()
+.then((resultado) => {
+avisarResultadoMails(resultado, { siempreAvisar: false });
+})
+.catch((err) => avisar(`No se pudieron revisar tus mails: ${err.message}`, "error"));
+}, [modoMails, planillaId, revisarMisMails, avisar, avisarResultadoMails]);
+
+// Cambiar el modo desde Configuración. Se llama directo desde el click: la
+// primera vez, activarMails abre la ventana de permisos de Google.
+async function cambiarModoMails(modo) {
+if (modo !== "apagado" && !planillaId) {
+throw new Error("Todavía no se encontró tu planilla. Probá de nuevo en un momento.");
+}
+const anterior = modoMails;
+yaRevisoAlAbrir.current = true;
+// Para apagar no hace falta pedir permisos: si el automático estaba
+// prendido se intenta frenar, pero si no se puede igual se apaga acá.
+if (modo === "apagado") {
+if (anterior === "siempre") await activarMails(planillaId, "apagado").catch(() => {});
+} else {
+await activarMails(planillaId, modo, { interactivo: true });
+}
+await guardarModoMails(modo);
+configMails.recargar();
+if (anterior === "apagado" && modo !== "apagado") {
+// Primera vez: mira dos semanas para atrás, así ya ves algo.
+avisarResultadoMails(await revisarMisMails({ interactivo: true, dias: 14 }));
+}
+}
+
 function alternarSonido() {
 setSonido(toggleSonido());
 }
@@ -206,11 +333,16 @@ categorias.recargar();
 }
 
 const abrirNuevo = () => setDialogOpen(true);
+// Navegar desde el menú abre Movimientos sin filtro.
+function irA(tab) {
+setFiltroMovimientos("todos");
+setActiveTab(tab);
+}
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
 <div className="app-shell">
-<Sidebar activeTab={activeTab} onSelect={setActiveTab} />
+<Sidebar activeTab={activeTab} onSelect={irA} />
 
 <main className="main">
 <header className="main-header">
@@ -237,6 +369,21 @@ dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
 onIrA={setActiveTab}
+mails={
+mailsDisponible()
+? {
+config: configMails,
+cantidadARevisar,
+revisando: revisandoMails,
+onRevisar: revisarMailsConBoton,
+onVerARevisar: () => {
+setFiltroMovimientos("revisar");
+setActiveTab("movimientos");
+},
+onActivar: () => setActiveTab("configuracion"),
+}
+: null
+}
 />
 )}
 
@@ -251,6 +398,10 @@ dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
 onCambio={recargarTodo}
+mailsActivos={modoMails !== "apagado"}
+filtroInicial={filtroMovimientos}
+revisandoMails={revisandoMails}
+onRevisarMails={revisarMailsConBoton}
 />
 )}
 
@@ -301,6 +452,10 @@ onMonedasGuardadas={() => {
 monedas.recargar();
 recargarTodo();
 }}
+configMails={mailsDisponible() ? configMails : null}
+onCambiarModoMails={cambiarModoMails}
+revisandoMails={revisandoMails}
+onRevisarMails={revisarMailsConBoton}
 categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}
@@ -317,7 +472,7 @@ onInstalar={() => setGuiaInstalarAbierta(true)}
 </div>
 </main>
 
-<BottomNav activeTab={activeTab} onSelect={setActiveTab} />
+<BottomNav activeTab={activeTab} onSelect={irA} />
 
 {dialogOpen && (
 <NuevoMovimientoDialog
@@ -342,4 +497,32 @@ setGuiaInstalarAbierta(true);
 {guiaInstalarAbierta && <InstalarAppDialog onClose={() => setGuiaInstalarAbierta(false)} />}
 </div>
 );
+}
+
+// --- Qué gastos detectados ya se avisaron (por dispositivo) ---
+const VISTOS_KEY = "taros-mails-vistos";
+
+function claveGasto(g) {
+return `${g.fecha}|${g.hora}|${Number(g.monto).toFixed(2)}`;
+}
+
+function leerVistos() {
+try {
+const crudo = localStorage.getItem(VISTOS_KEY);
+return { vistos: new Set(crudo ? JSON.parse(crudo) : []), primeraVez: crudo === null };
+} catch {
+return { vistos: new Set(), primeraVez: true };
+}
+}
+
+function marcarVistos(claves, { aunqueSeaVacio = false } = {}) {
+if (claves.length === 0 && !aunqueSeaVacio) return;
+try {
+const { vistos } = leerVistos();
+claves.forEach((c) => vistos.add(c));
+// Solo los últimos 200: alcanza para no repetir avisos.
+localStorage.setItem(VISTOS_KEY, JSON.stringify([...vistos].slice(-200)));
+} catch {
+/* sin storage: a lo sumo se repite algún aviso */
+}
 }
