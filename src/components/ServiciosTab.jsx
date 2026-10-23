@@ -14,7 +14,7 @@ import PagarServicioDialog from "./PagarServicioDialog";
 
 const VACIO = { nombre: "", diaVencimiento: "", categoria: "", monto: "", cuenta: "" };
 
-export default function ServiciosTab({ servicios, categorias, cuentas, cotizacionUsdArs, monedaPorCuenta, onCambio, onCambioConGasto }) {
+export default function ServiciosTab({ servicios, categorias, cuentas, cotizaciones, monedaPorCuenta, onCambio, onCambioConGasto }) {
   const { avisar } = useAvisos();
   const [form, setForm] = useState(VACIO);
   const [enviando, setEnviando] = useState(false);
@@ -119,7 +119,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   const atajos = SERVICIOS_TIPICOS.filter((t) => !yaCargados.has(t.nombre.toLowerCase()));
   const pendientes = lista.filter((s) => s.estado !== "pagado");
   const pagados = lista.length - pendientes.length;
-  const enPesos = (s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizacionUsdArs);
+  const enPesos = (s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizaciones);
   const faltaCotizacion = pendientes.some((s) => enPesos(s) === null);
   const faltaPagar = pendientes.reduce((sum, s) => sum + (enPesos(s) ?? 0), 0);
 
@@ -182,7 +182,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
           {faltaCotizacion && (
             <p className="aviso-inline">
               <i className="ph ph-info" aria-hidden="true" />
-              No incluye los servicios en dólares porque no se pudo traer la cotización.
+              No incluye los servicios en otras monedas porque falta su cotización (fijala en Configuración › Monedas).
             </p>
           )}
           <AvisoMail estado={avisoMail} guardando={guardandoAviso} onCambiar={cambiarAvisoMail} />

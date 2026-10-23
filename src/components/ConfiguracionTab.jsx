@@ -4,6 +4,7 @@ import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
+import MonedasCard from "./MonedasCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
 const OPCIONES_TEMA = [
@@ -14,6 +15,10 @@ const OPCIONES_TEMA = [
 
 export default function ConfiguracionTab({
   urlPlanilla,
+  monedas,
+  cotizacionesHoy,
+  cuentas,
+  onMonedasGuardadas,
   categorias,
   onAgregarCategoria,
   onBorrarCategoria,
@@ -145,6 +150,8 @@ export default function ConfiguracionTab({
         </p>
         {planilla}
       </section>
+
+      <MonedasCard monedas={monedas} cotizacionesHoy={cotizacionesHoy} cuentas={cuentas} onGuardadas={onMonedasGuardadas} />
 
       <section className="card" aria-labelledby="titulo-categorias-config">
         <h2 className="card-kicker" id="titulo-categorias-config">

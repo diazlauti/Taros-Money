@@ -1,9 +1,18 @@
-// $650.000 (ARS, sin centavos — así se maneja la plata en la planilla) o
-// US$1,234.56 (USD, con centavos, para las cuentas en dólares).
+import { MONEDAS } from "./monedas";
+
+// $650.000 (ARS, sin centavos — así se maneja la plata en la planilla),
+// US$1,234.56 (USD, con centavos, para las cuentas en dólares), €1.234,56,
+// R$1.234,56 o CLP$12.500 (el peso chileno no usa centavos).
 export function fmtMoney(n, moneda = "ARS") {
   const v = Number(n) || 0;
   if (moneda === "USD") {
     return "US$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  const extra = MONEDAS[moneda];
+  if (extra) {
+    const d = extra.decimales;
+    const signo = v < 0 ? "-" : "";
+    return signo + extra.simbolo + Math.abs(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
   }
   const signo = v < 0 ? "-" : "";
   return signo + "$" + Math.round(Math.abs(v)).toLocaleString("es-AR");
@@ -42,12 +51,14 @@ export function mapaMonedas(cuentas) {
   return Object.fromEntries((cuentas || []).map((c) => [c.nombre, c.moneda]));
 }
 
-// Pasa un monto a pesos. Si es en USD y no hay cotización devuelve null,
-// para que quien lo use pueda avisar en vez de sumar 0 sin decir nada.
-export function aPesos(monto, moneda, cotizacionUsdArs) {
+// Pasa un monto a pesos con las cotizaciones ({ USD: 1565, EUR: 1717 }).
+// Si es en otra moneda y no hay cotización devuelve null, para que quien lo
+// use pueda avisar en vez de sumar 0 sin decir nada.
+export function aPesos(monto, moneda, cotizaciones) {
   const n = Number(monto) || 0;
-  if (moneda !== "USD") return n;
-  return cotizacionUsdArs ? n * cotizacionUsdArs : null;
+  if (!moneda || moneda === "ARS") return n;
+  const tasa = cotizaciones?.[moneda];
+  return tasa ? n * tasa : null;
 }
 
 const ICONOS_CATEGORIA = {

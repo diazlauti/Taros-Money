@@ -117,7 +117,11 @@ async function llamarUnaVez(funcion, parametros) {
   } catch {
     throw errorTransitorio(MENSAJE_GOOGLE);
   }
-  if (data.error) throw new Error(mensajeDelBackend(data));
+  if (data.error) {
+    const err = new Error(mensajeDelBackend(data));
+    err.noDisponible = /script function not found/i.test(data.error.details?.[0]?.errorMessage || data.error.message || "");
+    throw err;
+  }
 
   return data.response?.result;
 }
@@ -245,10 +249,30 @@ export function getTendencia(meses = 6) {
   return leer("obtenerTendencia", [meses]);
 }
 
-// --- Cotización USD->ARS, usada para convertir el saldo de cuentas en USD ---
+// --- Monedas: cuáles usa cada uno y si su cotización es automática o fija ---
+// { monedas: { USD: { modo: "auto", tipo: "blue", valor, fecha }, EUR: { modo: "fijo", valor } } }
 
-export function getCotizacion() {
-  return leer("obtenerCotizacion");
+export async function getMonedas() {
+  try {
+    return await leer("obtenerMonedas");
+  } catch (err) {
+    // Backend todavía sin el archivo de monedas: se sigue como antes, solo
+    // con el dólar a valor fijo.
+    if (!err.noDisponible) throw err;
+    const valor = await leer("obtenerCotizacion");
+    return { monedas: { USD: { modo: "fijo", valor } }, sinConfigurar: true };
+  }
+}
+
+export function guardarMonedas(monedas) {
+  return escribir("guardarMonedas", [monedas]);
+}
+
+// Guarda el último valor automático para que los resúmenes del backend
+// conviertan con el mismo número que se ve en pantalla. Repetirlo no
+// duplica nada, así que se puede reintentar.
+export function guardarCotizacionesAuto(valores) {
+  return leer("guardarCotizacionesAuto", [valores]);
 }
 
 // --- Link directo a tu planilla real en Google Sheets ---
