@@ -11,7 +11,7 @@ Hay DOS proyectos de Apps Script, a propósito separados:
 
 - **"Taros Money API"** — toda la lógica que usa esta app (gastos, ingresos,
   cuentas, metas, suscripciones). Sin nada de Gmail, para que el permiso que
-  pide el login sea sólo Sheets/Drive, no la bandeja de entrada de nadie.
+  pide el login sea sólo Sheets, no la bandeja de entrada de nadie.
 - El proyecto que lee los mails del banco (ej. "Gastos Lauti") — aparte,
   atado a la cuenta de quien lo usa, con su propio trigger automático. No lo
   toca esta app.
@@ -102,7 +102,7 @@ con Google"; la app le crea su planilla sola la primera vez.
 ## Cómo está armada
 
 - `src/auth.js` — login con Google (Google Identity Services): pide un
-  Access Token con los scopes de Sheets/Drive, lo guarda en `localStorage`
+  Access Token con el scope de Sheets, lo guarda en `localStorage`
   con su vencimiento, y lo renueva solo sin mostrar nada cuando puede
   (`intentarSesionSilenciosa`).
 - `src/api.js` — llama a cada función del backend por nombre a través de

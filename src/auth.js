@@ -8,10 +8,11 @@
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const TOKEN_KEY = "taros-google-token";
 
-// Spreadsheets (leer/escribir los gastos) + Drive (crear la planilla "Taros
-// Money" la primera vez que alguien entra — igual que DriveApp.createFile
-// necesitaba el permiso amplio de Drive y no el restringido "drive.file",
-// SpreadsheetApp.create() lo necesita también).
+// Spreadsheets: leer/escribir los gastos y también crear la planilla "Taros
+// Money" la primera vez (SpreadsheetApp.create() no necesita Drive). Antes se
+// pedía además "drive", que da acceso a TODO el Drive de la persona; la API
+// no lo usa y si un token se filtraba, alcanzaba para leer o borrar
+// cualquier archivo.
 //
 // Los otros tres son para el aviso por mail de servicios por vencer: mandarse
 // el mail a uno mismo, programar que corra solo una vez por día y saber a
@@ -20,7 +21,6 @@ const TOKEN_KEY = "taros-google-token";
 // apagado).
 const SCOPES = [
   "https://www.googleapis.com/auth/spreadsheets",
-  "https://www.googleapis.com/auth/drive",
   "https://www.googleapis.com/auth/script.send_mail",
   "https://www.googleapis.com/auth/script.scriptapp",
   "https://www.googleapis.com/auth/userinfo.email",
