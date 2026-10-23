@@ -815,6 +815,20 @@ color: var(--color-on-accent);
 font-weight: var(--weight-bold);
 }
 
+.chip-frecuente i {
+color: var(--color-accent-text);
+}
+
+.chip-frecuente-monto {
+color: var(--color-text-dim);
+font-weight: var(--weight-medium);
+}
+
+.chip-frecuente[aria-pressed="true"] i,
+.chip-frecuente[aria-pressed="true"] .chip-frecuente-monto {
+color: inherit;
+}
+
 /* --- Movimientos --- */
 
 .lista {

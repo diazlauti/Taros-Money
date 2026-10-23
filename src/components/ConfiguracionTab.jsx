@@ -335,6 +335,10 @@ export default function ConfiguracionTab({
               Agregar a la pantalla de inicio
             </button>
           )}
+          <p className="field-ayuda">
+            Atajo: con la app instalada, mantené apretado su ícono para cargar un gasto o un ingreso directo (en
+            Android y en la compu).
+          </p>
         </div>
       </section>
 
