@@ -6,17 +6,19 @@ import { useValidacion } from "../hooks";
 import { playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
+import EditarCuentaDialog from "./EditarCuentaDialog";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import MontoDialog from "./MontoDialog";
 
 const VACIO = { nombre: "", saldo: "", moneda: "ARS" };
 
-export default function CuentasTab({ cuentas, onCambio, onIrA }) {
+export default function CuentasTab({ cuentas, onCambio, onCambioGeneral }) {
   const { avisar } = useAvisos();
   const [form, setForm] = useState(VACIO);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [ajustando, setAjustando] = useState(null);
+  const [editando, setEditando] = useState(null);
   const nombreRef = useRef(null);
   const lista = cuentas.data || [];
   const v = useValidacion(form, (f) => ({
@@ -100,7 +102,14 @@ export default function CuentasTab({ cuentas, onCambio, onIrA }) {
       <ul className="lista grid-cards">
         {lista.map((c) => (
           <li className="card" key={c.nombre}>
-            <h2 className="card-title">{c.nombre}</h2>
+            <div className="fila-separada">
+              <h2 className="card-title">{c.nombre}</h2>
+              {!c.esTarjeta && (
+                <button type="button" className="btn btn-icono" onClick={() => setEditando(c)} aria-label={`Renombrar o borrar ${c.nombre}`}>
+                  <i className="ph ph-pencil-simple" aria-hidden="true" />
+                </button>
+              )}
+            </div>
             <div className="monto-medio">{fmtMoney(c.saldo, c.moneda)}</div>
             {c.esTarjeta ? (
               <span className="texto-tenue texto-chico">Se actualiza sola con los mails del banco</span>
@@ -169,18 +178,16 @@ export default function CuentasTab({ cuentas, onCambio, onIrA }) {
         <button className="btn btn-primary" type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
         </button>
-        <p className="aviso-inline">
-          <i className="ph ph-info" aria-hidden="true" />
-          <span>
-            Para renombrar o borrar una cuenta, abrí tu planilla desde{" "}
-            <button type="button" className="btn btn-texto" onClick={() => onIrA("configuracion")}>
-              Configuración
-            </button>
-            .
-          </span>
-        </p>
       </form>
 
+      {editando && (
+        <EditarCuentaDialog
+          cuenta={editando}
+          otrosNombres={lista.filter((c) => c.nombre !== editando.nombre).map((c) => c.nombre)}
+          onClose={() => setEditando(null)}
+          onGuardado={onCambioGeneral}
+        />
+      )}
 
       {ajustando && (
         <MontoDialog
