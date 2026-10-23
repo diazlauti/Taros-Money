@@ -432,6 +432,22 @@ gap: var(--space-3);
 .grid-2 { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
 }
 
+/* Configuración: en compu las tarjetas se reparten en columnas (hasta 3)
+   para usar el ancho; cada tarjeta queda entera en su columna. En celu
+   sigue siendo una sola columna. */
+@media (min-width: 781px) {
+.config-columnas {
+display: block;
+max-width: none;
+columns: var(--form-max) 3;
+column-gap: var(--space-3);
+}
+.config-columnas > * {
+break-inside: avoid;
+margin-bottom: var(--space-3);
+}
+}
+
 /* --- Botones y links --- */
 
 .btn {
