@@ -1,4 +1,5 @@
-import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
+import { aPesos, fmtMoney, fmtFecha, haceCuanto, iconoPorCategoria, nombreMes } from "../format";
+import { serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
 import { colorPorCategoria } from "../theme";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
 import PeriodoSelector from "./PeriodoSelector";
@@ -8,16 +9,21 @@ saldo,
 resumen,
 gastos,
 cuentas,
-cotizacionUsdArs,
+servicios,
+cotizaciones,
 monedaPorCuenta,
 dias,
 onCambiarDias,
 onNuevo,
 onIrA,
+mails,
 }) {
 return (
 <>
-<SaldoCard saldo={saldo} cuentas={cuentas} cotizacionUsdArs={cotizacionUsdArs} onIrA={onIrA} />
+<SaldoCard saldo={saldo} cuentas={cuentas} cotizaciones={cotizaciones} onIrA={onIrA} />
+
+{mails && <MailsCard {...mails} />}
+<ServiciosCard servicios={servicios} cotizaciones={cotizaciones} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
 
 <PeriodoSelector dias={dias} onCambiar={onCambiarDias} />
 
@@ -35,15 +41,15 @@ onIrA={onIrA}
 );
 }
 
-function SaldoCard({ saldo, cuentas, cotizacionUsdArs, onIrA }) {
+function SaldoCard({ saldo, cuentas, cotizaciones, onIrA }) {
 const lista = cuentas.data || [];
 const hayCuentas = lista.length > 0;
 // El saldo grande es la suma de las cuentas (convirtiendo las que están en
-// USD a ARS con la cotización del script) en vez del valor manual de la
+// otras monedas a ARS con las cotizaciones elegidas en Configuración) en vez del valor manual de la
 // planilla, en cuanto haya al menos una cuenta cargada. Si falta la
 // cotización, las cuentas en USD quedan afuera y se avisa.
-const faltaCotizacion = lista.some((c) => aPesos(c.saldo, c.moneda, cotizacionUsdArs) === null);
-const totalCuentasArs = lista.reduce((sum, c) => sum + (aPesos(c.saldo, c.moneda, cotizacionUsdArs) ?? 0), 0);
+const faltaCotizacion = lista.some((c) => aPesos(c.saldo, c.moneda, cotizaciones) === null);
+const totalCuentasArs = lista.reduce((sum, c) => sum + (aPesos(c.saldo, c.moneda, cotizaciones) ?? 0), 0);
 
 let contenido;
 if (cuentas.cargando || (!hayCuentas && saldo.cargando)) {
@@ -82,11 +88,11 @@ contenido = (
 {hayCuentas && (
 <ul className="lista pila-chica">
 {lista.map((c) => {
-const enPesos = aPesos(c.saldo, c.moneda, cotizacionUsdArs);
+const enPesos = aPesos(c.saldo, c.moneda, cotizaciones);
 return (
 <li key={c.nombre} className="texto-tenue">
 {c.nombre}: {fmtMoney(c.saldo, c.moneda)}
-{c.moneda === "USD" && enPesos !== null && ` (≈ ${fmtMoney(enPesos)})`}
+{c.moneda !== "ARS" && enPesos !== null && ` (≈ ${fmtMoney(enPesos)})`}
 </li>
 );
 })}
@@ -95,7 +101,7 @@ return (
 {faltaCotizacion && (
 <p className="aviso-inline">
 <i className="ph ph-info" aria-hidden="true" />
-El total no incluye las cuentas en dólares porque no se pudo traer la cotización.
+El total no incluye las cuentas en otras monedas porque falta su cotización (fijala en Configuración › Monedas).
 </p>
 )}
 </>
@@ -106,6 +112,79 @@ return (
 <section className="card" aria-labelledby="titulo-saldo">
 <h2 className="card-kicker" id="titulo-saldo">
 Saldo estimado
+</h2>
+{contenido}
+</section>
+);
+}
+
+// Los servicios del mes que faltan pagar, los más urgentes primero.
+function ServiciosCard({ servicios, cotizaciones, monedaPorCuenta, onIrA }) {
+const lista = serviciosConEstado(servicios.data);
+const pendientes = lista.filter((s) => s.estado !== "pagado");
+const enPesos = (s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizaciones) ?? 0;
+const faltaPagar = pendientes.reduce((sum, s) => sum + enPesos(s), 0);
+const verTodos = (
+<button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={() => onIrA("servicios")}>
+<i className="ph ph-receipt" aria-hidden="true" />
+{lista.length === 0 ? "Agregar servicios" : "Ver servicios"}
+</button>
+);
+
+let contenido;
+if (servicios.cargando) {
+contenido = (
+<Cargando texto="Cargando servicios…">
+<Skeleton ancho="60%" />
+<Skeleton ancho="80%" />
+<Skeleton ancho="70%" />
+</Cargando>
+);
+} else if (servicios.error && !servicios.data) {
+contenido = <ErrorEstado mensaje={servicios.error} onReintentar={servicios.recargar} />;
+} else if (lista.length === 0) {
+contenido = <Vacio icono="ph ph-receipt" texto="Cargá la luz, el gas, internet o el alquiler y acá ves cuáles te faltan pagar este mes.">{verTodos}</Vacio>;
+} else if (pendientes.length === 0) {
+contenido = (
+<>
+<p className="fila es-ingreso negrita">
+<i className="ph ph-check-circle" aria-hidden="true" />
+Ya pagaste todos los servicios de {nombreMes()}.
+</p>
+{verTodos}
+</>
+);
+} else {
+contenido = (
+<>
+<div className="fila-separada">
+<span>
+Te {pendientes.length === 1 ? "falta 1" : `faltan ${pendientes.length}`} de {lista.length}
+</span>
+<span className="monto-chico">{fmtMoney(faltaPagar)}</span>
+</div>
+<ul className="lista lista-servicios-resumen">
+{pendientes.slice(0, 3).map((s) => (
+<li key={s.nombre}>
+<span className="fila">
+<span className={`tag tag-estado tag-estado--${s.estado}`}>{TEXTO_ESTADO[s.estado]}</span>
+{s.nombre}
+</span>
+<span className="texto-tenue texto-chico">
+{textoVencimiento(s)} ({fmtFecha(s.vencimiento)})
+</span>
+</li>
+))}
+</ul>
+{verTodos}
+</>
+);
+}
+
+return (
+<section className="card" aria-labelledby="titulo-servicios-resumen">
+<h2 className="card-kicker" id="titulo-servicios-resumen">
+Servicios de {nombreMes()}
 </h2>
 {contenido}
 </section>
@@ -189,7 +268,8 @@ Gastos por categoría
 }
 
 function UltimosGastosCard({ gastos, dias, monedaPorCuenta, onNuevo, onIrA }) {
-const lista = gastos.data || [];
+// Los de mails sin confirmar no son gastos todavía: se ven en Movimientos.
+const lista = (gastos.data || []).filter((g) => !g.sinConfirmar);
 let contenido;
 
 if (gastos.cargando) {
@@ -239,6 +319,75 @@ return (
 <section className="card" aria-labelledby="titulo-ultimos" aria-busy={gastos.actualizando || undefined}>
 <h2 className="card-kicker" id="titulo-ultimos">
 Últimos gastos
+</h2>
+{contenido}
+</section>
+);
+}
+
+// La detección de gastos en los mails, a mano en el Resumen: si está apagada
+// invita a activarla; si está prendida muestra qué falta revisar.
+function MailsCard({ config, cantidadARevisar, revisando, onRevisar, onVerARevisar, onActivar }) {
+const modo = config.data?.modo || "apagado";
+let contenido;
+
+if (config.cargando) {
+contenido = (
+<Cargando texto="Cargando la detección de mails…">
+<Skeleton ancho="60%" />
+</Cargando>
+);
+} else if (config.error && !config.data) {
+contenido = <ErrorEstado mensaje={config.error} onReintentar={config.recargar} />;
+} else if (modo === "apagado") {
+contenido = (
+<>
+<p className="texto-intro">
+Dejá que Taros Money lea los mails de tus compras y pagos y los cargue solo. Vos solo confirmás.
+</p>
+<button type="button" className="btn btn-primary btn-alinear-inicio" onClick={onActivar}>
+<i className="ph ph-sparkle" aria-hidden="true" />
+Activar
+</button>
+</>
+);
+} else {
+contenido = (
+<>
+<p className="mails-card-cuenta" aria-live="polite">
+{cantidadARevisar === 0 ? (
+"Todo revisado. No hay movimientos de tus mails esperando."
+) : (
+<>
+<strong>{cantidadARevisar}</strong>{" "}
+{cantidadARevisar === 1 ? "movimiento de tus mails para revisar" : "movimientos de tus mails para revisar"}
+</>
+)}
+</p>
+{config.data?.ultimaRevision && (
+<p className="texto-tenue texto-chico">
+<i className="ph ph-clock" aria-hidden="true" /> Última revisión: {haceCuanto(config.data.ultimaRevision)}
+</p>
+)}
+<div className="fila">
+{cantidadARevisar > 0 && (
+<button type="button" className="btn btn-primary" onClick={onVerARevisar}>
+Revisarlos
+</button>
+)}
+<button type="button" className="btn btn-secondary" onClick={onRevisar} disabled={revisando}>
+<i className="ph ph-envelope-simple" aria-hidden="true" />
+{revisando ? "Revisando mails…" : "Revisar ahora"}
+</button>
+</div>
+</>
+);
+}
+
+return (
+<section className="card mails-card" aria-labelledby="titulo-mails-resumen">
+<h2 className="card-kicker" id="titulo-mails-resumen">
+<i className="ph ph-envelope-simple-open" aria-hidden="true" /> Gastos desde tus mails
 </h2>
 {contenido}
 </section>

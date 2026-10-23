@@ -45,6 +45,7 @@ export const NAV_ITEMS = [
 { id: "movimientos", label: "Movimientos", icon: "ph ph-list-bullets" },
 { id: "cuentas", label: "Cuentas", icon: "ph ph-wallet" },
 { id: "metas", label: "Metas", icon: "ph ph-target" },
+{ id: "servicios", label: "Servicios", icon: "ph ph-receipt" },
 { id: "recurrentes", label: "Suscripciones", icon: "ph ph-repeat" },
 { id: "reportes", label: "Reportes", icon: "ph ph-chart-line" },
 { id: "configuracion", label: "Configuración", icon: "ph ph-gear" },

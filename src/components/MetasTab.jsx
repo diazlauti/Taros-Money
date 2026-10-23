@@ -6,17 +6,19 @@ import { useValidacion } from "../hooks";
 import { playChime, playError, playSuccess } from "../sounds";
 import { errorMonto, errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
+import EditarMetaDialog from "./EditarMetaDialog";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import MontoDialog from "./MontoDialog";
 
 const VACIO = { nombre: "", objetivo: "" };
 
-export default function MetasTab({ metas, onCambio, onIrA }) {
+export default function MetasTab({ metas, onCambio }) {
   const { avisar } = useAvisos();
   const [form, setForm] = useState(VACIO);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [aportando, setAportando] = useState(null);
+  const [editando, setEditando] = useState(null);
   const nombreRef = useRef(null);
   const lista = metas.data || [];
   const v = useValidacion(form, (f) => ({
@@ -107,7 +109,12 @@ export default function MetasTab({ metas, onCambio, onIrA }) {
           const pct = Math.min(100, Math.round((g.actual / g.objetivo) * 100) || 0);
           return (
             <li className="card" key={g.nombre}>
-              <h2 className="card-title">{g.nombre}</h2>
+              <div className="fila-separada">
+                <h2 className="card-title">{g.nombre}</h2>
+                <button type="button" className="btn btn-icono" onClick={() => setEditando(g)} aria-label={`Editar ${g.nombre}`}>
+                  <i className="ph ph-pencil-simple" aria-hidden="true" />
+                </button>
+              </div>
               <div className="fila-separada">
                 <span className="texto-tenue">
                   {fmtMoney(g.actual)} de {fmtMoney(g.objetivo)}
@@ -181,18 +188,16 @@ export default function MetasTab({ metas, onCambio, onIrA }) {
         <button className="btn btn-primary" type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Crear meta"}
         </button>
-        <p className="aviso-inline">
-          <i className="ph ph-info" aria-hidden="true" />
-          <span>
-            Para cambiar o borrar una meta, abrí tu planilla desde{" "}
-            <button type="button" className="btn btn-texto" onClick={() => onIrA("configuracion")}>
-              Configuración
-            </button>
-            .
-          </span>
-        </p>
       </form>
 
+      {editando && (
+        <EditarMetaDialog
+          meta={editando}
+          otrosNombres={lista.filter((m) => m.nombre !== editando.nombre).map((m) => m.nombre)}
+          onClose={() => setEditando(null)}
+          onGuardado={onCambio}
+        />
+      )}
 
       {aportando && (
         <MontoDialog

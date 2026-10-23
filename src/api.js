@@ -3,9 +3,12 @@
 // ejecuta cada función del backend con el token OAuth de quien está
 // logueado — por eso cada quien termina leyendo/escribiendo su propia
 // planilla, sin que el backend tenga que saber de PINes ni sesiones.
-import { cerrarSesion, obtenerTokenActual } from "./auth";
+import { cerrarSesion, obtenerTokenActual, obtenerTokenMails, olvidarTokenMails } from "./auth";
 
 const SCRIPT_ID = import.meta.env.VITE_APPS_SCRIPT_ID;
+// Proyecto aparte "Taros Money Mails" (el único que lee Gmail). Si no está
+// configurado, la opción de detectar gastos de los mails no aparece.
+const SCRIPT_ID_MAILS = import.meta.env.VITE_APPS_SCRIPT_ID_MAILS;
 
 function chequearConfig() {
   if (!SCRIPT_ID) {
@@ -23,11 +26,19 @@ function dispararSesionVencida() {
 }
 
 const TIEMPO_LIMITE_MS = 20000;
+const TIEMPO_LIMITE_MAILS_MS = 90000;
 const ESPERAS_REINTENTO_MS = [800, 2000];
 
 const MENSAJE_SIN_RED = "No hay conexión o Google no respondió. Revisá tu internet y probá de nuevo.";
 const MENSAJE_LENTO = "Google está tardando demasiado en responder. Probá de nuevo.";
+export const MENSAJE_FALTA_PERMISO = "Falta que aceptes un permiso nuevo de Google. Volvé a entrar para aceptarlo.";
 const MENSAJE_GOOGLE = "Google tuvo un problema al responder. Probá de nuevo en un rato.";
+
+// Cierra la sesión y vuelve al login, que pide todos los permisos de nuevo.
+export function volverAEntrar() {
+  cerrarSesion();
+  dispararSesionVencida();
+}
 
 // Error que vale la pena reintentar solo (red caída, tiempo agotado, Google
 // devolvió un 5xx). Los errores del propio backend (validaciones, "no existe
@@ -50,7 +61,52 @@ function mensajeDelBackend(data) {
   if (/script function not found|not found/i.test(crudo)) {
     return "Esta sección todavía no está disponible en tu planilla.";
   }
+  // La sesión se abrió antes de que la app pidiera un permiso nuevo (ej: el
+  // del aviso por mail): Google responde con un error técnico en inglés.
+  if (/required permissions|do not have permission/i.test(crudo)) {
+    return MENSAJE_FALTA_PERMISO;
+  }
   return crudo || "No se pudo completar. Probá de nuevo.";
+}
+
+// A qué proyecto de Apps Script se llama y con qué token. El principal usa
+// el token del login; si Google lo rechaza, la sesión venció. El de mails usa
+// su propio token: si falta o lo rechazan, solo hay que volver a dar el
+// permiso de Gmail, sin cerrar la sesión de la app.
+const API_PRINCIPAL = {
+  scriptId: SCRIPT_ID,
+  obtenerToken: obtenerTokenActual,
+  sinPermiso() {
+    dispararSesionVencida();
+    const err = new Error("Iniciá sesión de nuevo.");
+    err.requiereLogin = true;
+    throw err;
+  },
+  rechazado() {
+    cerrarSesion();
+    dispararSesionVencida();
+    const err = new Error("Tu sesión venció. Iniciá sesión de nuevo.");
+    err.requiereLogin = true;
+    throw err;
+  },
+};
+
+function apiMails(interactivo) {
+  return {
+    scriptId: SCRIPT_ID_MAILS,
+    // Leer varios mails tarda bastante más que una lectura de la planilla.
+    tiempoLimite: TIEMPO_LIMITE_MAILS_MS,
+    obtenerToken: () => obtenerTokenMails({ interactivo }),
+    sinPermiso() {
+      const err = new Error("Hace falta que vuelvas a dar permiso para leer tus mails. Hacelo desde Configuración.");
+      err.requierePermisoMails = true;
+      throw err;
+    },
+    rechazado() {
+      olvidarTokenMails();
+      this.sinPermiso();
+    },
+  };
 }
 
 // Llama a una función del backend por nombre, con el token de quien está
@@ -60,21 +116,16 @@ function mensajeDelBackend(data) {
 // de error.details[0].errorMessage) o si Google rechazó el pedido entero
 // (token vencido, falta un permiso) — eso último viene con status HTTP 401
 // o 403 en vez de 200.
-async function llamarUnaVez(funcion, parametros) {
+async function llamarUnaVez(funcion, parametros, destino = API_PRINCIPAL) {
   chequearConfig();
-  const token = obtenerTokenActual();
-  if (!token) {
-    dispararSesionVencida();
-    const err = new Error("Iniciá sesión de nuevo.");
-    err.requiereLogin = true;
-    throw err;
-  }
+  const token = await destino.obtenerToken();
+  if (!token) destino.sinPermiso();
 
   const control = new AbortController();
-  const temporizador = setTimeout(() => control.abort(), TIEMPO_LIMITE_MS);
+  const temporizador = setTimeout(() => control.abort(), destino.tiempoLimite || TIEMPO_LIMITE_MS);
   let res;
   try {
-    res = await fetch(`https://script.googleapis.com/v1/scripts/${SCRIPT_ID}:run`, {
+    res = await fetch(`https://script.googleapis.com/v1/scripts/${destino.scriptId}:run`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -89,13 +140,7 @@ async function llamarUnaVez(funcion, parametros) {
     clearTimeout(temporizador);
   }
 
-  if (res.status === 401 || res.status === 403) {
-    cerrarSesion();
-    dispararSesionVencida();
-    const err = new Error("Tu sesión venció. Iniciá sesión de nuevo.");
-    err.requiereLogin = true;
-    throw err;
-  }
+  if (res.status === 401 || res.status === 403) destino.rechazado();
 
   if (res.status >= 500) throw errorTransitorio(MENSAJE_GOOGLE);
 
@@ -105,7 +150,11 @@ async function llamarUnaVez(funcion, parametros) {
   } catch {
     throw errorTransitorio(MENSAJE_GOOGLE);
   }
-  if (data.error) throw new Error(mensajeDelBackend(data));
+  if (data.error) {
+    const err = new Error(mensajeDelBackend(data));
+    err.noDisponible = /script function not found/i.test(data.error.details?.[0]?.errorMessage || data.error.message || "");
+    throw err;
+  }
 
   return data.response?.result;
 }
@@ -163,6 +212,20 @@ export function editarGasto(criterio, cambios) {
 
 export function borrarGasto(criterio) {
   return escribir("borrarGasto", [criterio]);
+}
+
+// Gastos de mails de remitentes desconocidos: no están en la planilla de
+// gastos hasta que la persona los confirma.
+export function confirmarGastoDeMail(idMail, gasto) {
+  return escribir("confirmarGastoDeMail", [idMail, gasto]);
+}
+
+export function confirmarTodosLosDeMails() {
+  return escribir("confirmarTodosLosDeMails");
+}
+
+export function descartarGastoDeMail(idMail) {
+  return escribir("descartarGastoDeMail", [idMail]);
 }
 
 export function agregarIngreso(ingreso) {
@@ -233,14 +296,138 @@ export function getTendencia(meses = 6) {
   return leer("obtenerTendencia", [meses]);
 }
 
-// --- Cotización USD->ARS, usada para convertir el saldo de cuentas en USD ---
+// --- Monedas: cuáles usa cada uno y si su cotización es automática o fija ---
+// { monedas: { USD: { modo: "auto", tipo: "blue", valor, fecha }, EUR: { modo: "fijo", valor } } }
 
-export function getCotizacion() {
-  return leer("obtenerCotizacion");
+export async function getMonedas() {
+  try {
+    return await leer("obtenerMonedas");
+  } catch (err) {
+    // Backend todavía sin el archivo de monedas: se sigue como antes, solo
+    // con el dólar a valor fijo.
+    if (!err.noDisponible) throw err;
+    const valor = await leer("obtenerCotizacion");
+    return { monedas: { USD: { modo: "fijo", valor } }, sinConfigurar: true };
+  }
+}
+
+export function guardarMonedas(monedas) {
+  return escribir("guardarMonedas", [monedas]);
+}
+
+// Guarda el último valor automático para que los resúmenes del backend
+// conviertan con el mismo número que se ve en pantalla. Repetirlo no
+// duplica nada, así que se puede reintentar.
+export function guardarCotizacionesAuto(valores) {
+  return leer("guardarCotizacionesAuto", [valores]);
 }
 
 // --- Link directo a tu planilla real en Google Sheets ---
 
 export function getUrlPlanilla() {
   return leer("obtenerUrlPlanilla");
+}
+
+// --- Gastos desde tus mails (proyecto aparte "Taros Money Mails") ---
+
+export function mailsDisponible() {
+  return !!SCRIPT_ID_MAILS;
+}
+
+// Cuándo revisar los mails: se guarda en la API principal para que valga en
+// todos tus dispositivos. modo: "apagado" | "al_abrir" | "boton" | "siempre".
+export function getConfigMails() {
+  return leer("obtenerConfigMails");
+}
+
+export function guardarModoMails(modo) {
+  return escribir("guardarModoMails", [modo]);
+}
+
+// Las dos de abajo tienen que llamarse directo desde un click cuando
+// interactivo=true: la primera vez abren la ventana de permisos de Google.
+export function activarMails(planillaId, modo, { interactivo = false } = {}) {
+  return llamarUnaVez("activarMails", [planillaId, modo], apiMails(interactivo));
+}
+
+// No se reintenta sola: si se cortó la respuesta, la próxima revisión no
+// duplica nada (cada mail se carga una sola vez), pero mejor que lo decida
+// la persona con "Reintentar".
+export function revisarMails(planillaId, dias, { interactivo = false } = {}) {
+  return llamarUnaVez("revisarMails", [planillaId, dias], apiMails(interactivo));
+}
+
+// Remitentes y palabras propios de cada persona, y si quiere el aviso por
+// mail del modo "siempre". Viven en el proyecto de mails porque los usa la
+// revisión automática.
+// Sin permiso de Gmail a mano no hace falta: lo usa el diálogo después de borrar.
+export function ignorarRemitenteMail(nombre) {
+  return llamarUnaVez("ignorarRemitenteMail", [nombre], apiMails(false));
+}
+
+export function getAjustesMails({ interactivo = false } = {}) {
+  return llamarUnaVez("obtenerAjustesMails", [], apiMails(interactivo));
+}
+
+export function guardarAjustesMails(ajustes, { interactivo = false } = {}) {
+  return llamarUnaVez("guardarAjustesMails", [ajustes], apiMails(interactivo));
+}
+
+// El ID de la planilla sale del link que ya devuelve la API.
+export function idDePlanilla(url) {
+  const match = String(url || "").match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : "";
+}
+
+export function renombrarCuenta(nombreViejo, nombreNuevo) {
+  return escribir("renombrarCuenta", [nombreViejo, nombreNuevo]);
+}
+
+export function borrarCuenta(nombre) {
+  return escribir("borrarCuenta", [nombre]);
+}
+
+export function editarMeta(nombreOriginal, cambios) {
+  return escribir("editarMeta", [nombreOriginal, cambios]);
+}
+
+export function borrarMeta(nombre) {
+  return escribir("borrarMeta", [nombre]);
+}
+
+// --- Servicios del mes (pestaña "Servicios"): luz, gas, internet… ---
+// Cada uno guarda el último mes en que se pagó; si no es el mes actual,
+// está pendiente.
+
+export function getServicios() {
+  return leer("obtenerServicios");
+}
+
+export function crearServicio(servicio) {
+  return escribir("crearServicio", [servicio]);
+}
+
+export function editarServicio(nombreOriginal, cambios) {
+  return escribir("editarServicio", [nombreOriginal, cambios]);
+}
+
+export function borrarServicio(nombre) {
+  return escribir("borrarServicio", [nombre]);
+}
+
+export function pagarServicio(nombre, pago) {
+  return escribir("pagarServicio", [nombre, pago]);
+}
+
+export function desmarcarServicio(nombre) {
+  return escribir("desmarcarServicio", [nombre]);
+}
+
+// Aviso diario por mail de servicios vencidos o por vencer.
+export function getAvisoServicios() {
+  return leer("obtenerAvisoServicios");
+}
+
+export function activarAvisoServicios(activo) {
+  return escribir("activarAvisoServicios", [activo, window.location.origin]);
 }
