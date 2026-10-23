@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { confirmarTodosLosDeMails } from "../api";
+import { useAvisos } from "../avisos";
+import { playError, playSuccess } from "../sounds";
 import { fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
 import { PERIODOS } from "../theme";
 import Campo from "./Campo";
@@ -16,10 +19,17 @@ export default function MovimientosTab({
   onCambiarDias,
   onNuevo,
   onCambio,
+  mailsActivos,
+  revisandoMails,
+  onRevisarMails,
+  filtroInicial = "todos",
 }) {
-  const [filtro, setFiltro] = useState("todos");
+  const [filtro, setFiltro] = useState(filtroInicial);
   const [busqueda, setBusqueda] = useState("");
   const [editando, setEditando] = useState(null);
+  const [confirmando, setConfirmando] = useState(false);
+  const [errorConfirmar, setErrorConfirmar] = useState("");
+  const { avisar } = useAvisos();
 
   const combinados = useMemo(() => {
     const g = (gastos.data || []).map((x) => ({ ...x, tipo: "gasto" }));
@@ -29,14 +39,39 @@ export default function MovimientosTab({
     );
   }, [gastos.data, ingresos.data]);
 
+  const cantidadARevisar = combinados.filter((t) => t.aRevisar).length;
+  // Si ya no queda nada por revisar, el filtro vuelve a "Todos".
+  const filtroActivo = filtro === "revisar" && cantidadARevisar === 0 ? "todos" : filtro;
+
   const textoBusqueda = busqueda.trim().toLowerCase();
   const filtrados = combinados.filter((t) => {
-    if (filtro !== "todos" && t.tipo !== filtro) return false;
+    if (filtroActivo === "revisar" && !t.aRevisar) return false;
+    if (filtroActivo !== "todos" && filtroActivo !== "revisar" && t.tipo !== filtroActivo) return false;
     if (!textoBusqueda) return true;
     const descripcion = (t.descripcion || "").toLowerCase();
     const categoria = (t.categoria || "").toLowerCase();
     return descripcion.includes(textoBusqueda) || categoria.includes(textoBusqueda);
   });
+
+  async function confirmarTodos() {
+    const sinConfirmar = combinados.filter((t) => t.sinConfirmar).length;
+    const aclaracion = sinConfirmar > 0 ? ` ${sinConfirmar} sin confirmar se suman a tus gastos.` : "";
+    if (!window.confirm(`¿Confirmar los ${cantidadARevisar} movimientos tal como están?${aclaracion}`)) return;
+    setConfirmando(true);
+    setErrorConfirmar("");
+    try {
+      const { confirmados } = await confirmarTodosLosDeMails();
+      playSuccess();
+      avisar(confirmados === 1 ? "1 movimiento confirmado" : `${confirmados} movimientos confirmados`);
+      setFiltro("todos");
+      onCambio?.();
+    } catch (err) {
+      playError();
+      setErrorConfirmar(err.message || "No se pudieron confirmar. Probá de nuevo.");
+    } finally {
+      setConfirmando(false);
+    }
+  }
 
   const cargando = gastos.cargando || ingresos.cargando;
   const error = (gastos.error && !gastos.data) || (ingresos.error && !ingresos.data) ? gastos.error || ingresos.error : "";
@@ -95,7 +130,7 @@ export default function MovimientosTab({
                   type="button"
                   className="movimiento"
                   onClick={() => setEditando(t)}
-                  aria-label={`Editar ${esIngreso ? "ingreso" : "gasto"}: ${t.descripcion || "sin descripción"}, ${esIngreso ? "más" : "menos"} ${monto}, ${fmtFecha(t.fecha)}`}
+                  aria-label={`${t.aRevisar ? "Revisar" : "Editar"} ${esIngreso ? "ingreso" : "gasto"}${t.aRevisar ? " detectado en tus mails" : ""}: ${t.descripcion || "sin descripción"}, ${esIngreso ? "más" : "menos"} ${monto}, ${fmtFecha(t.fecha)}`}
                 >
                   <i className={iconoPorCategoria(t.categoria)} aria-hidden="true" />
                   <span className="movimiento-texto">
@@ -104,6 +139,12 @@ export default function MovimientosTab({
                       {t.categoria || "Sin categoría"} · {fmtFecha(t.fecha)}
                       {t.cuenta ? ` · ${t.cuenta}` : ""}
                     </span>
+                    {t.aRevisar && (
+                      <span className="tag tag-revisar">
+                        <i className="ph ph-envelope-simple" aria-hidden="true" />
+                        {t.sinConfirmar ? "Sin confirmar" : "A revisar"}
+                      </span>
+                    )}
                   </span>
                   <span className={"movimiento-monto" + (esIngreso ? " es-ingreso" : "")}>
                     {esIngreso ? "+" : "-"}
@@ -123,18 +164,46 @@ export default function MovimientosTab({
     <>
       <PeriodoSelector dias={dias} onCambiar={onCambiarDias} />
 
-      <div className="seg" role="radiogroup" aria-label="Mostrar">
-        {[
-          ["todos", "Todos"],
-          ["ingreso", "Ingresos"],
-          ["gasto", "Gastos"],
-        ].map(([valor, texto]) => (
-          <label className="seg-opt" key={valor}>
-            <input type="radio" name="filtro-mov" checked={filtro === valor} onChange={() => setFiltro(valor)} />
-            {texto}
-          </label>
-        ))}
+      <div className="fila-separada">
+        <div className="seg" role="radiogroup" aria-label="Mostrar">
+          {[
+            ["todos", "Todos"],
+            ["ingreso", "Ingresos"],
+            ["gasto", "Gastos"],
+            ...(cantidadARevisar > 0 ? [["revisar", `A revisar (${cantidadARevisar})`]] : []),
+          ].map(([valor, texto]) => (
+            <label className="seg-opt" key={valor}>
+              <input type="radio" name="filtro-mov" checked={filtroActivo === valor} onChange={() => setFiltro(valor)} />
+              {texto}
+            </label>
+          ))}
+        </div>
+        {mailsActivos && (
+          <button type="button" className="btn btn-secondary" onClick={onRevisarMails} disabled={revisandoMails}>
+            <i className="ph ph-envelope-simple" aria-hidden="true" />
+            {revisandoMails ? "Revisando mails…" : "Revisar mails"}
+          </button>
+        )}
       </div>
+
+      {filtroActivo === "revisar" && (
+        <div className="pila-chica">
+          <button
+            type="button"
+            className="btn btn-primary btn-alinear-inicio"
+            onClick={confirmarTodos}
+            disabled={confirmando}
+          >
+            <i className="ph ph-checks" aria-hidden="true" />
+            {confirmando ? "Confirmando…" : `Confirmar todos (${cantidadARevisar})`}
+          </button>
+          {errorConfirmar && (
+            <p className="mensaje-error" role="alert">
+              {errorConfirmar}
+            </p>
+          )}
+        </div>
+      )}
 
       <Campo etiqueta="Buscar">
         {(p) => (
