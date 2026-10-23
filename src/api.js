@@ -31,7 +31,14 @@ const ESPERAS_REINTENTO_MS = [800, 2000];
 
 const MENSAJE_SIN_RED = "No hay conexión o Google no respondió. Revisá tu internet y probá de nuevo.";
 const MENSAJE_LENTO = "Google está tardando demasiado en responder. Probá de nuevo.";
+export const MENSAJE_FALTA_PERMISO = "Falta que aceptes un permiso nuevo de Google. Volvé a entrar para aceptarlo.";
 const MENSAJE_GOOGLE = "Google tuvo un problema al responder. Probá de nuevo en un rato.";
+
+// Cierra la sesión y vuelve al login, que pide todos los permisos de nuevo.
+export function volverAEntrar() {
+  cerrarSesion();
+  dispararSesionVencida();
+}
 
 // Error que vale la pena reintentar solo (red caída, tiempo agotado, Google
 // devolvió un 5xx). Los errores del propio backend (validaciones, "no existe
@@ -53,6 +60,11 @@ function mensajeDelBackend(data) {
   const crudo = detalle?.errorMessage || data.error.message || "";
   if (/script function not found|not found/i.test(crudo)) {
     return "Esta sección todavía no está disponible en tu planilla.";
+  }
+  // La sesión se abrió antes de que la app pidiera un permiso nuevo (ej: el
+  // del aviso por mail): Google responde con un error técnico en inglés.
+  if (/required permissions|do not have permission/i.test(crudo)) {
+    return MENSAJE_FALTA_PERMISO;
   }
   return crudo || "No se pudo completar. Probá de nuevo.";
 }
@@ -341,4 +353,57 @@ export function guardarAjustesMails(ajustes, { interactivo = false } = {}) {
 export function idDePlanilla(url) {
   const match = String(url || "").match(/\/d\/([a-zA-Z0-9_-]+)/);
   return match ? match[1] : "";
+}
+
+export function renombrarCuenta(nombreViejo, nombreNuevo) {
+  return escribir("renombrarCuenta", [nombreViejo, nombreNuevo]);
+}
+
+export function borrarCuenta(nombre) {
+  return escribir("borrarCuenta", [nombre]);
+}
+
+export function editarMeta(nombreOriginal, cambios) {
+  return escribir("editarMeta", [nombreOriginal, cambios]);
+}
+
+export function borrarMeta(nombre) {
+  return escribir("borrarMeta", [nombre]);
+}
+
+// --- Servicios del mes (pestaña "Servicios"): luz, gas, internet… ---
+// Cada uno guarda el último mes en que se pagó; si no es el mes actual,
+// está pendiente.
+
+export function getServicios() {
+  return leer("obtenerServicios");
+}
+
+export function crearServicio(servicio) {
+  return escribir("crearServicio", [servicio]);
+}
+
+export function editarServicio(nombreOriginal, cambios) {
+  return escribir("editarServicio", [nombreOriginal, cambios]);
+}
+
+export function borrarServicio(nombre) {
+  return escribir("borrarServicio", [nombre]);
+}
+
+export function pagarServicio(nombre, pago) {
+  return escribir("pagarServicio", [nombre, pago]);
+}
+
+export function desmarcarServicio(nombre) {
+  return escribir("desmarcarServicio", [nombre]);
+}
+
+// Aviso diario por mail de servicios vencidos o por vencer.
+export function getAvisoServicios() {
+  return leer("obtenerAvisoServicios");
+}
+
+export function activarAvisoServicios(activo) {
+  return escribir("activarAvisoServicios", [activo, window.location.origin]);
 }
