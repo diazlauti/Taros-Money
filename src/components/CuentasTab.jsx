@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ajustarCuenta, crearCuenta } from "../api";
 import { useAvisos } from "../avisos";
 import { fmtMoney, parseMonto } from "../format";
+import { etiquetaMoneda } from "../monedas";
 import { useValidacion } from "../hooks";
 import { playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
@@ -12,7 +13,7 @@ import MontoDialog from "./MontoDialog";
 
 const VACIO = { nombre: "", saldo: "", moneda: "ARS" };
 
-export default function CuentasTab({ cuentas, onCambio, onCambioGeneral }) {
+export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onCambioGeneral, onIrAMonedas }) {
   const { avisar } = useAvisos();
   const [form, setForm] = useState(VACIO);
   const [enviando, setEnviando] = useState(false);
@@ -164,12 +165,21 @@ export default function CuentasTab({ cuentas, onCambio, onCambioGeneral }) {
           <Campo etiqueta="Moneda">
             {(p) => (
               <select {...p} className="input" value={form.moneda} onChange={(e) => campo("moneda", e.target.value)}>
-                <option value="ARS">Pesos (ARS)</option>
-                <option value="USD">Dólares (USD)</option>
+                {["ARS", ...monedasActivas].map((m) => (
+                  <option key={m} value={m}>
+                    {etiquetaMoneda(m)}
+                  </option>
+                ))}
               </select>
             )}
           </Campo>
         </div>
+        {onIrAMonedas && (
+          <button type="button" className="btn btn-texto btn-alinear-inicio" onClick={onIrAMonedas}>
+            <i className="ph ph-currency-circle-dollar" aria-hidden="true" />
+            ¿Otra moneda? Sumala en Configuración
+          </button>
+        )}
         {errorForm && (
           <p className="mensaje-error" role="alert">
             {errorForm}

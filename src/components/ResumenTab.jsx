@@ -10,7 +10,7 @@ resumen,
 gastos,
 cuentas,
 servicios,
-cotizacionUsdArs,
+cotizaciones,
 monedaPorCuenta,
 dias,
 onCambiarDias,
@@ -20,10 +20,10 @@ mails,
 }) {
 return (
 <>
-<SaldoCard saldo={saldo} cuentas={cuentas} cotizacionUsdArs={cotizacionUsdArs} onIrA={onIrA} />
+<SaldoCard saldo={saldo} cuentas={cuentas} cotizaciones={cotizaciones} onIrA={onIrA} />
 
 {mails && <MailsCard {...mails} />}
-<ServiciosCard servicios={servicios} cotizacionUsdArs={cotizacionUsdArs} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
+<ServiciosCard servicios={servicios} cotizaciones={cotizaciones} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
 
 <PeriodoSelector dias={dias} onCambiar={onCambiarDias} />
 
@@ -41,15 +41,15 @@ onIrA={onIrA}
 );
 }
 
-function SaldoCard({ saldo, cuentas, cotizacionUsdArs, onIrA }) {
+function SaldoCard({ saldo, cuentas, cotizaciones, onIrA }) {
 const lista = cuentas.data || [];
 const hayCuentas = lista.length > 0;
 // El saldo grande es la suma de las cuentas (convirtiendo las que están en
-// USD a ARS con la cotización del script) en vez del valor manual de la
+// otras monedas a ARS con las cotizaciones elegidas en Configuración) en vez del valor manual de la
 // planilla, en cuanto haya al menos una cuenta cargada. Si falta la
 // cotización, las cuentas en USD quedan afuera y se avisa.
-const faltaCotizacion = lista.some((c) => aPesos(c.saldo, c.moneda, cotizacionUsdArs) === null);
-const totalCuentasArs = lista.reduce((sum, c) => sum + (aPesos(c.saldo, c.moneda, cotizacionUsdArs) ?? 0), 0);
+const faltaCotizacion = lista.some((c) => aPesos(c.saldo, c.moneda, cotizaciones) === null);
+const totalCuentasArs = lista.reduce((sum, c) => sum + (aPesos(c.saldo, c.moneda, cotizaciones) ?? 0), 0);
 
 let contenido;
 if (cuentas.cargando || (!hayCuentas && saldo.cargando)) {
@@ -88,11 +88,11 @@ contenido = (
 {hayCuentas && (
 <ul className="lista pila-chica">
 {lista.map((c) => {
-const enPesos = aPesos(c.saldo, c.moneda, cotizacionUsdArs);
+const enPesos = aPesos(c.saldo, c.moneda, cotizaciones);
 return (
 <li key={c.nombre} className="texto-tenue">
 {c.nombre}: {fmtMoney(c.saldo, c.moneda)}
-{c.moneda === "USD" && enPesos !== null && ` (≈ ${fmtMoney(enPesos)})`}
+{c.moneda !== "ARS" && enPesos !== null && ` (≈ ${fmtMoney(enPesos)})`}
 </li>
 );
 })}
@@ -101,7 +101,7 @@ return (
 {faltaCotizacion && (
 <p className="aviso-inline">
 <i className="ph ph-info" aria-hidden="true" />
-El total no incluye las cuentas en dólares porque no se pudo traer la cotización.
+El total no incluye las cuentas en otras monedas porque falta su cotización (fijala en Configuración › Monedas).
 </p>
 )}
 </>
@@ -119,10 +119,10 @@ Saldo estimado
 }
 
 // Los servicios del mes que faltan pagar, los más urgentes primero.
-function ServiciosCard({ servicios, cotizacionUsdArs, monedaPorCuenta, onIrA }) {
+function ServiciosCard({ servicios, cotizaciones, monedaPorCuenta, onIrA }) {
 const lista = serviciosConEstado(servicios.data);
 const pendientes = lista.filter((s) => s.estado !== "pagado");
-const enPesos = (s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizacionUsdArs) ?? 0;
+const enPesos = (s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizaciones) ?? 0;
 const faltaPagar = pendientes.reduce((sum, s) => sum + enPesos(s), 0);
 const verTodos = (
 <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={() => onIrA("servicios")}>

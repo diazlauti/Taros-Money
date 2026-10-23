@@ -12,7 +12,8 @@ getMetas,
 getSuscripciones,
 getServicios,
 getTendencia,
-getCotizacion,
+getMonedas,
+guardarCotizacionesAuto,
 getUrlPlanilla,
 getConfigMails,
 guardarModoMails,
@@ -24,6 +25,7 @@ idDePlanilla,
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { fmtMoney, mapaMonedas } from "./format";
+import { cotizacionesParaGuardar, resolverCotizaciones, traerCotizaciones } from "./monedas";
 import { notificar } from "./notificaciones";
 import { avisarServiciosUrgentes } from "./recordatorios";
 import { serviciosConEstado } from "./servicios";
@@ -130,7 +132,8 @@ const metas = useSeccion(getMetas, []);
 const suscripciones = useSeccion(getSuscripciones, []);
 const servicios = useSeccion(getServicios, []);
 const tendencia = useSeccion(() => getTendencia(6), []);
-const cotizacion = useSeccion(getCotizacion, []);
+const monedas = useSeccion(getMonedas, []);
+const cotizacionesHoy = useSeccion(traerCotizaciones, []);
 const urlPlanilla = useSeccion(getUrlPlanilla, []);
 const configMails = useSeccion(() => (mailsDisponible() ? getConfigMails() : Promise.resolve(null)), []);
 
@@ -153,6 +156,35 @@ if (servicios.data) avisarServiciosUrgentes(serviciosConEstado(servicios.data));
 
 // Única fuente de verdad para "en qué moneda está cada cuenta".
 const monedaPorCuenta = useMemo(() => mapaMonedas(cuentas.data), [cuentas.data]);
+
+// Con cuánto se pasa cada moneda a pesos: la automática de hoy si llegó, si
+// no la fija o la última guardada.
+const configMonedas = monedas.data?.monedas;
+const cotizaciones = useMemo(
+() => resolverCotizaciones(configMonedas, cotizacionesHoy.data),
+[configMonedas, cotizacionesHoy.data],
+);
+
+// Si la cotización automática de hoy es distinta de la guardada, se la pasa
+// al backend para que el resumen por categoría y la tendencia usen la misma.
+const ultimaGuardada = useRef("");
+useEffect(() => {
+if (!configMonedas || monedas.data?.sinConfigurar || !cotizacionesHoy.data) return;
+const cambios = cotizacionesParaGuardar(configMonedas, cotizacionesHoy.data);
+const clave = JSON.stringify(cambios);
+if (clave === "{}" || clave === ultimaGuardada.current) return;
+ultimaGuardada.current = clave;
+guardarCotizacionesAuto(cambios)
+.then(() => {
+monedas.recargar();
+resumen.recargar();
+tendencia.recargar();
+})
+.catch(() => {
+/* sin drama: se reintenta la próxima vez que se abra la app */
+});
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [configMonedas, cotizacionesHoy.data]);
 
 const recargarTodo = useCallback(() => {
 saldo.recargar();
@@ -331,7 +363,7 @@ resumen={resumen}
 gastos={gastos}
 cuentas={cuentas}
 servicios={servicios}
-cotizacionUsdArs={cotizacion.data}
+cotizaciones={cotizaciones}
 monedaPorCuenta={monedaPorCuenta}
 dias={dias}
 onCambiarDias={setDias}
@@ -373,7 +405,15 @@ onRevisarMails={revisarMailsConBoton}
 />
 )}
 
-{activeTab === "cuentas" && <CuentasTab cuentas={cuentas} onCambio={cuentas.recargar} onCambioGeneral={recargarTodo} />}
+{activeTab === "cuentas" && (
+<CuentasTab
+cuentas={cuentas}
+monedasActivas={Object.keys(configMonedas || {})}
+onCambio={cuentas.recargar}
+onCambioGeneral={recargarTodo}
+onIrAMonedas={() => setActiveTab("configuracion")}
+/>
+)}
 
 {activeTab === "metas" && <MetasTab metas={metas} onCambio={metas.recargar} />}
 
@@ -382,7 +422,7 @@ onRevisarMails={revisarMailsConBoton}
 servicios={servicios}
 categorias={categorias.data}
 cuentas={cuentas.data}
-cotizacionUsdArs={cotizacion.data}
+cotizaciones={cotizaciones}
 monedaPorCuenta={monedaPorCuenta}
 onCambio={servicios.recargar}
 onCambioConGasto={recargarTodo}
@@ -394,7 +434,7 @@ onCambioConGasto={recargarTodo}
 suscripciones={suscripciones}
 categorias={categorias.data}
 cuentas={cuentas.data}
-cotizacionUsdArs={cotizacion.data}
+cotizaciones={cotizaciones}
 monedaPorCuenta={monedaPorCuenta}
 onCambio={suscripciones.recargar}
 />
@@ -405,6 +445,13 @@ onCambio={suscripciones.recargar}
 {activeTab === "configuracion" && (
 <ConfiguracionTab
 urlPlanilla={urlPlanilla}
+monedas={monedas}
+cotizacionesHoy={cotizacionesHoy}
+cuentas={cuentas.data}
+onMonedasGuardadas={() => {
+monedas.recargar();
+recargarTodo();
+}}
 configMails={mailsDisponible() ? configMails : null}
 onCambiarModoMails={cambiarModoMails}
 revisandoMails={revisandoMails}

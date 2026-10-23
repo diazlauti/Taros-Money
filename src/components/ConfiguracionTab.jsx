@@ -5,6 +5,7 @@ import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import AjustesMails from "./AjustesMails";
 import Campo from "./Campo";
+import MonedasCard from "./MonedasCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
 const OPCIONES_TEMA = [
@@ -22,6 +23,10 @@ const OPCIONES_MAILS = [
 
 export default function ConfiguracionTab({
   urlPlanilla,
+  monedas,
+  cotizacionesHoy,
+  cuentas,
+  onMonedasGuardadas,
   configMails,
   onCambiarModoMails,
   revisandoMails,
@@ -249,6 +254,8 @@ export default function ConfiguracionTab({
           {mails}
         </section>
       )}
+
+      <MonedasCard monedas={monedas} cotizacionesHoy={cotizacionesHoy} cuentas={cuentas} onGuardadas={onMonedasGuardadas} />
 
       <section className="card" aria-labelledby="titulo-categorias-config">
         <h2 className="card-kicker" id="titulo-categorias-config">
