@@ -1,4 +1,5 @@
-import { MONEDAS } from "./monedas";
+import { iconoDeCategoria } from "./iconos";
+import { infoMoneda } from "./monedas";
 
 // $650.000 (ARS, sin centavos — así se maneja la plata en la planilla),
 // US$1,234.56 (USD, con centavos, para las cuentas en dólares), €1.234,56,
@@ -8,7 +9,7 @@ export function fmtMoney(n, moneda = "ARS") {
   if (moneda === "USD") {
     return "US$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  const extra = MONEDAS[moneda];
+  const extra = infoMoneda(moneda);
   if (extra) {
     const d = extra.decimales;
     const signo = v < 0 ? "-" : "";
@@ -74,20 +75,9 @@ export function aPesos(monto, moneda, cotizaciones) {
   return tasa ? n * tasa : null;
 }
 
-const ICONOS_CATEGORIA = {
-  comida: "ph ph-hamburger",
-  transporte: "ph ph-car",
-  servicios: "ph ph-lightning",
-  entretenimiento: "ph ph-film-slate",
-  salud: "ph ph-heartbeat",
-  compras: "ph ph-shopping-bag",
-  "gasto personal": "ph ph-user",
-  sueldo: "ph ph-arrow-circle-down",
-  freelance: "ph ph-arrow-circle-down",
-};
-
+// Ícono de una categoría: el que eligió la persona o uno según el nombre (ver iconos.js).
 export function iconoPorCategoria(categoria) {
-  return ICONOS_CATEGORIA[(categoria || "").toLowerCase()] || "ph ph-dots-three-circle";
+  return iconoDeCategoria(categoria);
 }
 
 const pad2 = (n) => String(n).padStart(2, "0");

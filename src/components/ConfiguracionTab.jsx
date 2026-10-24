@@ -3,8 +3,10 @@ import { useAvisos } from "../avisos";
 import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
+import { iconoDeCategoria } from "../iconos";
 import AjustesMails from "./AjustesMails";
 import Campo from "./Campo";
+import ElegirIconoDialog from "./ElegirIconoDialog";
 import MonedasCard from "./MonedasCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
@@ -34,6 +36,8 @@ export default function ConfiguracionTab({
   categorias,
   onAgregarCategoria,
   onBorrarCategoria,
+  onGuardarIconoCategoria,
+  iconosSoloEsteDispositivo,
   tema,
   onCambiarTema,
   sonido,
@@ -48,6 +52,7 @@ export default function ConfiguracionTab({
   const [guardandoCategoria, setGuardandoCategoria] = useState(false);
   const [borrandoCategoria, setBorrandoCategoria] = useState(null);
   const [errorCategoria, setErrorCategoria] = useState("");
+  const [categoriaIcono, setCategoriaIcono] = useState(null);
   const lista = categorias.data || [];
   const errorNombre = errorNombreNuevo(nuevaCategoria, lista, "categoría");
   const errorVisible = tocado || nuevaCategoria ? errorNombre : "";
@@ -211,7 +216,16 @@ export default function ConfiguracionTab({
     chips = (
       <ul className="lista chips">
         {lista.map((c) => (
-          <li key={c} className="tag tag-borrable">
+          <li key={c} className="tag tag-borrable tag-con-icono">
+            <button
+              type="button"
+              className="btn btn-icono"
+              onClick={() => setCategoriaIcono(c)}
+              aria-label={`Cambiar ícono de ${c}`}
+              aria-haspopup="dialog"
+            >
+              <i className={iconoDeCategoria(c)} aria-hidden="true" />
+            </button>
             {c}
             <button
               type="button"
@@ -261,8 +275,23 @@ export default function ConfiguracionTab({
         <h2 className="card-kicker" id="titulo-categorias-config">
           Categorías
         </h2>
-        <p className="texto-intro">Aparecen para elegir al cargar un gasto, ingreso o suscripción.</p>
+        <p className="texto-intro">
+          Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá el ícono de una para cambiarlo.
+        </p>
         {chips}
+        {iconosSoloEsteDispositivo && lista.length > 0 && (
+          <p className="texto-chico texto-tenue">
+            <i className="ph ph-info" aria-hidden="true" /> Por ahora los íconos que elegís se guardan solo en este
+            dispositivo.
+          </p>
+        )}
+        {categoriaIcono && (
+          <ElegirIconoDialog
+            categoria={categoriaIcono}
+            onGuardar={onGuardarIconoCategoria}
+            onClose={() => setCategoriaIcono(null)}
+          />
+        )}
 
         <form className="form-buscar" onSubmit={agregar} noValidate>
           <Campo etiqueta="Nueva categoría" error={errorVisible}>
