@@ -4,6 +4,7 @@
 // logueado — por eso cada quien termina leyendo/escribiendo su propia
 // planilla, sin que el backend tenga que saber de PINes ni sesiones.
 import { cerrarSesion, obtenerTokenActual, obtenerTokenMails, olvidarTokenMails } from "./auth";
+import { guardarIconosLocales, leerIconosLocales } from "./iconos";
 
 const SCRIPT_ID = import.meta.env.VITE_APPS_SCRIPT_ID;
 // Proyecto aparte "Taros Money Mails" (el único que lee Gmail). Si no está
@@ -200,6 +201,30 @@ export function agregarCategoria(nombre) {
 
 export function borrarCategoria(nombre) {
   return escribir("borrarCategoria", [nombre]);
+}
+
+// Íconos elegidos para las categorías. Si el backend todavía no tiene el
+// archivo de íconos, se guardan en este dispositivo.
+export async function getIconosCategorias() {
+  try {
+    return { iconos: (await leer("obtenerIconosCategorias")) || {} };
+  } catch (err) {
+    if (!err.noDisponible) throw err;
+    return { iconos: leerIconosLocales(), soloEsteDispositivo: true };
+  }
+}
+
+export async function guardarIconoCategoria(nombre, icono) {
+  try {
+    return { iconos: (await escribir("guardarIconoCategoria", [nombre, icono])) || {} };
+  } catch (err) {
+    if (!err.noDisponible) throw err;
+    const iconos = { ...leerIconosLocales() };
+    if (icono) iconos[nombre] = icono;
+    else delete iconos[nombre];
+    guardarIconosLocales(iconos);
+    return { iconos, soloEsteDispositivo: true };
+  }
 }
 
 export function agregarGasto(gasto) {

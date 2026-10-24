@@ -4,6 +4,8 @@ getSaldo,
 getResumen,
 getGastos,
 getCategorias,
+getIconosCategorias,
+guardarIconoCategoria,
 agregarCategoria,
 borrarCategoria,
 getIngresos,
@@ -25,7 +27,8 @@ idDePlanilla,
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { fmtMoney, mapaMonedas } from "./format";
-import { cotizacionesParaGuardar, resolverCotizaciones, traerCotizaciones } from "./monedas";
+import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
+import { registrarIconos } from "./iconos";
 import { notificar } from "./notificaciones";
 import { avisarServiciosUrgentes } from "./recordatorios";
 import { serviciosConEstado } from "./servicios";
@@ -48,6 +51,7 @@ import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
 import { leerNuevoDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
+import CalculadoraDialog from "./components/CalculadoraDialog";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
@@ -125,6 +129,7 @@ const [dialogOpen, setDialogOpen] = useState(() => inicialNuevo !== null);
 // El recorrido aparece solo la primera vez; después se abre desde Configuración.
 const [tourAbierto, setTourAbierto] = useState(() => !tourVisto() && inicialNuevo === null);
 const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
+const [calculadoraAbierta, setCalculadoraAbierta] = useState(false);
 
 useEffect(() => {
 if (inicialNuevo) limpiarNuevoDeUrl();
@@ -135,6 +140,7 @@ const resumen = useSeccion(() => getResumen(dias), [dias]);
 const gastos = useSeccion(() => getGastos(dias), [dias]);
 const ingresos = useSeccion(() => getIngresos(dias), [dias]);
 const categorias = useSeccion(getCategorias, []);
+const iconosCategorias = useSeccion(getIconosCategorias, []);
 const cuentas = useSeccion(getCuentas, []);
 const metas = useSeccion(getMetas, []);
 const suscripciones = useSeccion(getSuscripciones, []);
@@ -168,6 +174,10 @@ const monedaPorCuenta = useMemo(() => mapaMonedas(cuentas.data), [cuentas.data])
 // Con cuánto se pasa cada moneda a pesos: la automática de hoy si llegó, si
 // no la fija o la última guardada.
 const configMonedas = monedas.data?.monedas;
+// Monedas propias e íconos elegidos: se registran antes de dibujar, así
+// cualquier monto o categoría de la app los usa.
+registrarMonedasPropias(configMonedas);
+registrarIconos(iconosCategorias.data?.iconos);
 const cotizaciones = useMemo(
 () => resolverCotizaciones(configMonedas, cotizacionesHoy.data),
 [configMonedas, cotizacionesHoy.data],
@@ -340,6 +350,38 @@ await borrarCategoria(nombre);
 categorias.recargar();
 }
 
+async function guardarIconoYRecargar(nombre, icono) {
+await guardarIconoCategoria(nombre, icono);
+iconosCategorias.recargar();
+}
+
+// Puntitos en el menú: lo que quedó pendiente se sigue marcando hasta que
+// se resuelve (un gasto de los mails sin revisar, un servicio por vencer).
+const serviciosUrgentes = useMemo(
+() => serviciosConEstado(servicios.data).filter((s) => s.estado === "vencido" || s.estado === "pronto").length,
+[servicios.data],
+);
+const avisosMenu = {
+movimientos: cantidadARevisar
+? { cantidad: cantidadARevisar, texto: `${cantidadARevisar} ${cantidadARevisar === 1 ? "movimiento" : "movimientos"} para revisar` }
+: null,
+servicios: serviciosUrgentes
+? { cantidad: serviciosUrgentes, texto: `${serviciosUrgentes} ${serviciosUrgentes === 1 ? "servicio vencido o por vencer" : "servicios vencidos o por vencer"}` }
+: null,
+};
+const totalAvisos = cantidadARevisar + serviciosUrgentes;
+
+// Con la app instalada, el mismo número aparece sobre el ícono (donde el
+// sistema lo permite).
+useEffect(() => {
+try {
+if (totalAvisos > 0) navigator.setAppBadge?.(totalAvisos)?.catch?.(() => {});
+else navigator.clearAppBadge?.()?.catch?.(() => {});
+} catch {
+/* el navegador no lo soporta: no pasa nada */
+}
+}, [totalAvisos]);
+
 const abrirNuevo = () => {
 setInicialNuevo(null);
 setDialogOpen(true);
@@ -353,12 +395,22 @@ const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
 <div className="app-shell">
-<Sidebar activeTab={activeTab} onSelect={irA} />
+<Sidebar activeTab={activeTab} onSelect={irA} avisos={avisosMenu} />
 
 <main className="main">
 <header className="main-header">
 <i className="ph ph-wallet brand-icono" role="img" aria-label="Taros Money" />
 <h1>{activeItem.label}</h1>
+<button
+type="button"
+className="btn btn-secondary btn-calculadora"
+onClick={() => setCalculadoraAbierta(true)}
+aria-haspopup="dialog"
+title="Calculadora de impuestos"
+>
+<i className="ph ph-calculator" aria-hidden="true" />
+<span className="visualmente-oculto">Calculadora de impuestos</span>
+</button>
 <button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento">
 <i className="ph ph-plus" aria-hidden="true" />
 Nuevo movimiento
@@ -470,6 +522,8 @@ onRevisarMails={revisarMailsConBoton}
 categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}
+onGuardarIconoCategoria={guardarIconoYRecargar}
+iconosSoloEsteDispositivo={!!iconosCategorias.data?.soloEsteDispositivo}
 tema={tema}
 onCambiarTema={onCambiarTema}
 sonido={sonido}
@@ -483,7 +537,7 @@ onInstalar={() => setGuiaInstalarAbierta(true)}
 </div>
 </main>
 
-<BottomNav activeTab={activeTab} onSelect={irA} />
+<BottomNav activeTab={activeTab} onSelect={irA} avisos={avisosMenu} />
 
 {dialogOpen && (
 <NuevoMovimientoDialog
@@ -510,6 +564,20 @@ setGuiaInstalarAbierta(true);
 )}
 
 {guiaInstalarAbierta && <InstalarAppDialog onClose={() => setGuiaInstalarAbierta(false)} />}
+
+{calculadoraAbierta && (
+<CalculadoraDialog
+cotizaciones={cotizaciones}
+configMonedas={configMonedas}
+cotizacionesHoy={cotizacionesHoy}
+onClose={() => setCalculadoraAbierta(false)}
+onCargarGasto={(datos) => {
+setCalculadoraAbierta(false);
+setInicialNuevo(datos);
+setDialogOpen(true);
+}}
+/>
+)}
 </div>
 );
 }

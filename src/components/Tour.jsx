@@ -79,6 +79,20 @@ const PASOS = [
   },
 ];
 
+// Si se saltea una práctica, algunos pasos dejan de tener sentido (no se
+// puede festejar un movimiento que no se cargó) o cambian el texto.
+const SALTEO = {
+  "movimiento-creado": { saltarHasta: "movimiento-borrado", etiqueta: "Saltear este paso" },
+  "movimiento-borrado": { saltarHasta: null, etiqueta: "Dejarlo así" },
+};
+const TEXTO_SI_NO_BORRO = {
+  "¡Perfecto!":
+    "Listo, el movimiento de prueba queda guardado. Si después lo querés sacar, tocalo en Movimientos y «Borrar». Y si solo querés corregir algo, tocalo y cambialo, sin borrarlo.",
+};
+// Segundos que hay que esperar antes de poder saltear una práctica: así se
+// intenta primero, pero nadie queda trabado.
+const ESPERA_SALTEO_S = 5;
+
 const PASO_INSTALAR = {
   icono: "ph ph-device-mobile",
   titulo: "Tenela a mano",
@@ -92,7 +106,14 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
   const [indice, setIndice] = useState(0);
   // Para animar el paso nuevo entrando desde el lado correcto.
   const [direccion, setDireccion] = useState("adelante");
+  // Las prácticas que se saltearon (para ajustar los textos que siguen).
+  const [salteadas, setSalteadas] = useState(() => new Set());
+  // En qué paso de práctica ya pasó la espera y se puede saltear.
+  const [salteableEn, setSalteableEn] = useState(-1);
+  // Después de saltear no se vuelve a los pasos que se pasaron de largo.
+  const [piso, setPiso] = useState(0);
   const paso = pasos[indice];
+  const textoPaso = (salteadas.has("movimiento-borrado") && TEXTO_SI_NO_BORRO[paso.titulo]) || paso.texto;
   const esUltimo = indice === pasos.length - 1;
 
   useEffect(() => {
@@ -125,6 +146,33 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
       delete raiz.dataset.tourObjetivo;
     };
   }, [paso, pasos, indice, onIrA]);
+
+  // Después de unos segundos en una práctica aparece la opción de saltearla.
+  useEffect(() => {
+    if (!paso.espera) return undefined;
+    const t = setTimeout(() => setSalteableEn(indice), ESPERA_SALTEO_S * 1000);
+    return () => clearTimeout(t);
+  }, [paso, indice]);
+  const puedeSaltear = paso.espera && salteableEn === indice;
+
+  // Saltear una práctica: sigue con el paso que corresponda sin obligar a
+  // cargar ni a borrar nada.
+  function saltearPractica() {
+    const regla = SALTEO[paso.espera] || {};
+    let destino = indice + 1;
+    if (regla.saltarHasta) {
+      const fin = pasos.findIndex((p, i) => i > indice && p.espera === regla.saltarHasta);
+      // También se saltea el festejo de después ("¡Perfecto!"), que habla de algo que no se hizo.
+      if (fin !== -1) destino = fin + 2;
+    }
+    destino = Math.min(destino, pasos.length - 1);
+    setSalteadas((s) => new Set([...s, paso.espera, regla.saltarHasta].filter(Boolean)));
+    setDireccion("adelante");
+    setIndice(destino);
+    setPiso(destino);
+    playPaso(destino, false);
+    if (pasos[destino].tab) onIrA(pasos[destino].tab);
+  }
 
   function irA(nuevo) {
     const atras = nuevo < indice;
@@ -175,20 +223,30 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
           Paso {indice + 1} de {pasos.length}: {paso.titulo}. {paso.texto}
         </p>
         <div className="fila-separada">
-          <span className="tour-esperando">
-            <i className="ph ph-hourglass-medium" aria-hidden="true" />
-            Esperando que lo hagas…
-          </span>
+          {!puedeSaltear ? (
+            <span className="tour-esperando">
+              <i className="ph ph-hourglass-medium" aria-hidden="true" />
+              Esperando que lo hagas…
+            </span>
+          ) : (
+            <button type="button" className="btn btn-secondary tour-saltear-paso" onClick={saltearPractica}>
+              {(SALTEO[paso.espera] || {}).etiqueta || "Saltear este paso"}
+              <i className="ph ph-arrow-right" aria-hidden="true" />
+            </button>
+          )}
           <button type="button" className="btn btn-texto" onClick={cerrar}>
             Saltear recorrido
           </button>
         </div>
+        <p className="visualmente-oculto" aria-live="polite">
+          {puedeSaltear ? "Si preferís, podés seguir sin hacerlo." : ""}
+        </p>
       </section>
     );
   }
 
   // No se puede volver a un paso de práctica ya hecho (habría que repetirlo).
-  const puedeVolver = indice > 0 && !pasos[indice - 1].espera;
+  const puedeVolver = indice > piso && !pasos[indice - 1].espera;
 
   return (
     <Dialog titulo={paso.titulo} onClose={cerrar} variante="tour">
@@ -207,12 +265,12 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
             </span>
           )}
         </span>
-        <p className="tour-texto">{paso.texto}</p>
+        <p className="tour-texto">{textoPaso}</p>
       </div>
 
       {puntos}
       <p className="visualmente-oculto" aria-live="polite">
-        Paso {indice + 1} de {pasos.length}: {paso.titulo}. {paso.texto}
+        Paso {indice + 1} de {pasos.length}: {paso.titulo}. {textoPaso}
       </p>
 
       <div className="dialog-actions dialog-actions--separadas">
