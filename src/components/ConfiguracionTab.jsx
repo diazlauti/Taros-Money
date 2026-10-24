@@ -4,6 +4,7 @@ import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import AjustesMails from "./AjustesMails";
+import EstadoRevisionMails from "./EstadoRevisionMails";
 import Campo from "./Campo";
 import MonedasCard from "./MonedasCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
@@ -29,6 +30,7 @@ export default function ConfiguracionTab({
   onMonedasGuardadas,
   configMails,
   onCambiarModoMails,
+  revisionMails,
   revisandoMails,
   onRevisarMails,
   categorias,
@@ -180,6 +182,9 @@ export default function ConfiguracionTab({
               <i className="ph ph-envelope-simple" aria-hidden="true" />
               {revisandoMails ? "Revisando mails…" : "Revisar mails ahora"}
             </button>
+          )}
+          {modoMails !== "apagado" && (
+            <EstadoRevisionMails revision={revisionMails} revisando={revisandoMails} onReintentar={onRevisarMails} />
           )}
           {errorMails && (
             <p className="mensaje-error" role="alert">

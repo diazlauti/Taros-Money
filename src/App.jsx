@@ -27,6 +27,7 @@ import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, resolverCotizaciones, traerCotizaciones } from "./monedas";
 import { notificar } from "./notificaciones";
+import { ahoraArgentina, ultimaRevisionMails } from "./revisionMails";
 import { avisarServiciosUrgentes } from "./recordatorios";
 import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
@@ -209,12 +210,16 @@ tendencia.recargar();
 
 // --- Gastos desde tus mails ---
 const [revisandoMails, setRevisandoMails] = useState(false);
+// Resultado de la última revisión hecha desde este dispositivo (incluido el
+// error), para mostrarlo fijo y no solo en un aviso que desaparece.
+const [revisionLocal, setRevisionLocal] = useState(null);
 // Desde la tarjeta del Resumen se puede abrir Movimientos ya filtrado.
 const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
 const modoMails = configMails.data?.modo || "apagado";
 const planillaId = idDePlanilla(urlPlanilla.data);
 
 const cantidadARevisar = [...(gastos.data || []), ...(ingresos.data || [])].filter((g) => g.aRevisar).length;
+const revisionMails = ultimaRevisionMails(revisionLocal, configMails.data);
 
 // interactivo=true solo desde un click: si hace falta, abre la ventana de
 // permisos de Google. Devuelve el resultado o tira el error.
@@ -224,6 +229,13 @@ if (!planillaId) throw new Error("Todavía no se encontró tu planilla. Probá d
 setRevisandoMails(true);
 try {
 const resultado = await revisarMails(planillaId, dias, { interactivo });
+setRevisionLocal({
+cuando: resultado?.revisadoEl || ahoraArgentina(),
+nuevos: resultado?.nuevos || 0,
+yaEstaban: resultado?.yaEstaban || 0,
+revisados: resultado?.revisados,
+dias: resultado?.dias,
+});
 // Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
 // como "mientras no estabas".
 marcarVistos((resultado?.encontrados || []).map(claveGasto));
@@ -236,6 +248,9 @@ cuentas.recargar();
 tendencia.recargar();
 }
 return resultado;
+} catch (err) {
+setRevisionLocal({ cuando: ahoraArgentina(), error: err.message || "No se pudieron revisar tus mails." });
+throw err;
 } finally {
 setRevisandoMails(false);
 }
@@ -251,9 +266,10 @@ const avisarResultadoMails = useCallback(
 const encontrados = resultado?.encontrados || [];
 const n = resultado?.nuevos || encontrados.length;
 if (n === 0) {
-if (!siempreAvisar) return;
-avisar("No encontré movimientos nuevos en tus mails.");
-notificar("Taros Money", "Revisé tus mails: no hay nada nuevo.");
+// Al abrir también se avisa (antes no decía nada y parecía que no
+// andaba), pero sin notificación del sistema.
+avisar("Revisé tus mails: no hay movimientos nuevos.");
+if (siempreAvisar) notificar("Taros Money", "Revisé tus mails: no hay nada nuevo.");
 return;
 }
 const detalle = encontrados
@@ -385,6 +401,7 @@ mailsDisponible()
 ? {
 config: configMails,
 cantidadARevisar,
+revision: revisionMails,
 revisando: revisandoMails,
 onRevisar: revisarMailsConBoton,
 onVerARevisar: () => {
@@ -465,6 +482,7 @@ recargarTodo();
 }}
 configMails={mailsDisponible() ? configMails : null}
 onCambiarModoMails={cambiarModoMails}
+revisionMails={revisionMails}
 revisandoMails={revisandoMails}
 onRevisarMails={revisarMailsConBoton}
 categorias={categorias}
@@ -489,12 +507,14 @@ onInstalar={() => setGuiaInstalarAbierta(true)}
 <NuevoMovimientoDialog
 categorias={categorias.data}
 cuentas={cuentas.data}
+cuentasEstado={cuentas}
 gastos={gastos.data}
 ingresos={ingresos.data}
 inicial={inicialNuevo}
 monedaPorCuenta={monedaPorCuenta}
 onClose={() => setDialogOpen(false)}
 onGuardado={recargarTodo}
+onCuentaCreada={cuentas.recargar}
 />
 )}
 
