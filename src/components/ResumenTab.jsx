@@ -366,6 +366,7 @@ Ver
 </div>
 )}
 <RevisionMails
+compacto
 revision={revision}
 revisando={revisando}
 dias={dias}
