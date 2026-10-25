@@ -227,6 +227,11 @@ export async function guardarIconoCategoria(nombre, icono) {
   }
 }
 
+// Le cambia el nombre en la lista y en todo lo que ya la usaba.
+export function renombrarCategoria(nombreViejo, nombreNuevo) {
+  return escribir("renombrarCategoria", [nombreViejo, nombreNuevo]);
+}
+
 export function agregarGasto(gasto) {
   return escribir("agregarGastoManual", [gasto]);
 }

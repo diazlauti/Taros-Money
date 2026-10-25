@@ -20,6 +20,18 @@ const PASOS = [
     texto: "Tu saldo, cuánto gastaste e ingresaste y en qué categorías. Arriba elegís el período: 7, 14, 30 o 90 días.",
   },
   {
+    tab: "cuentas",
+    icono: "ph ph-wallet",
+    titulo: "Primero, tu cuenta",
+    texto: "Cada gasto sale de una cuenta. Creá la que más usás (efectivo, banco, Mercado Pago) con la plata que tenés hoy y tocá «Agregar».",
+    espera: "cuenta-creada",
+    objetivo: "nueva-cuenta",
+    // Sin cuenta no se puede cargar nada: este paso no se saltea. Si ya
+    // tenés alguna, no aparece.
+    obligatorio: true,
+    soloSinCuentas: true,
+  },
+  {
     tab: "resumen",
     icono: "ph ph-plus-circle",
     titulo: "Cargá tu primer movimiento",
@@ -101,7 +113,7 @@ const PASO_INSTALAR = {
 
 // Recorrido de primera vez. Se marca como visto al terminarlo o saltearlo
 // (también con Esc), así no vuelve a aparecer solo.
-export default function Tour({ onIrA, onInstalar, onClose }) {
+export default function Tour({ hayCuentas, onIrA, onInstalar, onClose }) {
   const [pasos] = useState(() => (estaInstalada() ? PASOS : [...PASOS, PASO_INSTALAR]));
   const [indice, setIndice] = useState(0);
   // Para animar el paso nuevo entrando desde el lado correcto.
@@ -128,7 +140,16 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
     raiz.dataset.tourObjetivo = paso.objetivo;
     const enfocar = setTimeout(() => {
       const selector = paso.objetivo === "borrar" ? '[data-tour="primer-movimiento"]' : `[data-tour="${paso.objetivo}"]`;
-      document.querySelector(selector)?.focus();
+      const el = document.querySelector(selector);
+      if (el?.matches("form")) {
+        // Un formulario entero: se sube arriba de todo para que el cartel no
+        // tape el botón, y se arranca por el primer campo.
+        el.querySelector("input")?.focus({ preventScroll: true });
+        const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        el.scrollIntoView({ block: "start", behavior: quieto ? "auto" : "smooth" });
+      } else {
+        el?.focus();
+      }
     }, 300);
 
     function onAccion(e) {
@@ -153,7 +174,7 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
     const t = setTimeout(() => setSalteableEn(indice), ESPERA_SALTEO_S * 1000);
     return () => clearTimeout(t);
   }, [paso, indice]);
-  const puedeSaltear = paso.espera && salteableEn === indice;
+  const puedeSaltear = paso.espera && !paso.obligatorio && salteableEn === indice;
 
   // Saltear una práctica: sigue con el paso que corresponda sin obligar a
   // cargar ni a borrar nada.
@@ -175,6 +196,8 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
   }
 
   function irA(nuevo) {
+    // El paso de crear cuenta no hace falta si ya tenés una.
+    if (nuevo > indice && pasos[nuevo]?.soloSinCuentas && hayCuentas) nuevo++;
     const atras = nuevo < indice;
     setDireccion(atras ? "atras" : "adelante");
     setIndice(nuevo);

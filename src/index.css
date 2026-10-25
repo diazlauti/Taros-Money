@@ -88,6 +88,7 @@
 --tour-icono: 64px;
 --punto: 8px;
 --insignia: 18px;
+--tour-coach-alto: 320px;
 --icono-opcion: 48px;
 --calc-porcentaje: 72px;
 --landing-max: 1040px;
@@ -2248,6 +2249,7 @@ animation: pulso var(--dur-pulse) var(--ease-out) infinite;
 }
 
 :root[data-tour-objetivo="nuevo-movimiento"] [data-tour="nuevo-movimiento"],
+:root[data-tour-objetivo="nueva-cuenta"] [data-tour="nueva-cuenta"],
 :root[data-tour-objetivo="borrar"] [data-tour="primer-movimiento"],
 :root[data-tour-objetivo="borrar"] [data-tour="borrar-movimiento"] {
 position: relative;
@@ -2763,9 +2765,27 @@ font-size: var(--icon-md);
 padding-left: 0;
 }
 
-.tag-con-icono > .btn-icono:first-child i {
+.tag-editar {
+display: inline-flex;
+align-items: center;
+gap: var(--space-2);
+min-height: var(--tap);
+padding: 0 var(--space-1) 0 var(--space-3);
+border: none;
+border-radius: var(--radius-pill);
+background: transparent;
+color: inherit;
+font: inherit;
+cursor: pointer;
+}
+
+.tag-editar i {
 font-size: var(--icon-md);
 color: var(--color-accent-text);
+}
+
+.tag-editar:hover {
+text-decoration: underline;
 }
 
 .iconos-grilla {
@@ -2892,4 +2912,10 @@ animation: aparecer var(--dur-base) var(--ease-out);
 overflow: hidden;
 white-space: nowrap;
 text-overflow: ellipsis;
+}
+
+/* Mientras hay una práctica del recorrido, el cartel queda abajo: se deja
+   lugar para poder subir lo que hay que tocar por encima de él. */
+:root[data-tour-objetivo] .main-content {
+padding-bottom: calc(var(--tour-coach-alto) + var(--tap) + env(safe-area-inset-bottom));
 }

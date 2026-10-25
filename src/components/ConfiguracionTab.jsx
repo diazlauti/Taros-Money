@@ -7,7 +7,7 @@ import { iconoDeCategoria } from "../iconos";
 import ModoMails from "./ModoMails";
 import RevisionMails from "./RevisionMails";
 import Campo from "./Campo";
-import ElegirIconoDialog from "./ElegirIconoDialog";
+import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
@@ -33,7 +33,7 @@ export default function ConfiguracionTab({
   categorias,
   onAgregarCategoria,
   onBorrarCategoria,
-  onGuardarIconoCategoria,
+  onEditarCategoria,
   iconosSoloEsteDispositivo,
   tema,
   onCambiarTema,
@@ -167,14 +167,14 @@ export default function ConfiguracionTab({
           <li key={c} className="tag tag-borrable tag-con-icono">
             <button
               type="button"
-              className="btn btn-icono"
+              className="tag-editar"
               onClick={() => setCategoriaIcono(c)}
-              aria-label={`Cambiar ícono de ${c}`}
+              aria-label={`Editar ${c}`}
               aria-haspopup="dialog"
             >
               <i className={iconoDeCategoria(c)} aria-hidden="true" />
+              {c}
             </button>
-            {c}
             <button
               type="button"
               className="btn btn-icono"
@@ -225,7 +225,7 @@ export default function ConfiguracionTab({
           Categorías
         </h2>
         <p className="texto-intro">
-          Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá el ícono de una para cambiarlo.
+          Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá una para cambiarle el nombre o el ícono.
         </p>
         {chips}
         {iconosSoloEsteDispositivo && lista.length > 0 && (
@@ -235,9 +235,10 @@ export default function ConfiguracionTab({
           </p>
         )}
         {categoriaIcono && (
-          <ElegirIconoDialog
+          <EditarCategoriaDialog
             categoria={categoriaIcono}
-            onGuardar={onGuardarIconoCategoria}
+            otras={lista.filter((c) => c !== categoriaIcono)}
+            onGuardar={onEditarCategoria}
             onClose={() => setCategoriaIcono(null)}
           />
         )}

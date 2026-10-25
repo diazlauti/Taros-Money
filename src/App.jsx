@@ -6,6 +6,7 @@ getGastos,
 getCategorias,
 getIconosCategorias,
 guardarIconoCategoria,
+renombrarCategoria,
 agregarCategoria,
 borrarCategoria,
 getIngresos,
@@ -28,7 +29,7 @@ import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
-import { registrarIconos } from "./iconos";
+import { iconoDeCategoria, registrarIconos } from "./iconos";
 import { notificar } from "./notificaciones";
 import { ahoraArgentina, diasMailsGuardados, guardarDiasMails, ultimaRevisionMails } from "./revisionMails";
 import { avisarServiciosUrgentes } from "./recordatorios";
@@ -377,8 +378,21 @@ await borrarCategoria(nombre);
 categorias.recargar();
 }
 
-async function guardarIconoYRecargar(nombre, icono) {
-await guardarIconoCategoria(nombre, icono);
+// Editar una categoría: primero el nombre, después el ícono.
+async function editarCategoria(nombre, { nombre: nuevo, icono }) {
+let actual = nombre;
+if (nuevo && nuevo !== nombre) {
+await renombrarCategoria(nombre, nuevo);
+actual = nuevo;
+categorias.recargar();
+gastos.recargar();
+ingresos.recargar();
+suscripciones.recargar();
+resumen.recargar();
+}
+// Con nombre nuevo se guarda el ícono que se ve, así no se pierde el que
+// salía por el nombre viejo (ej. «Comida» → hamburguesa).
+if (icono && (actual !== nombre || icono !== iconoDeCategoria(nombre))) await guardarIconoCategoria(actual, icono);
 iconosCategorias.recargar();
 }
 
@@ -557,7 +571,7 @@ onCambiarDiasMails={cambiarDiasMails}
 categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}
-onGuardarIconoCategoria={guardarIconoYRecargar}
+onEditarCategoria={editarCategoria}
 iconosSoloEsteDispositivo={!!iconosCategorias.data?.soloEsteDispositivo}
 tema={tema}
 onCambiarTema={onCambiarTema}
@@ -591,6 +605,7 @@ onCuentaCreada={cuentas.recargar}
 
 {tourAbierto && (
 <Tour
+hayCuentas={(cuentas.data || []).some((c) => !c.esTarjeta)}
 onIrA={setActiveTab}
 onClose={() => setTourAbierto(false)}
 onInstalar={() => {
