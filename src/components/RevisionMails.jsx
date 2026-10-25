@@ -440,15 +440,23 @@ export default function RevisionMails({
         </div>
       )}
 
-      <button
-        type="button"
-        className="btn btn-primary btn-alinear-inicio"
-        onClick={() => onRevisar(dias)}
-        disabled={revisando}
-      >
-        <i className="ph ph-envelope-simple" aria-hidden="true" />
-        {revisando ? "Revisando…" : "Revisar mis mails"}
-      </button>
+      <div className="fila">
+        <button type="button" className="btn btn-primary" onClick={() => onRevisar(dias)} disabled={revisando}>
+          <i className="ph ph-envelope-simple" aria-hidden="true" />
+          {revisando ? "Revisando…" : "Revisar mis mails"}
+        </button>
+        {/* En el Resumen la «i» va al lado del botón; en Configuración, arriba. */}
+        {compacto && (
+          <button
+            type="button"
+            className="btn btn-icono"
+            onClick={() => setInfoAbierta(true)}
+            aria-label="Cómo funciona la revisión de mails"
+          >
+            <i className="ph ph-info" aria-hidden="true" />
+          </button>
+        )}
+      </div>
 
       {revisando || llenando ? (
         <Progreso bancos={bancos} completo={llenando} />
