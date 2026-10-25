@@ -355,20 +355,15 @@ Activar
 } else {
 contenido = (
 <>
-<p className="mails-card-cuenta" aria-live="polite">
-{cantidadARevisar === 0 ? (
-"Todo revisado. No hay movimientos de tus mails esperando."
-) : (
-<>
-<strong>{cantidadARevisar}</strong>{" "}
-{cantidadARevisar === 1 ? "movimiento de tus mails para revisar" : "movimientos de tus mails para revisar"}
-</>
-)}
-</p>
 {cantidadARevisar > 0 && (
-<button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onVerARevisar}>
-Ver los que faltan revisar
+<div className="fila-separada">
+<p className="mails-card-cuenta" aria-live="polite">
+<strong>{cantidadARevisar}</strong> para revisar
+</p>
+<button type="button" className="btn btn-secondary" onClick={onVerARevisar}>
+Ver
 </button>
+</div>
 )}
 <RevisionMails
 revision={revision}

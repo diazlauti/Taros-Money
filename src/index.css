@@ -2635,17 +2635,6 @@ gap: var(--space-2);
 font-size: var(--text-sm);
 }
 
-.revision-consejos {
-display: flex;
-flex-direction: column;
-gap: var(--space-2);
-font-size: var(--text-sm);
-}
-
-.revision-consejos p {
-margin: 0;
-}
-
 .revision-consejos-lista {
 display: flex;
 flex-direction: column;
@@ -2655,23 +2644,51 @@ gap: var(--space-3);
 .revision-consejos-lista li {
 display: flex;
 align-items: flex-start;
-gap: var(--space-2);
+gap: var(--space-3);
+}
+
+.revision-consejos-lista p {
+margin: 0;
 }
 
 .revision-consejos-lista li > i {
-font-size: var(--icon-md);
+font-size: var(--icon-lg);
 flex: none;
 color: var(--color-accent-text);
 }
 
-.revision-consejo-accion {
+.revision-cabeza {
 display: flex;
-margin-top: var(--space-2);
+align-items: center;
+justify-content: space-between;
+gap: var(--space-2);
 }
 
-.btn-chico {
+.revision-dias {
+display: flex;
+align-items: center;
+gap: var(--space-2);
+margin: 0;
+padding: 0;
+border: none;
+min-width: 0;
+}
+
+.revision-dias .seg-opt {
+white-space: nowrap;
+}
+
+.btn-link {
 min-height: var(--tap);
+padding: 0;
+border: none;
+background: none;
+color: var(--color-accent-text);
+font: inherit;
 font-size: var(--text-sm);
+font-weight: var(--weight-medium);
+text-decoration: underline;
+cursor: pointer;
 }
 
 @media (prefers-reduced-motion: no-preference) {
