@@ -177,7 +177,9 @@ export default function AjustesMails({ modo }) {
     <div className="pila-chica">
       <h3 className="subtitulo">Avisos</h3>
       {avisosDispositivo}
-      <h3 className="subtitulo">Búsqueda personalizada</h3>
+      <h3 className="subtitulo" id="busqueda-personalizada" tabIndex={-1}>
+        Búsqueda personalizada
+      </h3>
       {reglas}
       {errorGuardar && (
         <p className="mensaje-error" role="alert">

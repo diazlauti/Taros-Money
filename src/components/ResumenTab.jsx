@@ -1,5 +1,5 @@
 import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria, nombreMes } from "../format";
-import EstadoRevisionMails from "./EstadoRevisionMails";
+import RevisionMails from "./RevisionMails";
 import { serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
 import { colorPorCategoria } from "../theme";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
@@ -328,7 +328,7 @@ return (
 
 // La detección de gastos en los mails, a mano en el Resumen: si está apagada
 // invita a activarla; si está prendida muestra qué falta revisar.
-function MailsCard({ config, cantidadARevisar, revision, revisando, onRevisar, onVerARevisar, onActivar }) {
+function MailsCard({ config, cantidadARevisar, revision, revisando, dias, onCambiarDias, onIrABusqueda, onRevisar, onVerARevisar, onActivar }) {
 const modo = config.data?.modo || "apagado";
 let contenido;
 
@@ -365,18 +365,20 @@ contenido = (
 </>
 )}
 </p>
-<EstadoRevisionMails revision={revision} revisando={revisando} onReintentar={onRevisar} />
-<div className="fila">
 {cantidadARevisar > 0 && (
-<button type="button" className="btn btn-primary" onClick={onVerARevisar}>
-Revisarlos
+<button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onVerARevisar}>
+Ver los que faltan revisar
 </button>
 )}
-<button type="button" className="btn btn-secondary" onClick={onRevisar} disabled={revisando}>
-<i className="ph ph-envelope-simple" aria-hidden="true" />
-{revisando ? "Revisando mails…" : "Revisar ahora"}
-</button>
-</div>
+<RevisionMails
+revision={revision}
+revisando={revisando}
+dias={dias}
+onCambiarDias={onCambiarDias}
+onRevisar={onRevisar}
+onVerEncontrados={onVerARevisar}
+onIrABusqueda={onIrABusqueda}
+/>
 </>
 );
 }

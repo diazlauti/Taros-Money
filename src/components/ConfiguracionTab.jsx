@@ -4,7 +4,7 @@ import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import AjustesMails from "./AjustesMails";
-import EstadoRevisionMails from "./EstadoRevisionMails";
+import RevisionMails from "./RevisionMails";
 import Campo from "./Campo";
 import MonedasCard from "./MonedasCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
@@ -33,6 +33,9 @@ export default function ConfiguracionTab({
   revisionMails,
   revisandoMails,
   onRevisarMails,
+  diasMails,
+  onCambiarDiasMails,
+  onIrABusquedaMails,
   categorias,
   onAgregarCategoria,
   onBorrarCategoria,
@@ -173,18 +176,14 @@ export default function ConfiguracionTab({
             </p>
           </fieldset>
           {modoMails !== "apagado" && (
-            <button
-              type="button"
-              className="btn btn-secondary btn-alinear-inicio"
-              onClick={onRevisarMails}
-              disabled={revisandoMails || guardandoMails}
-            >
-              <i className="ph ph-envelope-simple" aria-hidden="true" />
-              {revisandoMails ? "Revisando mails…" : "Revisar mails ahora"}
-            </button>
-          )}
-          {modoMails !== "apagado" && (
-            <EstadoRevisionMails revision={revisionMails} revisando={revisandoMails} onReintentar={onRevisarMails} />
+            <RevisionMails
+              revision={revisionMails}
+              revisando={revisandoMails}
+              dias={diasMails}
+              onCambiarDias={onCambiarDiasMails}
+              onRevisar={onRevisarMails}
+              onIrABusqueda={onIrABusquedaMails}
+            />
           )}
           {errorMails && (
             <p className="mensaje-error" role="alert">

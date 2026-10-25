@@ -2547,3 +2547,133 @@ padding-top: var(--space-3);
 .moneda-detalle {
 padding-left: calc(var(--icon-md) + var(--space-2));
 }
+
+/* --- Revisión de mails (Resumen y Configuración) --- */
+
+.revision-mails {
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+}
+
+.revision-progreso {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+}
+
+.revision-progreso-cabeza {
+display: flex;
+justify-content: space-between;
+gap: var(--space-2);
+font-size: var(--text-sm);
+}
+
+.revision-barra {
+height: var(--space-2);
+border-radius: var(--radius-pill);
+background: var(--color-skeleton);
+overflow: hidden;
+}
+
+.revision-barra-relleno {
+display: block;
+height: 100%;
+width: var(--pct);
+border-radius: inherit;
+background: var(--color-accent);
+}
+
+.revision-resultado {
+display: flex;
+align-items: flex-start;
+gap: var(--space-3);
+padding: var(--space-3);
+border-radius: var(--radius-md);
+border: var(--border-thin) solid var(--color-divider);
+}
+
+.revision-resultado p {
+margin: 0;
+}
+
+.revision-resultado-icono {
+font-size: var(--icon-lg);
+flex: none;
+color: var(--color-text-dim);
+}
+
+.revision-resultado--nuevo {
+border-color: var(--color-accent-text);
+}
+
+.revision-resultado--nuevo .revision-resultado-icono {
+color: var(--color-accent-text);
+}
+
+.revision-resultado--ok .revision-resultado-icono {
+color: var(--exito);
+}
+
+.revision-resultado--error {
+border-color: var(--error);
+}
+
+.revision-resultado--error .revision-resultado-icono {
+color: var(--error);
+}
+
+.revision-titulo {
+font-size: var(--text-lg);
+font-weight: var(--weight-bold);
+}
+
+.revision-encontrados li {
+display: flex;
+justify-content: space-between;
+gap: var(--space-2);
+font-size: var(--text-sm);
+}
+
+.revision-consejos {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+font-size: var(--text-sm);
+}
+
+.revision-consejos p {
+margin: 0;
+}
+
+.revision-consejos-lista {
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+}
+
+.revision-consejos-lista li {
+display: flex;
+align-items: flex-start;
+gap: var(--space-2);
+}
+
+.revision-consejos-lista li > i {
+font-size: var(--icon-md);
+flex: none;
+color: var(--color-accent-text);
+}
+
+.revision-consejo-accion {
+display: flex;
+margin-top: var(--space-2);
+}
+
+.btn-chico {
+min-height: var(--tap);
+font-size: var(--text-sm);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+.revision-barra-relleno { transition: width var(--dur-slow) var(--ease-out); }
+}

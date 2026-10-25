@@ -27,7 +27,7 @@ import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
 import { fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, resolverCotizaciones, traerCotizaciones } from "./monedas";
 import { notificar } from "./notificaciones";
-import { ahoraArgentina, ultimaRevisionMails } from "./revisionMails";
+import { ahoraArgentina, diasMailsGuardados, guardarDiasMails, ultimaRevisionMails } from "./revisionMails";
 import { avisarServiciosUrgentes } from "./recordatorios";
 import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
@@ -213,6 +213,12 @@ const [revisandoMails, setRevisandoMails] = useState(false);
 // Resultado de la última revisión hecha desde este dispositivo (incluido el
 // error), para mostrarlo fijo y no solo en un aviso que desaparece.
 const [revisionLocal, setRevisionLocal] = useState(null);
+// Cuántos días para atrás revisa el botón (7, 14 o 30).
+const [diasMails, setDiasMails] = useState(diasMailsGuardados);
+function cambiarDiasMails(d) {
+setDiasMails(d);
+guardarDiasMails(d);
+}
 // Desde la tarjeta del Resumen se puede abrir Movimientos ya filtrado.
 const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
 const modoMails = configMails.data?.modo || "apagado";
@@ -233,6 +239,7 @@ setRevisionLocal({
 cuando: resultado?.revisadoEl || ahoraArgentina(),
 nuevos: resultado?.nuevos || 0,
 yaEstaban: resultado?.yaEstaban || 0,
+encontrados: (resultado?.encontrados || []).slice(0, 3),
 revisados: resultado?.revisados,
 dias: resultado?.dias,
 });
@@ -298,9 +305,13 @@ avisar(`${titulo} en tus mails. Revisalos en Movimientos.`);
 notificar(titulo, "Están en Movimientos con la etiqueta \"A revisar\".");
 }, [modoMails, gastos.data, avisar]);
 
-async function revisarMailsConBoton() {
+// "d" llega como número desde la tarjeta de revisión; desde otros botones
+// llega el evento del click, y ahí se usan los días elegidos.
+async function revisarMailsConBoton(d) {
+const dias = typeof d === "number" ? d : diasMails;
+if (dias !== diasMails) cambiarDiasMails(dias);
 try {
-avisarResultadoMails(await revisarMisMails({ interactivo: true }));
+avisarResultadoMails(await revisarMisMails({ interactivo: true, dias }));
 } catch (err) {
 avisar(err.message || "No se pudieron revisar tus mails. Probá de nuevo.", "error");
 }
@@ -365,6 +376,15 @@ function irA(tab) {
 setFiltroMovimientos("todos");
 setActiveTab(tab);
 }
+// Lleva a "Búsqueda personalizada" (Configuración) para sumar el banco.
+function irABusquedaMails() {
+setActiveTab("configuracion");
+setTimeout(() => {
+const destino = document.getElementById("busqueda-personalizada");
+destino?.scrollIntoView({ block: "start" });
+destino?.focus();
+}, 300);
+}
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
@@ -404,6 +424,9 @@ cantidadARevisar,
 revision: revisionMails,
 revisando: revisandoMails,
 onRevisar: revisarMailsConBoton,
+dias: diasMails,
+onCambiarDias: cambiarDiasMails,
+onIrABusqueda: irABusquedaMails,
 onVerARevisar: () => {
 setFiltroMovimientos("revisar");
 setActiveTab("movimientos");
@@ -485,6 +508,9 @@ onCambiarModoMails={cambiarModoMails}
 revisionMails={revisionMails}
 revisandoMails={revisandoMails}
 onRevisarMails={revisarMailsConBoton}
+diasMails={diasMails}
+onCambiarDiasMails={cambiarDiasMails}
+onIrABusquedaMails={irABusquedaMails}
 categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}

@@ -30,3 +30,24 @@ export function ultimaRevisionMails(local, config) {
   if (!remota) return local;
   return String(remota.cuando || "") > String(local.cuando || "") ? remota : local;
 }
+
+export const OPCIONES_DIAS_MAILS = [7, 14, 30];
+const DIAS_KEY = "taros-mails-dias";
+
+// Cuántos días revisar con el botón: se recuerda en este dispositivo.
+export function diasMailsGuardados() {
+  try {
+    const n = Number(localStorage.getItem(DIAS_KEY));
+    return OPCIONES_DIAS_MAILS.includes(n) ? n : DIAS_REVISION_MAILS;
+  } catch {
+    return DIAS_REVISION_MAILS;
+  }
+}
+
+export function guardarDiasMails(dias) {
+  try {
+    localStorage.setItem(DIAS_KEY, String(dias));
+  } catch {
+    /* storage bloqueado: vuelve a 7 la próxima vez, sin drama */
+  }
+}
