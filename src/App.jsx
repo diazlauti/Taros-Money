@@ -130,6 +130,8 @@ const [inicialNuevo, setInicialNuevo] = useState(leerNuevoDeUrl);
 const [dialogOpen, setDialogOpen] = useState(() => inicialNuevo !== null);
 // El recorrido aparece solo la primera vez; después se abre desde Configuración.
 const [tourAbierto, setTourAbierto] = useState(() => !tourVisto() && inicialNuevo === null);
+// Abierto a mano desde Configuración: ahí sí se puede saltear.
+const [tourDesdeConfig, setTourDesdeConfig] = useState(false);
 const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
 const [calculadoraAbierta, setCalculadoraAbierta] = useState(false);
 
@@ -582,7 +584,10 @@ onCambiarTema={onCambiarTema}
 sonido={sonido}
 onToggleSonido={alternarSonido}
 onCerrarSesion={onCerrarSesion}
-onVerTour={() => setTourAbierto(true)}
+onVerTour={() => {
+setTourDesdeConfig(true);
+setTourAbierto(true);
+}}
 onInstalar={() => setGuiaInstalarAbierta(true)}
 />
 )}
@@ -609,6 +614,7 @@ onCuentaCreada={cuentas.recargar}
 
 {tourAbierto && (
 <Tour
+sePuedeSaltear={tourDesdeConfig}
 hayCuentas={(cuentas.data || []).some((c) => !c.esTarjeta)}
 onIrA={setActiveTab}
 onClose={() => setTourAbierto(false)}

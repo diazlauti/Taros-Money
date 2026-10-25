@@ -2986,3 +2986,16 @@ to { --tour-angulo: 360deg; }
 background: var(--color-resalte);
 }
 }
+
+/* Práctica: se oscurece todo menos lo que hay que tocar (y el cartel del
+   recorrido, que queda arriba). La sombra no frena los toques. */
+:root[data-tour-objetivo="nuevo-movimiento"] [data-tour="nuevo-movimiento"]::after,
+:root[data-tour-objetivo="nueva-cuenta"] [data-tour="nueva-cuenta"]::after {
+content: "";
+position: absolute;
+inset: 0;
+border-radius: inherit;
+box-shadow: 0 0 0 100vmax var(--color-backdrop);
+pointer-events: none;
+animation: backdrop-in var(--dur-slow) var(--ease-out);
+}

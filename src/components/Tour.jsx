@@ -11,7 +11,7 @@ const PASOS = [
     tab: "resumen",
     icono: "ph ph-hand-waving",
     titulo: "¡Te damos la bienvenida!",
-    texto: "Te mostramos en un minuto dónde está cada cosa. Podés saltearlo y verlo cuando quieras desde Configuración.",
+    texto: "Te mostramos en un minuto dónde está cada cosa. Después lo podés volver a ver cuando quieras desde Configuración.",
   },
   {
     tab: "resumen",
@@ -116,7 +116,9 @@ const PASO_INSTALAR = {
 
 // Recorrido de primera vez. Se marca como visto al terminarlo o saltearlo
 // (también con Esc), así no vuelve a aparecer solo.
-export default function Tour({ hayCuentas, onIrA, onInstalar, onClose }) {
+// La primera vez no se puede saltear (ni con Esc): solo quien lo abre de
+// nuevo desde Configuración tiene «Saltear».
+export default function Tour({ hayCuentas, sePuedeSaltear = false, onIrA, onInstalar, onClose }) {
   const [pasos] = useState(() => (estaInstalada() ? PASOS : [...PASOS, PASO_INSTALAR]));
   const [indice, setIndice] = useState(0);
   // Para animar el paso nuevo entrando desde el lado correcto.
@@ -269,9 +271,11 @@ export default function Tour({ hayCuentas, onIrA, onInstalar, onClose }) {
               <i className="ph ph-arrow-right" aria-hidden="true" />
             </button>
           )}
-          <button type="button" className="btn btn-texto" onClick={cerrar}>
-            Saltear recorrido
-          </button>
+          {sePuedeSaltear && (
+            <button type="button" className="btn btn-texto" onClick={cerrar}>
+              Saltear recorrido
+            </button>
+          )}
         </div>
         <p className="visualmente-oculto" aria-live="polite">
           {puedeSaltear ? "Si preferís, podés seguir sin hacerlo." : ""}
@@ -284,7 +288,7 @@ export default function Tour({ hayCuentas, onIrA, onInstalar, onClose }) {
   const puedeVolver = indice > piso && !pasos[indice - 1].espera;
 
   return (
-    <Dialog titulo={paso.titulo} onClose={cerrar} variante="tour">
+    <Dialog titulo={paso.titulo} onClose={sePuedeSaltear || esUltimo ? cerrar : () => {}} variante="tour">
       <div key={indice} className={`tour-cuerpo tour-cuerpo--${direccion}`}>
         <span
           className={
@@ -313,10 +317,12 @@ export default function Tour({ hayCuentas, onIrA, onInstalar, onClose }) {
           <button type="button" className="btn btn-texto" onClick={cerrar}>
             {paso === PASO_INSTALAR ? "Ahora no" : "Cerrar"}
           </button>
-        ) : (
+        ) : sePuedeSaltear ? (
           <button type="button" className="btn btn-texto" onClick={cerrar}>
             Saltear
           </button>
+        ) : (
+          <span />
         )}
         <div className="fila">
           {puedeVolver && (
