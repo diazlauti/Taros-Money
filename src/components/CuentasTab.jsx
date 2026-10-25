@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { ajustarCuenta, crearCuenta } from "../api";
+import { avisarAccionTour } from "../tour";
 import { useAvisos } from "../avisos";
 import { fmtMoney, parseMonto } from "../format";
 import { etiquetaMoneda } from "../monedas";
@@ -40,6 +41,7 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
       await crearCuenta({ nombre: form.nombre.trim(), saldo: parseMonto(form.saldo) || 0, moneda: form.moneda });
       playSuccess();
       avisar("Cuenta agregada");
+      avisarAccionTour("cuenta-creada");
       setForm(VACIO);
       v.reiniciar();
       onCambio?.();
@@ -130,7 +132,13 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
     <>
       {contenido}
 
-      <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nueva-cuenta">
+      <form
+        className="card form ancho-form"
+        onSubmit={agregar}
+        noValidate
+        aria-labelledby="titulo-nueva-cuenta"
+        data-tour="nueva-cuenta"
+      >
         <h2 className="card-kicker" id="titulo-nueva-cuenta">
           Agregar cuenta
         </h2>

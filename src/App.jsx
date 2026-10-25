@@ -4,6 +4,9 @@ getSaldo,
 getResumen,
 getGastos,
 getCategorias,
+getIconosCategorias,
+guardarIconoCategoria,
+renombrarCategoria,
 agregarCategoria,
 borrarCategoria,
 getIngresos,
@@ -23,9 +26,10 @@ mailsDisponible,
 idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
-import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
+import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
 import { fmtMoney, mapaMonedas } from "./format";
-import { cotizacionesParaGuardar, resolverCotizaciones, traerCotizaciones } from "./monedas";
+import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
+import { iconoDeCategoria, registrarIconos } from "./iconos";
 import { notificar } from "./notificaciones";
 import { ahoraArgentina, diasMailsGuardados, guardarDiasMails, ultimaRevisionMails } from "./revisionMails";
 import { avisarServiciosUrgentes } from "./recordatorios";
@@ -49,6 +53,7 @@ import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
 import { leerNuevoDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
+import CalculadoraDialog from "./components/CalculadoraDialog";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
@@ -125,7 +130,10 @@ const [inicialNuevo, setInicialNuevo] = useState(leerNuevoDeUrl);
 const [dialogOpen, setDialogOpen] = useState(() => inicialNuevo !== null);
 // El recorrido aparece solo la primera vez; después se abre desde Configuración.
 const [tourAbierto, setTourAbierto] = useState(() => !tourVisto() && inicialNuevo === null);
+// Abierto a mano desde Configuración: ahí sí se puede saltear.
+const [tourDesdeConfig, setTourDesdeConfig] = useState(false);
 const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
+const [calculadoraAbierta, setCalculadoraAbierta] = useState(false);
 
 useEffect(() => {
 if (inicialNuevo) limpiarNuevoDeUrl();
@@ -136,6 +144,7 @@ const resumen = useSeccion(() => getResumen(dias), [dias]);
 const gastos = useSeccion(() => getGastos(dias), [dias]);
 const ingresos = useSeccion(() => getIngresos(dias), [dias]);
 const categorias = useSeccion(getCategorias, []);
+const iconosCategorias = useSeccion(getIconosCategorias, []);
 const cuentas = useSeccion(getCuentas, []);
 const metas = useSeccion(getMetas, []);
 const suscripciones = useSeccion(getSuscripciones, []);
@@ -169,6 +178,10 @@ const monedaPorCuenta = useMemo(() => mapaMonedas(cuentas.data), [cuentas.data])
 // Con cuánto se pasa cada moneda a pesos: la automática de hoy si llegó, si
 // no la fija o la última guardada.
 const configMonedas = monedas.data?.monedas;
+// Monedas propias e íconos elegidos: se registran antes de dibujar, así
+// cualquier monto o categoría de la app los usa.
+registrarMonedasPropias(configMonedas);
+registrarIconos(iconosCategorias.data?.iconos);
 const cotizaciones = useMemo(
 () => resolverCotizaciones(configMonedas, cotizacionesHoy.data),
 [configMonedas, cotizacionesHoy.data],
@@ -367,6 +380,51 @@ await borrarCategoria(nombre);
 categorias.recargar();
 }
 
+// Editar una categoría: primero el nombre, después el ícono.
+async function editarCategoria(nombre, { nombre: nuevo, icono }) {
+let actual = nombre;
+if (nuevo && nuevo !== nombre) {
+await renombrarCategoria(nombre, nuevo);
+actual = nuevo;
+categorias.recargar();
+gastos.recargar();
+ingresos.recargar();
+suscripciones.recargar();
+resumen.recargar();
+}
+// Con nombre nuevo se guarda el ícono que se ve, así no se pierde el que
+// salía por el nombre viejo (ej. «Comida» → hamburguesa).
+if (icono && (actual !== nombre || icono !== iconoDeCategoria(nombre))) await guardarIconoCategoria(actual, icono);
+iconosCategorias.recargar();
+}
+
+// Puntitos en el menú: lo que quedó pendiente se sigue marcando hasta que
+// se resuelve (un gasto de los mails sin revisar, un servicio por vencer).
+const serviciosUrgentes = useMemo(
+() => serviciosConEstado(servicios.data).filter((s) => s.estado === "vencido" || s.estado === "pronto").length,
+[servicios.data],
+);
+const avisosMenu = {
+movimientos: cantidadARevisar
+? { cantidad: cantidadARevisar, texto: `${cantidadARevisar} ${cantidadARevisar === 1 ? "movimiento" : "movimientos"} para revisar` }
+: null,
+servicios: serviciosUrgentes
+? { cantidad: serviciosUrgentes, texto: `${serviciosUrgentes} ${serviciosUrgentes === 1 ? "servicio vencido o por vencer" : "servicios vencidos o por vencer"}` }
+: null,
+};
+const totalAvisos = cantidadARevisar + serviciosUrgentes;
+
+// Con la app instalada, el mismo número aparece sobre el ícono (donde el
+// sistema lo permite).
+useEffect(() => {
+try {
+if (totalAvisos > 0) navigator.setAppBadge?.(totalAvisos)?.catch?.(() => {});
+else navigator.clearAppBadge?.()?.catch?.(() => {});
+} catch {
+/* el navegador no lo soporta: no pasa nada */
+}
+}, [totalAvisos]);
+
 const abrirNuevo = () => {
 setInicialNuevo(null);
 setDialogOpen(true);
@@ -377,16 +435,26 @@ setFiltroMovimientos("todos");
 setActiveTab(tab);
 }
 
-const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
+const activeItem = NAV_ITEMS.find((i) => i.id === seccionDelMenu(activeTab)) || NAV_ITEMS[0];
 
 return (
 <div className="app-shell">
-<Sidebar activeTab={activeTab} onSelect={irA} />
+<Sidebar activeTab={activeTab} onSelect={irA} avisos={avisosMenu} />
 
 <main className="main">
 <header className="main-header">
 <i className="ph ph-wallet brand-icono" role="img" aria-label="Taros Money" />
 <h1>{activeItem.label}</h1>
+<button
+type="button"
+className="btn btn-secondary btn-calculadora"
+onClick={() => setCalculadoraAbierta(true)}
+aria-haspopup="dialog"
+title="Calculadora de impuestos"
+>
+<i className="ph ph-calculator" aria-hidden="true" />
+<span className="visualmente-oculto">Calculadora de impuestos</span>
+</button>
 <button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento">
 <i className="ph ph-plus" aria-hidden="true" />
 Nuevo movimiento
@@ -460,6 +528,10 @@ onIrAMonedas={() => setActiveTab("configuracion")}
 
 {activeTab === "metas" && <MetasTab metas={metas} onCambio={metas.recargar} />}
 
+{(activeTab === "servicios" || activeTab === "recurrentes") && (
+<ElegirServiciosOSubs actual={activeTab} onCambiar={setActiveTab} />
+)}
+
 {activeTab === "servicios" && (
 <ServiciosTab
 servicios={servicios}
@@ -505,12 +577,17 @@ onCambiarDiasMails={cambiarDiasMails}
 categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}
+onEditarCategoria={editarCategoria}
+iconosSoloEsteDispositivo={!!iconosCategorias.data?.soloEsteDispositivo}
 tema={tema}
 onCambiarTema={onCambiarTema}
 sonido={sonido}
 onToggleSonido={alternarSonido}
 onCerrarSesion={onCerrarSesion}
-onVerTour={() => setTourAbierto(true)}
+onVerTour={() => {
+setTourDesdeConfig(true);
+setTourAbierto(true);
+}}
 onInstalar={() => setGuiaInstalarAbierta(true)}
 />
 )}
@@ -518,7 +595,7 @@ onInstalar={() => setGuiaInstalarAbierta(true)}
 </div>
 </main>
 
-<BottomNav activeTab={activeTab} onSelect={irA} />
+<BottomNav activeTab={activeTab} onSelect={irA} avisos={avisosMenu} />
 
 {dialogOpen && (
 <NuevoMovimientoDialog
@@ -537,6 +614,8 @@ onCuentaCreada={cuentas.recargar}
 
 {tourAbierto && (
 <Tour
+sePuedeSaltear={tourDesdeConfig}
+hayCuentas={(cuentas.data || []).some((c) => !c.esTarjeta)}
 onIrA={setActiveTab}
 onClose={() => setTourAbierto(false)}
 onInstalar={() => {
@@ -547,7 +626,47 @@ setGuiaInstalarAbierta(true);
 )}
 
 {guiaInstalarAbierta && <InstalarAppDialog onClose={() => setGuiaInstalarAbierta(false)} />}
+
+{calculadoraAbierta && (
+<CalculadoraDialog
+cotizaciones={cotizaciones}
+configMonedas={configMonedas}
+cotizacionesHoy={cotizacionesHoy}
+onClose={() => setCalculadoraAbierta(false)}
+onCargarGasto={(datos) => {
+setCalculadoraAbierta(false);
+setInicialNuevo(datos);
+setDialogOpen(true);
+}}
+/>
+)}
 </div>
+);
+}
+
+// Arriba de "Servicios y subs": cuál de las dos listas ver.
+function ElegirServiciosOSubs({ actual, onCambiar }) {
+return (
+<fieldset className="field ancho-contenido">
+<legend className="visualmente-oculto">Qué ver</legend>
+<div className="seg seg-ancho">
+{[
+["servicios", "Servicios", "ph ph-receipt"],
+["recurrentes", "Suscripciones", "ph ph-repeat"],
+].map(([valor, texto, icono]) => (
+<label className="seg-opt" key={valor}>
+<input type="radio" name="servicios-o-subs" checked={actual === valor} onChange={() => onCambiar(valor)} />
+<i className={icono} aria-hidden="true" />
+{texto}
+</label>
+))}
+</div>
+<p className="texto-chico texto-tenue">
+{actual === "servicios"
+? "Las facturas que pagás vos (luz, agua, alquiler): vencen, te avisamos y las marcás como pagadas."
+: "Lo que se cobra solo todos los meses (Netflix, Spotify, el gimnasio): ves cuánto suma y cuándo se cobra."}
+</p>
+</fieldset>
 );
 }
 

@@ -3,9 +3,11 @@ import { useAvisos } from "../avisos";
 import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
+import { iconoDeCategoria } from "../iconos";
 import ModoMails from "./ModoMails";
 import RevisionMails from "./RevisionMails";
 import Campo from "./Campo";
+import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
@@ -31,6 +33,8 @@ export default function ConfiguracionTab({
   categorias,
   onAgregarCategoria,
   onBorrarCategoria,
+  onEditarCategoria,
+  iconosSoloEsteDispositivo,
   tema,
   onCambiarTema,
   sonido,
@@ -45,6 +49,7 @@ export default function ConfiguracionTab({
   const [guardandoCategoria, setGuardandoCategoria] = useState(false);
   const [borrandoCategoria, setBorrandoCategoria] = useState(null);
   const [errorCategoria, setErrorCategoria] = useState("");
+  const [categoriaIcono, setCategoriaIcono] = useState(null);
   const lista = categorias.data || [];
   const errorNombre = errorNombreNuevo(nuevaCategoria, lista, "categoría");
   const errorVisible = tocado || nuevaCategoria ? errorNombre : "";
@@ -159,8 +164,17 @@ export default function ConfiguracionTab({
     chips = (
       <ul className="lista chips">
         {lista.map((c) => (
-          <li key={c} className="tag tag-borrable">
-            {c}
+          <li key={c} className="tag tag-borrable tag-con-icono">
+            <button
+              type="button"
+              className="tag-editar"
+              onClick={() => setCategoriaIcono(c)}
+              aria-label={`Editar ${c}`}
+              aria-haspopup="dialog"
+            >
+              <i className={iconoDeCategoria(c)} aria-hidden="true" />
+              {c}
+            </button>
             <button
               type="button"
               className="btn btn-icono"
@@ -210,8 +224,24 @@ export default function ConfiguracionTab({
         <h2 className="card-kicker" id="titulo-categorias-config">
           Categorías
         </h2>
-        <p className="texto-intro">Aparecen para elegir al cargar un gasto, ingreso o suscripción.</p>
+        <p className="texto-intro">
+          Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá una para cambiarle el nombre o el ícono.
+        </p>
         {chips}
+        {iconosSoloEsteDispositivo && lista.length > 0 && (
+          <p className="texto-chico texto-tenue">
+            <i className="ph ph-info" aria-hidden="true" /> Por ahora los íconos que elegís se guardan solo en este
+            dispositivo.
+          </p>
+        )}
+        {categoriaIcono && (
+          <EditarCategoriaDialog
+            categoria={categoriaIcono}
+            otras={lista.filter((c) => c !== categoriaIcono)}
+            onGuardar={onEditarCategoria}
+            onClose={() => setCategoriaIcono(null)}
+          />
+        )}
 
         <form className="form-buscar" onSubmit={agregar} noValidate>
           <Campo etiqueta="Nueva categoría" error={errorVisible}>

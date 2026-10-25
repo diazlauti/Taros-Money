@@ -45,8 +45,7 @@ export const NAV_ITEMS = [
 { id: "movimientos", label: "Movimientos", icon: "ph ph-list-bullets" },
 { id: "cuentas", label: "Cuentas", icon: "ph ph-wallet" },
 { id: "metas", label: "Metas", icon: "ph ph-target" },
-{ id: "servicios", label: "Servicios", icon: "ph ph-receipt" },
-{ id: "recurrentes", label: "Suscripciones", icon: "ph ph-repeat" },
+{ id: "servicios", label: "Servicios y subs", icon: "ph ph-receipt" },
 { id: "reportes", label: "Reportes", icon: "ph ph-chart-line" },
 { id: "configuracion", label: "Configuración", icon: "ph ph-gear" },
 ];
@@ -54,5 +53,11 @@ export const NAV_ITEMS = [
 // En el celu la barra de abajo muestra 4 secciones con texto + "Más"; el
 // resto se abre desde ese menú (con 7 íconos sin texto no se entendía nada).
 export const NAV_CELU = ["resumen", "movimientos", "cuentas", "metas"];
+
+// Servicios y suscripciones comparten una sola entrada del menú: adentro se
+// elige cuál ver. "recurrentes" (suscripciones) sigue existiendo como pestaña.
+export function seccionDelMenu(tab) {
+  return tab === "recurrentes" ? "servicios" : tab;
+}
 
 export const PERIODOS = [7, 14, 30, 90];
