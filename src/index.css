@@ -2919,3 +2919,14 @@ text-overflow: ellipsis;
 :root[data-tour-objetivo] .main-content {
 padding-bottom: calc(var(--tour-coach-alto) + var(--tap) + env(safe-area-inset-bottom));
 }
+
+/* Selector de arriba en «Servicios y subs». */
+.seg-ancho {
+width: 100%;
+}
+
+.seg-ancho .seg-opt {
+flex: 1;
+justify-content: center;
+gap: var(--space-2);
+}

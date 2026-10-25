@@ -26,7 +26,7 @@ mailsDisponible,
 idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
-import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
+import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
 import { fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
 import { iconoDeCategoria, registrarIconos } from "./iconos";
@@ -433,7 +433,7 @@ setFiltroMovimientos("todos");
 setActiveTab(tab);
 }
 
-const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
+const activeItem = NAV_ITEMS.find((i) => i.id === seccionDelMenu(activeTab)) || NAV_ITEMS[0];
 
 return (
 <div className="app-shell">
@@ -525,6 +525,10 @@ onIrAMonedas={() => setActiveTab("configuracion")}
 )}
 
 {activeTab === "metas" && <MetasTab metas={metas} onCambio={metas.recargar} />}
+
+{(activeTab === "servicios" || activeTab === "recurrentes") && (
+<ElegirServiciosOSubs actual={activeTab} onCambiar={setActiveTab} />
+)}
 
 {activeTab === "servicios" && (
 <ServiciosTab
@@ -631,6 +635,32 @@ setDialogOpen(true);
 />
 )}
 </div>
+);
+}
+
+// Arriba de "Servicios y subs": cuál de las dos listas ver.
+function ElegirServiciosOSubs({ actual, onCambiar }) {
+return (
+<fieldset className="field ancho-contenido">
+<legend className="visualmente-oculto">Qué ver</legend>
+<div className="seg seg-ancho">
+{[
+["servicios", "Servicios", "ph ph-receipt"],
+["recurrentes", "Suscripciones", "ph ph-repeat"],
+].map(([valor, texto, icono]) => (
+<label className="seg-opt" key={valor}>
+<input type="radio" name="servicios-o-subs" checked={actual === valor} onChange={() => onCambiar(valor)} />
+<i className={icono} aria-hidden="true" />
+{texto}
+</label>
+))}
+</div>
+<p className="texto-chico texto-tenue">
+{actual === "servicios"
+? "Las facturas que pagás vos (luz, agua, alquiler): vencen, te avisamos y las marcás como pagadas."
+: "Lo que se cobra solo todos los meses (Netflix, Spotify, el gimnasio): ves cuánto suma y cuándo se cobra."}
+</p>
+</fieldset>
 );
 }
 
