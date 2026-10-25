@@ -1,7 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { getAjustesMails } from "../api";
+import { nombresDeRemitentes } from "../bancosMails";
 import { fmtMoney, haceCuanto } from "../format";
 import { DIAS_REVISION_MAILS, OPCIONES_DIAS_MAILS } from "../revisionMails";
+import AjustesMails from "./AjustesMails";
 import Dialog from "./Dialog";
+import ModoMails from "./ModoMails";
 
 // La revisión de mails: cuántos días mira, el botón, una barra mientras
 // busca y el resultado. Poco texto a la vista: la explicación está en el
@@ -10,13 +14,24 @@ import Dialog from "./Dialog";
 
 // La revisión es un solo pedido a Google, que no avisa cuánto falta: la
 // barra avanza con lo que suele tardar cada parte y se completa al terminar.
-const PASOS = [
-  [0, "Conectando con tu Gmail…"],
-  [3, "Buscando en Mercado Pago…"],
-  [8, "Buscando en tus bancos…"],
-  [15, "Buscando otros comprobantes…"],
-  [24, "Anotando lo que encontré…"],
-];
+// Los bancos que agregó la persona salen por nombre y resaltados.
+const SEGUNDOS_POR_PASO = 3.5;
+
+function armarPasos(bancos) {
+  return [
+    { texto: "Conectando con tu Gmail…" },
+    { texto: "Buscando en", nombre: "Mercado Pago" },
+    ...(bancos.length > 0
+      ? bancos.map((b) => ({ texto: "Buscando en", nombre: b, propio: true }))
+      : [{ texto: "Buscando en los mails de bancos…" }]),
+    { texto: "Buscando transferencias…" },
+    { texto: "Buscando otros comprobantes de pago…" },
+    { texto: "Anotando lo que encontré…" },
+  ];
+}
+
+// Nombres de los bancos de la persona: se piden una vez por sesión.
+let bancosCache = null;
 
 // Cuántas revisiones seguidas sin nada nuevo (en esta sesión) hacen falta
 // para ofrecer los consejos cuando sí hay mails pero ya estaban cargados.
@@ -28,7 +43,7 @@ function desdeFecha(dias) {
   return `${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-function Progreso() {
+function Progreso({ bancos }) {
   const [segundos, setSegundos] = useState(0);
   useEffect(() => {
     const inicio = Date.now();
@@ -37,11 +52,21 @@ function Progreso() {
   }, []);
   // Llega rápido a la mitad y después se frena; nunca pasa de 95% sola.
   const pct = Math.round(95 * (1 - Math.exp(-segundos / 12)));
-  const paso = PASOS.filter(([desde]) => segundos >= desde).pop()[1];
+  const pasos = armarPasos(bancos);
+  const indice = Math.min(Math.floor(segundos / SEGUNDOS_POR_PASO), pasos.length - 1);
+  const paso = pasos[indice];
   return (
     <div className="revision-progreso" role="status" aria-live="polite">
       <div className="revision-progreso-cabeza">
-        <span>{paso}</span>
+        <span className="revision-paso" key={indice}>
+          {paso.texto}
+          {paso.nombre && (
+            <>
+              {" "}
+              <span className={paso.propio ? "revision-banco revision-banco--propio" : "revision-banco"}>{paso.nombre}</span>…
+            </>
+          )}
+        </span>
         <span className="texto-tenue">{pct}%</span>
       </div>
       <div
@@ -224,10 +249,60 @@ function ComoFunciona({ onClose }) {
   );
 }
 
-export default function RevisionMails({ revision, revisando, dias = DIAS_REVISION_MAILS, onCambiarDias, onRevisar, onVerEncontrados, onIrABusqueda }) {
+function AjustesDialog({ modo, onCambiarModo, irABusqueda, onClose }) {
+  // Al venir de «Agregar mi banco», baja directo a la búsqueda personalizada
+  // (tarda un momento en cargar).
+  useEffect(() => {
+    if (!irABusqueda) return;
+    let intentos = 0;
+    const id = setInterval(() => {
+      const destino = document.getElementById("busqueda-personalizada");
+      intentos++;
+      if (destino) {
+        destino.scrollIntoView({ block: "start" });
+        destino.focus();
+      }
+      if (destino || intentos > 20) clearInterval(id);
+    }, 150);
+    return () => clearInterval(id);
+  }, [irABusqueda]);
+
+  return (
+    <Dialog titulo="Ajustes de mails" onClose={onClose}>
+      <ModoMails modo={modo} onCambiar={onCambiarModo} />
+      {modo !== "apagado" && <AjustesMails modo={modo} />}
+      <div className="dialog-actions">
+        <button type="button" className="btn btn-primary" onClick={onClose}>
+          Listo
+        </button>
+      </div>
+    </Dialog>
+  );
+}
+
+export default function RevisionMails({ revision, revisando, dias = DIAS_REVISION_MAILS, modo, onCambiarModo, onCambiarDias, onRevisar, onVerEncontrados }) {
   const nombre = useId();
   const [consejosAbiertos, setConsejosAbiertos] = useState(false);
   const [infoAbierta, setInfoAbierta] = useState(false);
+  // null = cerrado; "general" o "busqueda" (baja a agregar el banco).
+  const [ajustes, setAjustes] = useState(null);
+  const [bancos, setBancos] = useState(bancosCache || []);
+
+  // Cada vez que se cierran los ajustes se vuelven a leer los bancos, por si
+  // agregó alguno. Si falla no pasa nada: el progreso dice "bancos" a secas.
+  useEffect(() => {
+    if (ajustes) return;
+    let cancelado = false;
+    getAjustesMails()
+      .then((a) => {
+        bancosCache = nombresDeRemitentes(a?.remitentes || []);
+        if (!cancelado) setBancos(bancosCache);
+      })
+      .catch(() => {});
+    return () => {
+      cancelado = true;
+    };
+  }, [ajustes]);
 
   // Al terminar una revisión de esta sesión sin nada nuevo, salen los
   // consejos: siempre si no encontró ningún mail, y si encontró pero ya
@@ -270,9 +345,16 @@ export default function RevisionMails({ revision, revisando, dias = DIAS_REVISIO
             ))}
           </div>
         </fieldset>
-        <button type="button" className="btn btn-icono" onClick={() => setInfoAbierta(true)} aria-label="Cómo funciona la revisión de mails">
-          <i className="ph ph-info" aria-hidden="true" />
-        </button>
+        <div className="fila revision-botones">
+          <button type="button" className="btn btn-icono" onClick={() => setInfoAbierta(true)} aria-label="Cómo funciona la revisión de mails">
+            <i className="ph ph-info" aria-hidden="true" />
+          </button>
+          {onCambiarModo && (
+            <button type="button" className="btn btn-icono" onClick={() => setAjustes("general")} aria-label="Ajustes de mails: cuándo revisar, tus bancos y avisos">
+              <i className="ph ph-gear-six" aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </div>
 
       <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={() => onRevisar(dias)} disabled={revisando}>
@@ -281,7 +363,7 @@ export default function RevisionMails({ revision, revisando, dias = DIAS_REVISIO
       </button>
 
       {revisando ? (
-        <Progreso />
+        <Progreso bancos={bancos} />
       ) : (
         revision && (
           <Resultado
@@ -297,12 +379,20 @@ export default function RevisionMails({ revision, revisando, dias = DIAS_REVISIO
       {consejosAbiertos && (
         <Consejos
           dias={revision?.dias || dias}
-          onIrABusqueda={onIrABusqueda}
+          onIrABusqueda={onCambiarModo ? () => setAjustes("busqueda") : null}
           onRevisar={onRevisar}
           onClose={() => setConsejosAbiertos(false)}
         />
       )}
       {infoAbierta && <ComoFunciona onClose={() => setInfoAbierta(false)} />}
+      {ajustes && (
+        <AjustesDialog
+          modo={modo}
+          onCambiarModo={onCambiarModo}
+          irABusqueda={ajustes === "busqueda"}
+          onClose={() => setAjustes(null)}
+        />
+      )}
     </div>
   );
 }

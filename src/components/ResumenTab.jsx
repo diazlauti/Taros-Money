@@ -328,7 +328,7 @@ return (
 
 // La detección de gastos en los mails, a mano en el Resumen: si está apagada
 // invita a activarla; si está prendida muestra qué falta revisar.
-function MailsCard({ config, cantidadARevisar, revision, revisando, dias, onCambiarDias, onIrABusqueda, onRevisar, onVerARevisar, onActivar }) {
+function MailsCard({ config, cantidadARevisar, revision, revisando, dias, onCambiarDias, onCambiarModo, onRevisar, onVerARevisar, onActivar }) {
 const modo = config.data?.modo || "apagado";
 let contenido;
 
@@ -372,7 +372,8 @@ dias={dias}
 onCambiarDias={onCambiarDias}
 onRevisar={onRevisar}
 onVerEncontrados={onVerARevisar}
-onIrABusqueda={onIrABusqueda}
+modo={modo}
+onCambiarModo={onCambiarModo}
 />
 </>
 );

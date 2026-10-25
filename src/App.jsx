@@ -376,15 +376,7 @@ function irA(tab) {
 setFiltroMovimientos("todos");
 setActiveTab(tab);
 }
-// Lleva a "Búsqueda personalizada" (Configuración) para sumar el banco.
-function irABusquedaMails() {
-setActiveTab("configuracion");
-setTimeout(() => {
-const destino = document.getElementById("busqueda-personalizada");
-destino?.scrollIntoView({ block: "start" });
-destino?.focus();
-}, 300);
-}
+
 const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
 
 return (
@@ -426,7 +418,7 @@ revisando: revisandoMails,
 onRevisar: revisarMailsConBoton,
 dias: diasMails,
 onCambiarDias: cambiarDiasMails,
-onIrABusqueda: irABusquedaMails,
+onCambiarModo: cambiarModoMails,
 onVerARevisar: () => {
 setFiltroMovimientos("revisar");
 setActiveTab("movimientos");
@@ -510,7 +502,6 @@ revisandoMails={revisandoMails}
 onRevisarMails={revisarMailsConBoton}
 diasMails={diasMails}
 onCambiarDiasMails={cambiarDiasMails}
-onIrABusquedaMails={irABusquedaMails}
 categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}

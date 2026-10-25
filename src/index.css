@@ -2676,6 +2676,7 @@ min-width: 0;
 
 .revision-dias .seg-opt {
 white-space: nowrap;
+padding: var(--space-2);
 }
 
 .btn-link {
@@ -2691,6 +2692,24 @@ text-decoration: underline;
 cursor: pointer;
 }
 
+.revision-botones {
+flex-wrap: nowrap;
+gap: var(--space-1);
+}
+
+.revision-banco {
+font-weight: var(--weight-bold);
+}
+
+/* Los bancos que sumó la persona: resaltados con el mostaza del logo. */
+.revision-banco--propio {
+padding: 0 var(--space-1);
+border-radius: var(--radius-sm);
+background: var(--color-resalte);
+color: var(--color-on-resalte);
+}
+
 @media (prefers-reduced-motion: no-preference) {
 .revision-barra-relleno { transition: width var(--dur-slow) var(--ease-out); }
+.revision-paso { display: inline-block; animation: aparecer var(--dur-slow) var(--ease-out); }
 }
