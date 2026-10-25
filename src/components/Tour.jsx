@@ -104,6 +104,9 @@ const TEXTO_SI_NO_BORRO = {
 // Segundos que hay que esperar antes de poder saltear una práctica: así se
 // intenta primero, pero nadie queda trabado.
 const ESPERA_SALTEO_S = 5;
+// En los pasos que se leen, «Siguiente» se habilita recién después de este
+// tiempo: así no se pasa todo de un tirón sin leer.
+const ESPERA_LECTURA_S = 3;
 
 const PASO_INSTALAR = {
   icono: "ph ph-device-mobile",
@@ -175,6 +178,15 @@ export default function Tour({ hayCuentas, onIrA, onInstalar, onClose }) {
     return () => clearTimeout(t);
   }, [paso, indice]);
   const puedeSaltear = paso.espera && !paso.obligatorio && salteableEn === indice;
+
+  // En qué paso de lectura ya se puede seguir.
+  const [leidoEn, setLeidoEn] = useState(-1);
+  useEffect(() => {
+    if (paso.espera) return undefined;
+    const t = setTimeout(() => setLeidoEn(indice), ESPERA_LECTURA_S * 1000);
+    return () => clearTimeout(t);
+  }, [paso, indice]);
+  const puedeSeguir = leidoEn === indice;
 
   // Saltear una práctica: sigue con el paso que corresponda sin obligar a
   // cargar ni a borrar nada.
@@ -315,16 +327,32 @@ export default function Tour({ hayCuentas, onIrA, onInstalar, onClose }) {
           )}
           {esUltimo ? (
             paso === PASO_INSTALAR ? (
-              <button type="button" className="btn btn-primary" onClick={instalar}>
+              <button
+                type="button"
+                className={"btn btn-primary" + (puedeSeguir ? "" : " btn-esperando")}
+                onClick={() => puedeSeguir && instalar()}
+                aria-disabled={!puedeSeguir}
+              >
                 Ver cómo
               </button>
             ) : (
-              <button type="button" className="btn btn-primary" onClick={cerrar}>
+              <button
+                type="button"
+                className={"btn btn-primary" + (puedeSeguir ? "" : " btn-esperando")}
+                onClick={() => puedeSeguir && cerrar()}
+                aria-disabled={!puedeSeguir}
+              >
                 ¡Listo!
               </button>
             )
           ) : (
-            <button type="button" className="btn btn-primary" onClick={() => irA(indice + 1)} data-autofocus>
+            <button
+              type="button"
+              className={"btn btn-primary" + (puedeSeguir ? "" : " btn-esperando")}
+              onClick={() => puedeSeguir && irA(indice + 1)}
+              aria-disabled={!puedeSeguir}
+              data-autofocus
+            >
               {indice === 0 ? "Empezar" : "Siguiente"}
               <i className="ph ph-arrow-right" aria-hidden="true" />
             </button>

@@ -88,6 +88,8 @@
 --tour-icono: 64px;
 --punto: 8px;
 --insignia: 18px;
+--dur-lectura-tour: 3s;
+--dur-giro-tour: 2000ms;
 --tour-coach-alto: 320px;
 --icono-opcion: 48px;
 --calc-porcentaje: 72px;
@@ -2929,4 +2931,58 @@ width: 100%;
 flex: 1;
 justify-content: center;
 gap: var(--space-2);
+}
+
+/* Recorrido: «Siguiente» se llena de a poco mientras espera los segundos
+   de lectura (ver Tour.jsx). Sin animaciones, igual queda más apagado. */
+.btn-esperando {
+position: relative;
+overflow: hidden;
+opacity: 0.75;
+cursor: progress;
+}
+
+.btn-esperando::after {
+content: "";
+position: absolute;
+inset: 0;
+background: var(--color-on-accent);
+opacity: 0.25;
+transform-origin: left;
+animation: tour-llenar var(--dur-lectura-tour) linear forwards;
+}
+
+@keyframes tour-llenar {
+from { transform: scaleX(0); }
+to { transform: scaleX(1); }
+}
+
+/* «Nuevo movimiento» en la práctica: un anillo amarillo que da vueltas
+   alrededor del botón, además del latido. */
+@property --tour-angulo {
+syntax: "<angle>";
+inherits: false;
+initial-value: 0deg;
+}
+
+:root[data-tour-objetivo="nuevo-movimiento"] [data-tour="nuevo-movimiento"]::before {
+content: "";
+position: absolute;
+inset: calc(var(--space-2) * -1);
+padding: var(--space-1);
+border-radius: calc(var(--radius-sm) + var(--space-2));
+background: conic-gradient(from var(--tour-angulo), var(--color-resalte) 0 50%, transparent 50% 100%);
+mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+pointer-events: none;
+animation: tour-girar var(--dur-giro-tour) linear infinite;
+}
+
+@keyframes tour-girar {
+to { --tour-angulo: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+:root[data-tour-objetivo="nuevo-movimiento"] [data-tour="nuevo-movimiento"]::before {
+background: var(--color-resalte);
+}
 }
