@@ -2717,6 +2717,10 @@ color: var(--color-on-resalte);
 .revision-paso { display: inline-block; animation: aparecer var(--dur-slow) var(--ease-out); }
 }
 
+.texto-error {
+color: var(--error);
+}
+
 /* --- Mejoras de los beta testers: avisos en el menú, íconos de categorías,
    calculadora de impuestos y tutorial salteable --- */
 
