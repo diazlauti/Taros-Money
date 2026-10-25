@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { getAjustesMails } from "../api";
 import { nombresDeRemitentes } from "../bancosMails";
 import { fmtMoney, haceCuanto } from "../format";
@@ -33,9 +33,31 @@ function armarPasos(bancos) {
 // Nombres de los bancos de la persona: se piden una vez por sesión.
 let bancosCache = null;
 
-// Cuántas revisiones seguidas sin nada nuevo (en esta sesión) hacen falta
-// para ofrecer los consejos cuando sí hay mails pero ya estaban cargados.
-const VACIAS_PARA_CONSEJOS = 2;
+// Los consejos salen solos la primera vez que no encuentra nada y después
+// cada tantas revisiones vacías seguidas (no siempre, que cansa). La cuenta
+// se guarda en este dispositivo.
+const VACIAS_PARA_CONSEJOS = 5;
+const VACIAS_KEY = "taros-mails-vacias";
+// Cuánto se ve la barra llena antes del resultado.
+const MS_BARRA_LLENA = 900;
+
+function contarVacia() {
+  try {
+    const n = (Number(localStorage.getItem(VACIAS_KEY)) || 0) + 1;
+    localStorage.setItem(VACIAS_KEY, String(n));
+    return n;
+  } catch {
+    return 1;
+  }
+}
+
+function reiniciarVacias() {
+  try {
+    localStorage.setItem(VACIAS_KEY, "0");
+  } catch {
+    /* sin storage: los consejos salen la primera vez de cada sesión */
+  }
+}
 
 function desdeFecha(dias) {
   const d = new Date();
@@ -43,7 +65,7 @@ function desdeFecha(dias) {
   return `${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-function Progreso({ bancos }) {
+function Progreso({ bancos, completo }) {
   const [segundos, setSegundos] = useState(0);
   useEffect(() => {
     const inicio = Date.now();
@@ -51,10 +73,11 @@ function Progreso({ bancos }) {
     return () => clearInterval(id);
   }, []);
   // Llega rápido a la mitad y después se frena; nunca pasa de 95% sola.
-  const pct = Math.round(95 * (1 - Math.exp(-segundos / 12)));
+  // Al terminar se llena hasta el 100% antes de mostrar el resultado.
+  const pct = completo ? 100 : Math.round(95 * (1 - Math.exp(-segundos / 12)));
   const pasos = armarPasos(bancos);
-  const indice = Math.min(Math.floor(segundos / SEGUNDOS_POR_PASO), pasos.length - 1);
-  const paso = pasos[indice];
+  const indice = completo ? pasos.length : Math.min(Math.floor(segundos / SEGUNDOS_POR_PASO), pasos.length - 1);
+  const paso = completo ? { texto: "¡Listo!" } : pasos[indice];
   return (
     <div className="revision-progreso" role="status" aria-live="polite">
       <div className="revision-progreso-cabeza">
@@ -63,7 +86,10 @@ function Progreso({ bancos }) {
           {paso.nombre && (
             <>
               {" "}
-              <span className={paso.propio ? "revision-banco revision-banco--propio" : "revision-banco"}>{paso.nombre}</span>…
+              <span className={paso.propio ? "revision-banco revision-banco--propio" : "revision-banco"}>
+                {paso.nombre}
+              </span>
+              …
             </>
           )}
         </span>
@@ -280,7 +306,42 @@ function AjustesDialog({ modo, onCambiarModo, irABusqueda, onClose }) {
   );
 }
 
-export default function RevisionMails({ revision, revisando, dias = DIAS_REVISION_MAILS, modo, onCambiarModo, onCambiarDias, onRevisar, onVerEncontrados }) {
+// Versión corta para el Resumen: el botón, la barra y una línea.
+function ResultadoCorto({ revision, onVerEncontrados }) {
+  const cuando = haceCuanto(revision.cuando) || revision.cuando;
+  let texto = "Nada nuevo";
+  if (revision.error) texto = "No pude revisar tus mails";
+  else if (revision.nuevos > 0)
+    texto = revision.nuevos === 1 ? "¡Encontré 1 movimiento!" : `¡Encontré ${revision.nuevos} movimientos!`;
+  else if (revision.revisados === 0) texto = "No encontré nada";
+  return (
+    <div className="fila-separada" aria-live="polite">
+      <p className={revision.error ? "texto-chico texto-error" : "texto-chico"}>
+        <span className="negrita">{texto}</span>
+        <span className="texto-tenue"> · {cuando}</span>
+      </p>
+      {revision.nuevos > 0 && onVerEncontrados && (
+        <button type="button" className="btn btn-secondary" onClick={onVerEncontrados}>
+          Revisarlos
+        </button>
+      )}
+    </div>
+  );
+}
+
+// "compacto" (Resumen): sin días, sin «i» ni tuerquita; eso vive en
+// Configuración.
+export default function RevisionMails({
+  revision,
+  revisando,
+  dias = DIAS_REVISION_MAILS,
+  modo,
+  compacto = false,
+  onCambiarModo,
+  onCambiarDias,
+  onRevisar,
+  onVerEncontrados,
+}) {
   const nombre = useId();
   const [consejosAbiertos, setConsejosAbiertos] = useState(false);
   const [infoAbierta, setInfoAbierta] = useState(false);
@@ -304,66 +365,95 @@ export default function RevisionMails({ revision, revisando, dias = DIAS_REVISIO
     };
   }, [ajustes]);
 
-  // Al terminar una revisión de esta sesión sin nada nuevo, salen los
-  // consejos: siempre si no encontró ningún mail, y si encontró pero ya
-  // estaban, recién después de varias seguidas.
-  const estabaRevisando = useRef(false);
-  const vaciasSeguidas = useRef(0);
+  // Al terminar, la barra se llena un momento y después sale el resultado
+  // (y los consejos, si toca).
+  // Se detecta el momento en que termina comparando con el render anterior
+  // (sin efecto de por medio, así la barra no parpadea).
+  const [revisandoAntes, setRevisandoAntes] = useState(revisando);
+  const [llenando, setLlenando] = useState(false);
+  // La revisión que terminó, para decidir los consejos cuando se llena la barra.
+  const [terminada, setTerminada] = useState(null);
+  if (revisando !== revisandoAntes) {
+    setRevisandoAntes(revisando);
+    if (!revisando && revision) {
+      setLlenando(true);
+      setTerminada(revision);
+    }
+  }
   useEffect(() => {
-    if (revisando) {
-      estabaRevisando.current = true;
-      return;
-    }
-    if (!estabaRevisando.current || !revision) return;
-    estabaRevisando.current = false;
-    if (revision.error) return;
-    if (revision.nuevos > 0) {
-      vaciasSeguidas.current = 0;
-      return;
-    }
-    vaciasSeguidas.current += 1;
-    if (revision.revisados === 0 || vaciasSeguidas.current >= VACIAS_PARA_CONSEJOS) setConsejosAbiertos(true);
-  }, [revisando, revision]);
+    if (!llenando) return;
+    const id = setTimeout(() => {
+      setLlenando(false);
+      const r = terminada;
+      if (!r || r.error) return;
+      if (r.nuevos > 0) {
+        reiniciarVacias();
+        return;
+      }
+      const vacias = contarVacia();
+      if (vacias === 1 || vacias % VACIAS_PARA_CONSEJOS === 0) setConsejosAbiertos(true);
+    }, MS_BARRA_LLENA);
+    return () => clearTimeout(id);
+  }, [llenando, terminada]);
 
   return (
     <div className="revision-mails">
-      <div className="revision-cabeza">
-        <fieldset className="revision-dias" disabled={revisando}>
-          <legend className="visualmente-oculto">Qué mails revisar</legend>
-          <div className="seg">
-            {OPCIONES_DIAS_MAILS.map((d) => (
-              <label className="seg-opt" key={d}>
-                <input
-                  type="radio"
-                  name={nombre}
-                  checked={dias === d}
-                  onChange={() => onCambiarDias(d)}
-                  aria-label={`Los últimos ${d} días`}
-                />
-                {d} días
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <div className="fila revision-botones">
-          <button type="button" className="btn btn-icono" onClick={() => setInfoAbierta(true)} aria-label="Cómo funciona la revisión de mails">
-            <i className="ph ph-info" aria-hidden="true" />
-          </button>
-          {onCambiarModo && (
-            <button type="button" className="btn btn-icono" onClick={() => setAjustes("general")} aria-label="Ajustes de mails: cuándo revisar, tus bancos y avisos">
-              <i className="ph ph-gear-six" aria-hidden="true" />
+      {!compacto && (
+        <div className="revision-cabeza">
+          <fieldset className="revision-dias" disabled={revisando}>
+            <legend className="visualmente-oculto">Qué mails revisar</legend>
+            <div className="seg">
+              {OPCIONES_DIAS_MAILS.map((d) => (
+                <label className="seg-opt" key={d}>
+                  <input
+                    type="radio"
+                    name={nombre}
+                    checked={dias === d}
+                    onChange={() => onCambiarDias(d)}
+                    aria-label={`Los últimos ${d} días`}
+                  />
+                  {d} días
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className="fila revision-botones">
+            <button
+              type="button"
+              className="btn btn-icono"
+              onClick={() => setInfoAbierta(true)}
+              aria-label="Cómo funciona la revisión de mails"
+            >
+              <i className="ph ph-info" aria-hidden="true" />
             </button>
-          )}
+            {onCambiarModo && (
+              <button
+                type="button"
+                className="btn btn-icono"
+                onClick={() => setAjustes("general")}
+                aria-label="Ajustes de mails: cuándo revisar, tus bancos y avisos"
+              >
+                <i className="ph ph-gear-six" aria-hidden="true" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={() => onRevisar(dias)} disabled={revisando}>
+      <button
+        type="button"
+        className="btn btn-primary btn-alinear-inicio"
+        onClick={() => onRevisar(dias)}
+        disabled={revisando}
+      >
         <i className="ph ph-envelope-simple" aria-hidden="true" />
         {revisando ? "Revisando…" : "Revisar mis mails"}
       </button>
 
-      {revisando ? (
-        <Progreso bancos={bancos} />
+      {revisando || llenando ? (
+        <Progreso bancos={bancos} completo={llenando} />
+      ) : compacto ? (
+        revision && <ResultadoCorto revision={revision} onVerEncontrados={onVerEncontrados} />
       ) : (
         revision && (
           <Resultado

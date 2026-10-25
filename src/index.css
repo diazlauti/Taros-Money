@@ -2713,3 +2713,7 @@ color: var(--color-on-resalte);
 .revision-barra-relleno { transition: width var(--dur-slow) var(--ease-out); }
 .revision-paso { display: inline-block; animation: aparecer var(--dur-slow) var(--ease-out); }
 }
+
+.texto-error {
+color: var(--error);
+}
