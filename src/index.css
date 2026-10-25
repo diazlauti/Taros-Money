@@ -2974,6 +2974,9 @@ border-radius: calc(var(--radius-sm) + var(--space-2));
 background: conic-gradient(from var(--tour-angulo), var(--color-resalte) 0 50%, transparent 50% 100%);
 mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 pointer-events: none;
+/* Por encima de la sombra que oscurece la pantalla, y con brillo. */
+z-index: 1;
+filter: drop-shadow(0 0 var(--space-2) var(--color-resalte));
 animation: tour-girar var(--dur-giro-tour) linear infinite;
 }
 
@@ -2997,5 +3000,6 @@ inset: 0;
 border-radius: inherit;
 box-shadow: 0 0 0 100vmax var(--color-backdrop);
 pointer-events: none;
+z-index: 0;
 animation: backdrop-in var(--dur-slow) var(--ease-out);
 }
