@@ -4,28 +4,13 @@ import { useAvisos } from "../avisos";
 import { useSeccion } from "../hooks";
 import { notificacionesSoportadas, notificar, pedirPermisoNotificaciones, permisoNotificaciones } from "../notificaciones";
 import { playError, playSuccess } from "../sounds";
+import { BANCOS } from "../bancosMails";
 import Campo from "./Campo";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
 // Búsqueda personalizada (remitentes y palabras), aviso por mail del modo
 // "siempre" y notificaciones en este dispositivo. Solo se muestra con la
 // detección de mails prendida.
-// Para agregar el banco sin saber de qué mail escribe. Algunos mandan desde
-// más de un dominio, por eso cada uno puede sumar varios.
-const BANCOS = [
-  { nombre: "Galicia", dominios: ["galicia.com.ar", "bancogalicia.com.ar"] },
-  { nombre: "Santander", dominios: ["santander.com.ar"] },
-  { nombre: "BBVA", dominios: ["bbva.com.ar"] },
-  { nombre: "Macro", dominios: ["macro.com.ar"] },
-  { nombre: "Nación", dominios: ["bna.com.ar"] },
-  { nombre: "Provincia", dominios: ["bancoprovincia.com.ar"] },
-  { nombre: "ICBC", dominios: ["icbc.com.ar"] },
-  { nombre: "Naranja X", dominios: ["naranjax.com"] },
-  { nombre: "Ualá", dominios: ["uala.com.ar"] },
-  { nombre: "Brubank", dominios: ["brubank.com"] },
-  { nombre: "Personal Pay", dominios: ["personalpay.com.ar"] },
-  { nombre: "MODO", dominios: ["modo.com.ar"] },
-];
 
 export default function AjustesMails({ modo }) {
   const { avisar } = useAvisos();
@@ -177,7 +162,9 @@ export default function AjustesMails({ modo }) {
     <div className="pila-chica">
       <h3 className="subtitulo">Avisos</h3>
       {avisosDispositivo}
-      <h3 className="subtitulo">Búsqueda personalizada</h3>
+      <h3 className="subtitulo" id="busqueda-personalizada" tabIndex={-1}>
+        Búsqueda personalizada
+      </h3>
       {reglas}
       {errorGuardar && (
         <p className="mensaje-error" role="alert">

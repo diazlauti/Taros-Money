@@ -2547,3 +2547,169 @@ padding-top: var(--space-3);
 .moneda-detalle {
 padding-left: calc(var(--icon-md) + var(--space-2));
 }
+
+/* --- Revisión de mails (Resumen y Configuración) --- */
+
+.revision-mails {
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+}
+
+.revision-progreso {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+}
+
+.revision-progreso-cabeza {
+display: flex;
+justify-content: space-between;
+gap: var(--space-2);
+font-size: var(--text-sm);
+}
+
+.revision-barra {
+height: var(--space-2);
+border-radius: var(--radius-pill);
+background: var(--color-skeleton);
+overflow: hidden;
+}
+
+.revision-barra-relleno {
+display: block;
+height: 100%;
+width: var(--pct);
+border-radius: inherit;
+background: var(--color-accent);
+}
+
+.revision-resultado {
+display: flex;
+align-items: flex-start;
+gap: var(--space-3);
+padding: var(--space-3);
+border-radius: var(--radius-md);
+border: var(--border-thin) solid var(--color-divider);
+}
+
+.revision-resultado p {
+margin: 0;
+}
+
+.revision-resultado-icono {
+font-size: var(--icon-lg);
+flex: none;
+color: var(--color-text-dim);
+}
+
+.revision-resultado--nuevo {
+border-color: var(--color-accent-text);
+}
+
+.revision-resultado--nuevo .revision-resultado-icono {
+color: var(--color-accent-text);
+}
+
+.revision-resultado--ok .revision-resultado-icono {
+color: var(--exito);
+}
+
+.revision-resultado--error {
+border-color: var(--error);
+}
+
+.revision-resultado--error .revision-resultado-icono {
+color: var(--error);
+}
+
+.revision-titulo {
+font-size: var(--text-lg);
+font-weight: var(--weight-bold);
+}
+
+.revision-encontrados li {
+display: flex;
+justify-content: space-between;
+gap: var(--space-2);
+font-size: var(--text-sm);
+}
+
+.revision-consejos-lista {
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+}
+
+.revision-consejos-lista li {
+display: flex;
+align-items: flex-start;
+gap: var(--space-3);
+}
+
+.revision-consejos-lista p {
+margin: 0;
+}
+
+.revision-consejos-lista li > i {
+font-size: var(--icon-lg);
+flex: none;
+color: var(--color-accent-text);
+}
+
+.revision-cabeza {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: var(--space-2);
+}
+
+.revision-dias {
+display: flex;
+align-items: center;
+gap: var(--space-2);
+margin: 0;
+padding: 0;
+border: none;
+min-width: 0;
+}
+
+.revision-dias .seg-opt {
+white-space: nowrap;
+padding: var(--space-2);
+}
+
+.btn-link {
+min-height: var(--tap);
+padding: 0;
+border: none;
+background: none;
+color: var(--color-accent-text);
+font: inherit;
+font-size: var(--text-sm);
+font-weight: var(--weight-medium);
+text-decoration: underline;
+cursor: pointer;
+}
+
+.revision-botones {
+flex-wrap: nowrap;
+gap: var(--space-1);
+}
+
+.revision-banco {
+font-weight: var(--weight-bold);
+}
+
+/* Los bancos que sumó la persona: resaltados con el mostaza del logo. */
+.revision-banco--propio {
+padding: 0 var(--space-1);
+border-radius: var(--radius-sm);
+background: var(--color-resalte);
+color: var(--color-on-resalte);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+.revision-barra-relleno { transition: width var(--dur-slow) var(--ease-out); }
+.revision-paso { display: inline-block; animation: aparecer var(--dur-slow) var(--ease-out); }
+}
