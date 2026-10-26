@@ -15,21 +15,21 @@ const PASOS = [
     tab: "resumen",
     icono: "ph ph-hand-waving",
     titulo: "¡Te damos la bienvenida!",
-    texto: "Te mostramos en un par de minutos todo lo que podés hacer, con ejemplos. Después lo podés volver a ver cuando quieras desde Configuración.",
+    texto: "Te mostramos en un minuto todo lo que podés hacer. Lo podés volver a ver desde Configuración.",
   },
   {
     tab: "resumen",
     icono: "ph ph-squares-four",
     titulo: "Resumen",
     resaltar: ["nav:resumen", '[data-tour="periodo"]'],
-    texto: "Tu saldo, cuánto gastaste e ingresaste y en qué categorías. Arriba elegís el período: 7, 14, 30 o 90 días.",
+    texto: "Tu saldo, lo que gastaste y en qué. Arriba elegís el período.",
   },
   {
     tab: "cuentas",
     icono: "ph ph-wallet",
     titulo: "Primero, tu cuenta",
     resaltar: ['[data-tour="nueva-cuenta"]'],
-    texto: "Cada gasto sale de una cuenta. Creá la que más usás (efectivo, banco, Mercado Pago) con la plata que tenés hoy y tocá «Agregar».",
+    texto: "Todo gasto sale de una cuenta. Creá la que más usás con la plata que tenés hoy y tocá «Agregar».",
     espera: "cuenta-creada",
     objetivo: "nueva-cuenta",
     // Sin cuenta no se puede cargar nada: este paso no se saltea. Si ya
@@ -42,7 +42,7 @@ const PASOS = [
     icono: "ph ph-plus-circle",
     titulo: "Cargá tu primer movimiento",
     resaltar: ['[data-tour="nuevo-movimiento"]'],
-    texto: "Tocá «Nuevo movimiento» (en el celu dice «Nuevo»), arriba. Probá con algo chico, como un café: poné el monto, elegí una categoría y tocá «Guardar». Después lo borramos juntos.",
+    texto: "Tocá «Nuevo», cargá algo chico (un café) y tocá «Guardar». Después lo borramos.",
     espera: "movimiento-creado",
     objetivo: "nuevo-movimiento",
   },
@@ -51,14 +51,14 @@ const PASOS = [
     icono: "ph ph-confetti",
     titulo: "¡Bien hecho!",
     resaltar: ["nav:movimientos", '[data-tour="primer-movimiento"]'],
-    texto: "Tu movimiento ya está guardado en tu planilla. En Movimientos ves todo lo que cargaste, del más nuevo al más viejo.",
+    texto: "Ya está guardado. Acá ves todo lo que cargaste.",
   },
   {
     tab: "movimientos",
     icono: "ph ph-trash",
     titulo: "Ahora borralo",
     resaltar: ['[data-tour="primer-movimiento"]'],
-    texto: "Tocá el movimiento que acabás de cargar (es el primero de la lista) y después «Borrar». Así se corrige cualquier error.",
+    texto: "Tocá el movimiento que cargaste y después «Borrar».",
     espera: "movimiento-borrado",
     objetivo: "borrar",
   },
@@ -67,70 +67,70 @@ const PASOS = [
     icono: "ph ph-check-circle",
     titulo: "¡Perfecto!",
     resaltar: ["nav:movimientos"],
-    texto: "Ya sabés cargar y borrar. Si te equivocás al borrar, abajo aparece «Deshacer» por unos segundos. Y si solo querés corregir algo, tocá el movimiento y cambialo, sin borrarlo.",
+    texto: "Si borrás algo por error, tocá «Deshacer» abajo. Para corregir, tocá el movimiento y cambialo.",
   },
   {
     tab: "movimientos",
     icono: "ph ph-lightning",
     titulo: "Cargá más rápido",
     resaltar: ['[data-tour="nuevo-movimiento"]'],
-    texto: "Lo que cargás seguido (el café, la SUBE) aparece como atajo en «Tus gastos frecuentes»: un toque y queda todo completo. Con la app instalada, mantené apretado el ícono para ir directo a «Nuevo gasto».",
+    texto: "Lo que cargás seguido aparece como atajo en «Nuevo»: un toque y listo.",
   },
   {
     tab: "movimientos",
     icono: "ph ph-bell",
     titulo: "Notificaciones",
     resaltar: ['[data-tour="campana"]'],
-    texto: "La campanita de arriba junta lo que tenés para hacer: mails para revisar, servicios por vencer y suscripciones que se cobran pronto. En «Novedades» ves lo nuevo de la app. El número te dice cuántas cosas no viste.",
+    texto: "La campanita junta lo pendiente (mails, servicios por vencer, subs) y las novedades de la app.",
   },
   {
     tab: "cuentas",
     icono: "ph ph-wallet",
     titulo: "Cuentas",
     resaltar: ["nav:cuentas", ".tab-pane .card"],
-    texto: "Efectivo, banco, billeteras virtuales: cada una con su saldo y su moneda. Con el lápiz le cambiás el nombre o la borrás.",
+    texto: "Cada cuenta con su saldo y su moneda. Con el lápiz la editás o la borrás.",
   },
   {
     tab: "metas",
     icono: "ph ph-target",
     titulo: "Metas",
     resaltar: ["nav:metas", ".tab-pane .card"],
-    texto: "Ponete un objetivo de ahorro y andá sumando plata. Ejemplo: «Vacaciones» por $500.000; cada vez que guardás algo, tocás «Sumar aporte» y ves cuánto te falta.",
+    texto: "Ponete un objetivo de ahorro y sumale plata de a poco.",
   },
   {
     tab: "servicios",
     icono: "ph ph-receipt",
     titulo: "Servicios",
     resaltar: ["nav:servicios", '[data-tour="elegir-servicios"]', ".tab-pane .card"],
-    texto: "Las cuentas de todos los meses: luz, agua, internet, alquiler. Ejemplo: cargás «Luz», que vence el 10 y sale unos $25.000. Cuando la pagás tocás «Marcar pagado» y, si querés, se suma sola a tus gastos. Si algo está por vencer, te avisamos.",
+    texto: "Luz, agua, alquiler: cuándo vencen y cuánto salen. Tocá «Marcar pagado» y se suma a tus gastos.",
   },
   {
     tab: "recurrentes",
     icono: "ph ph-repeat",
     titulo: "Suscripciones",
     resaltar: ["nav:servicios", '[data-tour="elegir-recurrentes"]', ".tab-pane .card"],
-    texto: "Los pagos fijos que se cobran solos (streaming, gimnasio, la nube) y cuánto suman por mes. Están junto a Servicios: arriba elegís cuál ver. En el celu, «Servicios y subs» está en «Más».",
+    texto: "Lo que se cobra solo (streaming, gimnasio) y cuánto suma por mes.",
   },
   {
     tab: "reportes",
     icono: "ph ph-chart-line",
     titulo: "Reportes",
     resaltar: ["nav:reportes", ".tab-pane .card"],
-    texto: "Cómo vienen tus gastos e ingresos en los últimos meses. En el celu también está en «Más».",
+    texto: "Cómo vienen tus gastos e ingresos mes a mes.",
   },
   {
     tab: "calculadora",
     icono: "ph ph-calculator",
     titulo: "Calculadora de impuestos",
     resaltar: ["nav:calculadora", "card:#titulo-calculadora"],
-    texto: "Cuánto termina saliendo en pesos algo que pagás en otra moneda o con impuestos encima. Ejemplo: una compra de US$ 20 en una app; ves el total con los impuestos y, si querés, la cargás como gasto. En el celu está en «Más».",
+    texto: "Cuánto sale en pesos algo en otra moneda o con impuestos encima.",
   },
   {
     tab: "configuracion",
     icono: "ph ph-envelope-simple",
     titulo: "Gastos desde tus mails",
     resaltar: ["nav:configuracion", "card:#titulo-mails"],
-    texto: "Para no cargar a mano lo que ya pagaste: buscamos en tu Gmail los pagos (Mercado Pago y tus bancos) y aparecen en Movimientos como «A revisar». Ejemplo: pagás $8.500 en la farmacia con Mercado Pago; aparece solo, elegís la categoría y confirmás. Acá elegís cuándo revisarlos.",
+    texto: "Buscamos tus pagos en Gmail (Mercado Pago y bancos) y aparecen en Movimientos para que los confirmes.",
     soloConMails: true,
   },
   {
@@ -138,14 +138,14 @@ const PASOS = [
     icono: "ph ph-currency-dollar",
     titulo: "Otras monedas",
     resaltar: ["nav:configuracion", "card:#titulo-monedas"],
-    texto: "¿Tenés dólares o ahorrás en euros? Activá la moneda y elegí la cotización: automática (oficial, blue, MEP o tarjeta) o una fija. Ejemplo: una cuenta «Ahorro» en USD y en el Resumen ves tu saldo total en pesos.",
+    texto: "¿Tenés dólares o euros? Activá la moneda y elegí la cotización: automática o fija.",
   },
   {
     tab: "configuracion",
     icono: "ph ph-gear",
     titulo: "Configuración",
     resaltar: ["nav:configuracion", "card:#titulo-planilla"],
-    texto: "Tu planilla de Google, tus categorías (con su ícono), tema claro u oscuro y sonidos. Desde acá podés volver a ver este recorrido.",
+    texto: "Tu planilla, categorías, tema y sonidos. Desde acá volvés a ver este recorrido.",
   },
 ];
 
@@ -157,7 +157,7 @@ const SALTEO = {
 };
 const TEXTO_SI_NO_BORRO = {
   "¡Perfecto!":
-    "Listo, el movimiento de prueba queda guardado. Si después lo querés sacar, tocalo en Movimientos y «Borrar». Y si solo querés corregir algo, tocalo y cambialo, sin borrarlo.",
+    "Listo, el movimiento de prueba queda guardado. Si lo querés sacar, tocalo en Movimientos y «Borrar».",
 };
 // Segundos que hay que esperar antes de poder saltear una práctica: así se
 // intenta primero, pero nadie queda trabado.
@@ -171,7 +171,7 @@ const PUNTOS_VISIBLES = 5;
 const PASO_INSTALAR = {
   icono: "ph ph-device-mobile",
   titulo: "Tenela a mano",
-  texto: "Agregá Taros Money a la pantalla de inicio de tu celu y abrila con un toque, como cualquier app.",
+  texto: "Agregá Taros Money a tu pantalla de inicio y abrila como cualquier app.",
 };
 
 // Recorrido de primera vez. Se marca como visto al terminarlo o saltearlo
