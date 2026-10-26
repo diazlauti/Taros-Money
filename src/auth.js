@@ -212,6 +212,14 @@ export async function obtenerTokenMails({ interactivo = false } = {}) {
   }
 }
 
+// Si hay un permiso de mails guardado y vigente. Sirve para lecturas de
+// fondo que no valen la pena si hay que pedirle el token a Google: renovarlo
+// en silencio igual abre y cierra una ventanita de Google.
+export function hayTokenMailsVigente() {
+  const guardado = leerTokenGuardado(TOKEN_MAILS_KEY);
+  return !!(guardado && guardado.vencimiento > Date.now());
+}
+
 export function olvidarTokenMails() {
   borrarToken(TOKEN_MAILS_KEY);
 }
