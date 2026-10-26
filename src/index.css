@@ -2642,6 +2642,24 @@ gap: var(--space-2);
 font-size: var(--text-sm);
 }
 
+/* Mails que no se pudieron leer: se avisa sin alarmar (no es un error de la
+   revisión, el resto se cargó bien). */
+.revision-avisos li {
+display: flex;
+align-items: flex-start;
+gap: var(--space-2);
+}
+
+.revision-avisos .ph,
+.revision-aviso-corto .ph {
+color: var(--color-accent-text);
+}
+
+.revision-avisos .ph {
+flex: none;
+margin-top: 0.15em;
+}
+
 .revision-consejos-lista {
 display: flex;
 flex-direction: column;

@@ -255,6 +255,8 @@ yaEstaban: resultado?.yaEstaban || 0,
 encontrados: (resultado?.encontrados || []).slice(0, 3),
 revisados: resultado?.revisados,
 dias: resultado?.dias,
+noLeidos: resultado?.noLeidos,
+fallaron: resultado?.fallaron,
 });
 // Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
 // como "mientras no estabas".

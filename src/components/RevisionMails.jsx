@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { getAjustesMails } from "../api";
 import { nombresDeRemitentes } from "../bancosMails";
 import { fmtMoney, haceCuanto } from "../format";
-import { DIAS_REVISION_MAILS, OPCIONES_DIAS_MAILS } from "../revisionMails";
+import { DIAS_REVISION_MAILS, OPCIONES_DIAS_MAILS, avisosRevisionMails } from "../revisionMails";
 import AjustesMails from "./AjustesMails";
 import Dialog from "./Dialog";
 import ModoMails from "./ModoMails";
@@ -150,6 +150,7 @@ function Resultado({ revision, dias, onReintentar, onVerEncontrados, onVerConsej
     titulo = "Nada nuevo";
   }
   const pie = [cuando, diasRev ? `últimos ${diasRev} días` : "", detalle].filter(Boolean).join(" · ");
+  const avisos = avisosRevisionMails(revision);
 
   return (
     <div className={`revision-resultado revision-resultado--${modo}`} aria-live="polite">
@@ -173,6 +174,16 @@ function Resultado({ revision, dias, onReintentar, onVerEncontrados, onVerConsej
           </ul>
         )}
         <p className="texto-tenue texto-chico">{pie}</p>
+        {avisos.length > 0 && (
+          <ul className="lista revision-avisos">
+            {avisos.map((aviso) => (
+              <li key={aviso} className="texto-chico">
+                <i className="ph ph-warning" aria-hidden="true" />
+                <span>{aviso}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         {revision.nuevos > 0 && onVerEncontrados && (
           <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={onVerEncontrados}>
             Revisarlos
@@ -314,11 +325,19 @@ function ResultadoCorto({ revision, onVerEncontrados }) {
   else if (revision.nuevos > 0)
     texto = revision.nuevos === 1 ? "¡Encontré 1 movimiento!" : `¡Encontré ${revision.nuevos} movimientos!`;
   else if (revision.revisados === 0) texto = "No encontré nada";
+  const avisos = avisosRevisionMails(revision);
   return (
     <div className="fila-separada" aria-live="polite">
       <p className={revision.error ? "texto-chico texto-error" : "texto-chico"}>
         <span className="negrita">{texto}</span>
         <span className="texto-tenue"> · {cuando}</span>
+        {avisos.length > 0 && (
+          <span className="revision-aviso-corto">
+            {" · "}
+            <i className="ph ph-warning" aria-hidden="true" />
+            {avisos.length === 1 ? " 1 aviso en Configuración" : ` ${avisos.length} avisos en Configuración`}
+          </span>
+        )}
       </p>
       {revision.nuevos > 0 && onVerEncontrados && (
         <button type="button" className="btn btn-secondary" onClick={onVerEncontrados}>
