@@ -32,6 +32,7 @@ export function Sidebar({ activeTab, onSelect, avisos = {} }) {
             key={item.id}
             type="button"
             className="nav-item"
+            data-tour={`nav-${item.id}`}
             aria-current={item.id === seccionDelMenu(activeTab) ? "page" : undefined}
             aria-label={etiquetaConAviso(item.label, avisos[item.id])}
             onClick={() => onSelect(item.id)}
@@ -65,6 +66,7 @@ export function BottomNav({ activeTab, onSelect, avisos = {} }) {
             key={item.id}
             type="button"
             className="bottom-nav-item"
+            data-tour={`nav-${item.id}`}
             aria-current={item.id === seccionDelMenu(activeTab) ? "page" : undefined}
             aria-label={etiquetaConAviso(item.label, avisos[item.id])}
             onClick={() => onSelect(item.id)}
@@ -79,6 +81,7 @@ export function BottomNav({ activeTab, onSelect, avisos = {} }) {
         <button
           type="button"
           className="bottom-nav-item"
+          data-tour="nav-mas"
           aria-current={activoEnMas ? "page" : undefined}
           aria-haspopup="dialog"
           aria-label={etiquetaConAviso("Más", avisoMas)}

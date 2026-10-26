@@ -23,6 +23,7 @@
 --color-divider: rgba(26, 31, 69, 0.15);
 --color-backdrop: rgba(10, 13, 35, 0.45);
 --color-backdrop-suave: rgba(10, 13, 35, 0.25);
+--color-backdrop-foco: rgba(10, 13, 35, 0.62);
 --color-skeleton: rgba(26, 31, 69, 0.1);
 --ink: #1a1f45;
 --error: #b3261e;
@@ -93,6 +94,7 @@
 --dur-lectura-tour: 3s;
 --dur-giro-tour: 2000ms;
 --tour-coach-alto: 320px;
+--tour-foco-margen: 12px;
 --icono-opcion: 48px;
 --calc-porcentaje: 72px;
 --landing-max: 1040px;
@@ -122,6 +124,7 @@
 --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
 --z-nav: 5;
+--z-tour-foco: 11;
 --z-tour: 12;
 --z-aviso: 15;
 --z-dialog: 20;
@@ -2287,9 +2290,11 @@ font-size: var(--icon-sm);
 animation: pulso var(--dur-pulse) var(--ease-out) infinite;
 }
 
-:root[data-tour-objetivo="nuevo-movimiento"] [data-tour="nuevo-movimiento"],
-:root[data-tour-objetivo="nueva-cuenta"] [data-tour="nueva-cuenta"],
-:root[data-tour-objetivo="borrar"] [data-tour="primer-movimiento"],
+:root[data-tour-objetivo="nuevo-movimiento"] [data-tour="nuevo-movimiento"] {
+position: relative;
+}
+
+/* «Borrar», dentro del diálogo del movimiento (ahí no llega el foco). */
 :root[data-tour-objetivo="borrar"] [data-tour="borrar-movimiento"] {
 position: relative;
 z-index: 1;
@@ -2383,7 +2388,7 @@ width: var(--punto);
 height: var(--punto);
 border-radius: var(--radius-pill);
 background: var(--color-divider);
-transition: width var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
+transition: width var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
 }
 
 .tour-punto--hecho {
@@ -2394,6 +2399,11 @@ opacity: 0.5;
 .tour-punto--activo {
 width: calc(var(--punto) * 3);
 background: var(--color-accent-text);
+}
+
+/* Puntas de la tira cuando hay más pasos para ese lado (estilo historias). */
+.tour-punto--chico {
+transform: scale(0.5);
 }
 
 .pasos {
@@ -3045,18 +3055,59 @@ background: var(--color-resalte);
 }
 }
 
-/* Práctica: se oscurece todo menos lo que hay que tocar (y el cartel del
-   recorrido, que queda arriba). La sombra no frena los toques. */
-:root[data-tour-objetivo="nuevo-movimiento"] [data-tour="nuevo-movimiento"]::after,
-:root[data-tour-objetivo="nueva-cuenta"] [data-tour="nueva-cuenta"]::after {
-content: "";
-position: absolute;
+/* Foco del recorrido (TourFoco.jsx): todo oscuro menos lo que muestra el
+   paso, con un anillo alrededor. Lo oscuro frena los toques; por el hueco
+   se puede tocar (en las prácticas). Queda debajo del cartel del recorrido
+   y de cualquier diálogo. */
+.tour-foco {
+position: fixed;
 inset: 0;
-border-radius: inherit;
-box-shadow: 0 0 0 100vmax var(--color-backdrop);
+z-index: var(--z-tour-foco);
 pointer-events: none;
-z-index: 0;
 animation: backdrop-in var(--dur-slow) var(--ease-out);
+}
+
+.tour-foco-sombra {
+display: block;
+}
+
+.tour-foco-sombra path {
+fill: var(--color-backdrop-foco);
+pointer-events: auto;
+}
+
+.tour-foco-anillo {
+position: fixed;
+border-radius: var(--radius-md);
+outline: var(--focus-ring) solid var(--color-resalte);
+outline-offset: calc(var(--focus-ring) * -1);
+pointer-events: none;
+animation: tour-latido-foco var(--dur-pulse) var(--ease-out) infinite;
+}
+
+@keyframes tour-latido-foco {
+0%, 100% { box-shadow: 0 0 0 0 var(--color-resalte); }
+50% { box-shadow: 0 0 0 var(--space-2) transparent; }
+}
+
+/* Mientras hay foco, el cartel de lectura no oscurece (ya lo hace el
+   foco) y va abajo, para dejar a la vista lo resaltado. En el celu queda
+   por encima de la barra de abajo, que también se resalta. Su fondo sigue
+   frenando los toques. */
+:root[data-tour-foco] .dialog-backdrop--tour {
+background: transparent;
+align-items: flex-end;
+animation: none;
+}
+
+@media (max-width: 780px) {
+:root[data-tour-foco] .dialog-backdrop--tour {
+padding-bottom: calc(var(--tap) + var(--space-4) + env(safe-area-inset-bottom));
+}
+}
+
+:root[data-tour-foco] .tab-pane .card {
+scroll-margin-top: var(--space-4);
 }
 
 /* --- Notificaciones: campanita del encabezado y panel --- */
