@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-26-actualizar-sola",
+    fecha: "2026-10-26",
+    icono: "ph ph-arrow-circle-up",
+    titulo: "La app se actualiza sola",
+    texto: "Cuando haya una versión nueva te aparece arriba «Hay una versión nueva · Actualizar». Ya no hace falta reinstalarla. También podés fijarte en Configuración › Ayuda.",
+  },
+  {
     id: "2026-10-26-deshacer-recorrido",
     fecha: "2026-10-26",
     icono: "ph ph-arrow-counter-clockwise",

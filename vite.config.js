@@ -4,10 +4,18 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Fecha de la versión, para mostrarla en Configuración › Ayuda.
+  define: {
+    __FECHA_VERSION__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // "prompt": la versión nueva queda esperando y la app muestra «Hay una
+      // versión nueva · Actualizar» (src/actualizacion.js). Así no cambia de
+      // golpe mientras cargás algo, y en el iPhone instalado se entera.
+      registerType: 'prompt',
+      injectRegister: false,
       // No cachea llamadas a la API (los datos de la planilla siempre tienen
       // que venir frescos): sólo el shell de la app (HTML/JS/CSS/íconos),
       // así abre instantáneo y queda instalable, sin mostrar datos viejos.

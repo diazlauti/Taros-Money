@@ -42,6 +42,7 @@ import NotificacionesDialog from "./components/NotificacionesDialog";
 import { armarPendientes, leerVistas, marcarVistas } from "./bandeja";
 import { NOVEDADES } from "./novedades";
 import AvisosProvider from "./components/Avisos";
+import AvisoActualizacion from "./components/AvisoActualizacion";
 import ConfirmarProvider from "./components/Confirmar";
 import ResumenTab from "./components/ResumenTab";
 import MovimientosTab from "./components/MovimientosTab";
@@ -126,6 +127,8 @@ setAutenticado(false);
 }}
 />
 </ConfirmarProvider>
+{/* Solo adentro de la app: en la landing y el login no se ofrece. */}
+<AvisoActualizacion />
 </AvisosProvider>
 );
 }

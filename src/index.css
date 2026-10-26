@@ -124,6 +124,7 @@
 --z-nav: 5;
 --z-tour: 12;
 --z-aviso: 15;
+--z-version: 18;
 --z-dialog: 20;
 --z-confirmar: 25;
 
@@ -1345,6 +1346,57 @@ font-weight: var(--weight-bold);
 
 @media (min-width: 781px) {
 .avisos { bottom: var(--space-4); }
+}
+
+/* --- Versión nueva de la app («Hay una versión nueva · Actualizar») --- */
+
+.aviso-version-capa {
+position: fixed;
+top: calc(env(safe-area-inset-top) + var(--space-2));
+left: var(--space-3);
+right: var(--space-3);
+display: flex;
+justify-content: center;
+pointer-events: none;
+z-index: var(--z-version);
+}
+
+.aviso-version {
+display: flex;
+align-items: center;
+gap: var(--space-2);
+max-width: 100%;
+padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+border-radius: var(--radius-pill);
+border: var(--border) solid var(--ink);
+background: var(--color-surface);
+color: var(--color-text);
+box-shadow: var(--shadow-md);
+font-size: var(--text-sm);
+font-weight: var(--weight-medium);
+pointer-events: auto;
+animation: aparecer var(--dur-base) var(--ease-out);
+}
+
+.aviso-version > i {
+font-size: var(--icon-md);
+color: var(--color-accent-text);
+}
+
+.aviso-version-texto {
+flex: 1;
+min-width: 0;
+}
+
+.aviso-version-boton {
+border-radius: var(--radius-pill);
+}
+
+.aviso-version-cerrar {
+min-width: var(--tap);
+text-decoration: none;
+padding: 0;
+border-radius: var(--radius-pill);
 }
 
 /* --- Login --- */
