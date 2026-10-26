@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-26-deshacer-recorrido",
+    fecha: "2026-10-26",
+    icono: "ph ph-arrow-counter-clockwise",
+    titulo: "Deshacer al borrar y recorrido nuevo",
+    texto: "Si borrás un movimiento por error, tocá «Deshacer» en el aviso de abajo. Y el recorrido ahora pasa por toda la app con ejemplos: lo ves desde Configuración.",
+  },
+  {
     id: "2026-10-26-notificaciones",
     fecha: "2026-10-26",
     icono: "ph ph-bell",

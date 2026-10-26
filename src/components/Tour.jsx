@@ -36,7 +36,7 @@ const PASOS = [
     tab: "resumen",
     icono: "ph ph-plus-circle",
     titulo: "Cargá tu primer movimiento",
-    texto: "Tocá «Nuevo movimiento», arriba. Probá con algo chico, como un café: poné el monto, elegí una categoría y tocá «Guardar». Después lo borramos juntos.",
+    texto: "Tocá «Nuevo movimiento» (en el celu dice «Nuevo»), arriba. Probá con algo chico, como un café: poné el monto, elegí una categoría y tocá «Guardar». Después lo borramos juntos.",
     espera: "movimiento-creado",
     objetivo: "nuevo-movimiento",
   },
@@ -68,9 +68,9 @@ const PASOS = [
   },
   {
     tab: "movimientos",
-    icono: "ph ph-calculator",
-    titulo: "Calculadora de impuestos",
-    texto: "El botón de la calculadora, arriba, te dice cuánto termina saliendo en pesos algo que pagás en otra moneda o con impuestos encima. Ejemplo: una compra de US$ 20 en una app; ves el total con los impuestos y, si querés, la cargás como gasto.",
+    icono: "ph ph-bell",
+    titulo: "Notificaciones",
+    texto: "La campanita de arriba junta lo que tenés para hacer: mails para revisar, servicios por vencer y suscripciones que se cobran pronto. En «Novedades» ves lo nuevo de la app. El número te dice cuántas cosas no viste.",
   },
   {
     tab: "cuentas",
@@ -101,6 +101,12 @@ const PASOS = [
     icono: "ph ph-chart-line",
     titulo: "Reportes",
     texto: "Cómo vienen tus gastos e ingresos en los últimos meses. En el celu también está en «Más».",
+  },
+  {
+    tab: "calculadora",
+    icono: "ph ph-calculator",
+    titulo: "Calculadora de impuestos",
+    texto: "Cuánto termina saliendo en pesos algo que pagás en otra moneda o con impuestos encima. Ejemplo: una compra de US$ 20 en una app; ves el total con los impuestos y, si querés, la cargás como gasto. En el celu está en «Más».",
   },
   {
     tab: "configuracion",
