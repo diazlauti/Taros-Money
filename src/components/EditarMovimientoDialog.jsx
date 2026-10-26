@@ -28,13 +28,18 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   // Lo que eligió la última vez que confirmó un gasto en este comercio.
   const sugerencia = esGasto && movimiento.aRevisar && !movimiento.categoria ? movimiento.sugerencia : null;
   const cuentaSugerida = cuentas?.some((c) => c.nombre === sugerencia?.cuenta) ? sugerencia.cuenta : "";
+  // Un gasto sin confirmar todavía no tiene cuenta (antes llegaba como
+  // "Cuscatlán" y el select mostraba "Cuscatlán (borrada)"): arranca en la
+  // primera cuenta de la persona.
+  const cuentaInicial =
+    sinConfirmar && !cuentas?.some((c) => c.nombre === movimiento.cuenta) ? cuentas?.[0]?.nombre || "" : movimiento.cuenta || "";
   const inicial = {
     fecha: movimiento.fecha || "",
     hora: movimiento.hora || "",
     categoria: sugerencia?.categoria || movimiento.categoria || "",
     descripcion: movimiento.descripcion || "",
     monto: String(movimiento.monto ?? "").replace(".", ","),
-    cuenta: cuentaSugerida || movimiento.cuenta || "",
+    cuenta: cuentaSugerida || cuentaInicial,
   };
   const [form, setForm] = useState(inicial);
   const [enviando, setEnviando] = useState(false);
@@ -126,7 +131,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
             <i className="ph ph-envelope-simple" aria-hidden="true" />
             Lo encontramos en un mail de {movimiento.origenMail}. Revisá el monto, elegí la categoría y la cuenta, y
             confirmalo.
-            {sinConfirmar && " Como no conocemos a ese remitente, no lo sumamos a tus gastos hasta que lo confirmes."}
+            {sinConfirmar && " Hasta que lo confirmes no se suma a tus gastos ni a tus saldos."}
             {sugerencia?.categoria && ` Elegimos la categoría que usaste la última vez en ${movimiento.descripcion}.`}
           </p>
         )}

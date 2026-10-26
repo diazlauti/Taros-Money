@@ -74,3 +74,30 @@ export function avisosRevisionMails(revision) {
   }
   return avisos;
 }
+
+// Qué dice la cabeza de la tarjeta de mails. Manda lo que falta revisar
+// AHORA (sale de la lista de movimientos), no lo que encontró la última
+// revisión: antes, después de descartar el único gasto seguía diciendo
+// "¡Encontré 1 movimiento!".
+// modo: "revisando" | "error" | "pendientes" | "cargando" | "nunca" | "al-dia".
+export function estadoBandeja({ revision, pendientes = 0, revisando = false, cargandoPendientes = false }) {
+  if (revisando) return { modo: "revisando", titulo: "Revisando tus mails…" };
+  if (revision?.error) return { modo: "error", titulo: "No pude revisar tus mails", detalle: revision.error };
+  if (pendientes > 0) {
+    return {
+      modo: "pendientes",
+      titulo: pendientes === 1 ? "1 movimiento para revisar" : `${pendientes} movimientos para revisar`,
+    };
+  }
+  const nuevos = Number(revision?.nuevos) || 0;
+  // Recién terminó y la lista todavía se está recargando: no decir "al día".
+  if (nuevos > 0 && cargandoPendientes) {
+    return { modo: "cargando", titulo: nuevos === 1 ? "¡Encontré 1 movimiento!" : `¡Encontré ${nuevos} movimientos!` };
+  }
+  if (!revision) return { modo: "nunca", titulo: "Todavía no revisé tus mails" };
+  let detalle = "no había nada nuevo";
+  if (nuevos > 0) detalle = nuevos === 1 ? "encontré 1 y ya lo revisaste" : `encontré ${nuevos} y ya los revisaste`;
+  else if (revision.revisados === 0) detalle = "no encontré mails de compras";
+  else if (revision.yaEstaban > 0) detalle = `nada nuevo (${revision.yaEstaban} ya estaban cargados)`;
+  return { modo: "al-dia", titulo: "Estás al día", detalle };
+}
