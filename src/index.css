@@ -26,6 +26,7 @@
 --color-skeleton: rgba(26, 31, 69, 0.1);
 --ink: #1a1f45;
 --error: #b3261e;
+--color-on-error: #ffffff;
 --exito: #1e6b3a;
 --color-ingreso: var(--exito);
 --color-gasto: #5f6688;
@@ -78,6 +79,7 @@
 --content-max: 480px;
 --form-max: 360px;
 --dialog-max: 420px;
+--dialog-confirmar-max: 360px;
 --card-min: 192px;
 --field-min: 136px;
 --donut: 128px;
@@ -114,6 +116,7 @@
 --dur-slow: 400ms;
 --dur-pulse: 1400ms;
 --dur-aviso: 3200ms;
+--dur-aviso-accion: 8000ms;
 --dur-flotar: 4000ms;
 --ease-out: ease;
 --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -122,6 +125,7 @@
 --z-tour: 12;
 --z-aviso: 15;
 --z-dialog: 20;
+--z-confirmar: 25;
 
 color-scheme: light;
 }
@@ -148,6 +152,7 @@ color-scheme: light;
 --color-skeleton: rgba(244, 241, 255, 0.12);
 --ink: #f4f1ff;
 --error: #ff8f9c;
+--color-on-error: #1a1f45;
 --exito: #8ee66b;
 --color-gasto: #9aa0c8;
 color-scheme: dark;
@@ -172,6 +177,7 @@ color-scheme: dark;
 --color-skeleton: rgba(244, 241, 255, 0.12);
 --ink: #f4f1ff;
 --error: #ff8f9c;
+--color-on-error: #1a1f45;
 --exito: #8ee66b;
 --color-gasto: #9aa0c8;
 color-scheme: dark;
@@ -1321,6 +1327,22 @@ color: var(--exito);
 color: var(--error);
 }
 
+/* Aviso con botón («Deshacer»): se puede tocar aunque el resto de la capa
+   deje pasar los toques. */
+.aviso--accion {
+pointer-events: auto;
+padding-right: var(--space-1);
+}
+
+.aviso-boton {
+min-height: var(--tap);
+padding: 0 var(--space-3);
+text-decoration: none;
+border-radius: var(--radius-pill);
+color: var(--color-accent-text);
+font-weight: var(--weight-bold);
+}
+
 @media (min-width: 781px) {
 .avisos { bottom: var(--space-4); }
 }
@@ -2149,6 +2171,21 @@ opacity: 0;
 
 /* --- Recorrido y guía de instalación --- */
 
+/* "¿Seguro?" propio (components/Confirmar.jsx): va arriba de cualquier
+   otro diálogo abierto. */
+.dialog-backdrop--confirmar {
+z-index: var(--z-confirmar);
+}
+
+.dialog-backdrop--confirmar .dialog {
+max-width: var(--dialog-confirmar-max);
+}
+
+.btn-primary--peligro {
+background: var(--error);
+color: var(--color-on-error);
+}
+
 .dialog-backdrop--tour {
 align-items: flex-end;
 background: var(--color-backdrop-suave);
@@ -2771,13 +2808,13 @@ line-height: 1;
 animation: tour-pop var(--dur-slow) var(--ease-bounce);
 }
 
-.btn-calculadora {
+.btn-encabezado {
 min-width: var(--tap);
 padding-left: var(--space-2);
 padding-right: var(--space-2);
 }
 
-.btn-calculadora i {
+.btn-encabezado i {
 font-size: var(--icon-md);
 }
 
@@ -3029,4 +3066,138 @@ color: var(--color-text);
 
 .aviso-inline--ok i {
 color: var(--exito);
+}
+/* --- Notificaciones: campanita del encabezado y panel --- */
+
+.btn-campana .insignia {
+top: calc(var(--space-1) * -1);
+right: calc(var(--space-1) * -1);
+}
+
+.btn-campana--nuevo i {
+color: var(--color-accent-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+.btn-campana--nuevo i {
+animation: campana-sonar var(--dur-slow) var(--ease-out) 2;
+transform-origin: 50% 0;
+}
+}
+
+@keyframes campana-sonar {
+0%, 100% { transform: rotate(0); }
+25% { transform: rotate(-14deg); }
+75% { transform: rotate(14deg); }
+}
+
+.notis {
+display: flex;
+flex-direction: column;
+gap: var(--space-4);
+}
+
+.notis section {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+}
+
+.notis-lista {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+}
+
+.noti {
+display: grid;
+grid-template-columns: var(--icono-circulo) 1fr;
+gap: var(--space-2);
+align-items: start;
+padding: var(--space-2);
+border: var(--border) solid var(--color-divider);
+border-radius: var(--radius-md);
+background: var(--color-surface-2);
+}
+
+.noti-icono {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: var(--icono-circulo);
+height: var(--icono-circulo);
+border-radius: var(--radius-pill);
+background: var(--color-surface);
+border: var(--border-thin) solid var(--ink);
+font-size: var(--icon-md);
+color: var(--color-accent-text);
+}
+
+.noti--urgente {
+border-color: var(--error);
+}
+
+.noti--urgente .noti-icono {
+color: var(--error);
+}
+
+.noti--servicio .noti-icono,
+.noti--mails .noti-icono {
+background: var(--color-resalte);
+color: var(--color-on-resalte);
+}
+
+.noti-cuerpo {
+display: flex;
+flex-direction: column;
+gap: var(--space-1);
+min-width: 0;
+}
+
+.noti-cuerpo p {
+margin: 0;
+}
+
+.noti-titulo {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: var(--space-2);
+font-weight: var(--weight-bold);
+font-size: var(--text-sm);
+}
+
+.tag-nuevo {
+background: var(--color-accent);
+color: var(--color-on-accent);
+font-weight: var(--weight-bold);
+}
+
+.notis-al-dia {
+display: flex;
+align-items: center;
+gap: var(--space-2);
+margin: 0;
+font-size: var(--text-sm);
+color: var(--color-text-dim);
+}
+
+.notis-al-dia i {
+font-size: var(--icon-lg);
+color: var(--exito);
+}
+
+/* Con la campanita y la calculadora, en celus angostos el botón dice solo
+   «Nuevo» para que el título de la sección se siga leyendo. */
+@media (max-width: 480px) {
+.texto-si-entra {
+display: none;
+}
+}
+
+/* Pestañas del panel de Notificaciones: mitad y mitad. */
+.notis .seg-opt {
+flex: 1;
+justify-content: center;
+gap: var(--space-2);
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
@@ -45,6 +46,7 @@ export default function ConfiguracionTab({
   onInstalar,
 }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const [nuevaCategoria, setNuevaCategoria] = useState("");
   const [tocado, setTocado] = useState(false);
   const [guardandoCategoria, setGuardandoCategoria] = useState(false);
@@ -77,7 +79,7 @@ export default function ConfiguracionTab({
   }
 
   async function borrar(nombre) {
-    if (!window.confirm(`¿Borrar la categoría "${nombre}"? Los movimientos que ya la usan no cambian.`)) return;
+    if (!(await confirmar({ titulo: `¿Borrar la categoría "${nombre}"?`, texto: "Los movimientos que ya la usan no cambian.", si: "Borrar", peligro: true }))) return;
     setBorrandoCategoria(nombre);
     setErrorCategoria("");
     try {

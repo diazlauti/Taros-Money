@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { mailsDisponible } from "../api";
 import { estaInstalada } from "../instalacion";
 import { playChime, playFestejo, playPaso, playSuccess } from "../sounds";
 import { EVENTO_TOUR, marcarTourVisto } from "../tour";
@@ -11,7 +12,7 @@ const PASOS = [
     tab: "resumen",
     icono: "ph ph-hand-waving",
     titulo: "¡Te damos la bienvenida!",
-    texto: "Te mostramos en un minuto dónde está cada cosa. Después lo podés volver a ver cuando quieras desde Configuración.",
+    texto: "Te mostramos en un par de minutos todo lo que podés hacer, con ejemplos. Después lo podés volver a ver cuando quieras desde Configuración.",
   },
   {
     tab: "resumen",
@@ -57,25 +58,43 @@ const PASOS = [
     tab: "movimientos",
     icono: "ph ph-check-circle",
     titulo: "¡Perfecto!",
-    texto: "Ya sabés cargar y borrar. Si solo querés corregir algo, tocá el movimiento y cambiá lo que necesites, sin borrarlo.",
+    texto: "Ya sabés cargar y borrar. Si te equivocás al borrar, abajo aparece «Deshacer» por unos segundos. Y si solo querés corregir algo, tocá el movimiento y cambialo, sin borrarlo.",
+  },
+  {
+    tab: "movimientos",
+    icono: "ph ph-lightning",
+    titulo: "Cargá más rápido",
+    texto: "Lo que cargás seguido (el café, la SUBE) aparece como atajo en «Tus gastos frecuentes»: un toque y queda todo completo. Con la app instalada, mantené apretado el ícono para ir directo a «Nuevo gasto».",
+  },
+  {
+    tab: "movimientos",
+    icono: "ph ph-calculator",
+    titulo: "Calculadora de impuestos",
+    texto: "El botón de la calculadora, arriba, te dice cuánto termina saliendo en pesos algo que pagás en otra moneda o con impuestos encima. Ejemplo: una compra de US$ 20 en una app; ves el total con los impuestos y, si querés, la cargás como gasto.",
   },
   {
     tab: "cuentas",
     icono: "ph ph-wallet",
     titulo: "Cuentas",
-    texto: "Efectivo, banco, billeteras virtuales: cada una con su saldo y su moneda.",
+    texto: "Efectivo, banco, billeteras virtuales: cada una con su saldo y su moneda. Con el lápiz le cambiás el nombre o la borrás.",
   },
   {
     tab: "metas",
     icono: "ph ph-target",
     titulo: "Metas",
-    texto: "Ponete un objetivo de ahorro y andá sumando plata para ver cuánto te falta.",
+    texto: "Ponete un objetivo de ahorro y andá sumando plata. Ejemplo: «Vacaciones» por $500.000; cada vez que guardás algo, tocás «Sumar aporte» y ves cuánto te falta.",
+  },
+  {
+    tab: "servicios",
+    icono: "ph ph-receipt",
+    titulo: "Servicios",
+    texto: "Las cuentas de todos los meses: luz, agua, internet, alquiler. Ejemplo: cargás «Luz», que vence el 10 y sale unos $25.000. Cuando la pagás tocás «Marcar pagado» y, si querés, se suma sola a tus gastos. Si algo está por vencer, te avisamos.",
   },
   {
     tab: "recurrentes",
     icono: "ph ph-repeat",
     titulo: "Suscripciones",
-    texto: "Los pagos fijos de todos los meses (streaming, gimnasio, servicios) y cuánto suman. En el celu está en «Más».",
+    texto: "Los pagos fijos que se cobran solos (streaming, gimnasio, la nube) y cuánto suman por mes. Están junto a Servicios: arriba elegís cuál ver. En el celu, «Servicios y subs» está en «Más».",
   },
   {
     tab: "reportes",
@@ -85,9 +104,25 @@ const PASOS = [
   },
   {
     tab: "configuracion",
+    icono: "ph ph-envelope-simple",
+    titulo: "Gastos desde tus mails",
+    texto: "Para no cargar a mano lo que ya pagaste: buscamos en tu Gmail los pagos (Mercado Pago y tus bancos) y aparecen en Movimientos como «A revisar». Ejemplo: pagás $8.500 en la farmacia con Mercado Pago; aparece solo, elegís la categoría y confirmás. Acá elegís cuándo revisarlos.",
+    seccion: "titulo-mails",
+    soloConMails: true,
+  },
+  {
+    tab: "configuracion",
+    icono: "ph ph-currency-dollar",
+    titulo: "Otras monedas",
+    texto: "¿Tenés dólares o ahorrás en euros? Activá la moneda y elegí la cotización: automática (oficial, blue, MEP o tarjeta) o una fija. Ejemplo: una cuenta «Ahorro» en USD y en el Resumen ves tu saldo total en pesos.",
+    seccion: "titulo-monedas",
+  },
+  {
+    tab: "configuracion",
     icono: "ph ph-gear",
     titulo: "Configuración",
-    texto: "Abrí tu planilla de Google, manejá tus categorías y elegí tema claro u oscuro. Desde acá podés volver a ver este recorrido.",
+    texto: "Tu planilla de Google, tus categorías (con su ícono), tema claro u oscuro y sonidos. Desde acá podés volver a ver este recorrido.",
+    seccion: "titulo-planilla",
   },
 ];
 
@@ -119,7 +154,11 @@ const PASO_INSTALAR = {
 // La primera vez no se puede saltear (ni con Esc): solo quien lo abre de
 // nuevo desde Configuración tiene «Saltear».
 export default function Tour({ hayCuentas, sePuedeSaltear = false, onIrA, onInstalar, onClose }) {
-  const [pasos] = useState(() => (estaInstalada() ? PASOS : [...PASOS, PASO_INSTALAR]));
+  // El paso de mails solo aparece si esta versión de la app los puede leer.
+  const [pasos] = useState(() => {
+    const base = PASOS.filter((p) => !p.soloConMails || mailsDisponible());
+    return estaInstalada() ? base : [...base, PASO_INSTALAR];
+  });
   const [indice, setIndice] = useState(0);
   // Para animar el paso nuevo entrando desde el lado correcto.
   const [direccion, setDireccion] = useState("adelante");
@@ -136,6 +175,20 @@ export default function Tour({ hayCuentas, sePuedeSaltear = false, onIrA, onInst
   useEffect(() => {
     playChime();
   }, []);
+
+  // Pasos que hablan de una parte de la sección (ej. Monedas, en
+  // Configuración): la acerca para que se vea detrás del cartel.
+  useEffect(() => {
+    if (!paso.seccion) return undefined;
+    const t = setTimeout(() => {
+      const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document
+        .getElementById(paso.seccion)
+        ?.closest("section, .card")
+        ?.scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "start" });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [paso]);
 
   // Pasos de práctica: se resalta lo que hay que tocar y se espera a que la
   // persona lo haga de verdad; cuando pasa, avanza solo.

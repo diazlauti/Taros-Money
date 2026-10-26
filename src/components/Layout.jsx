@@ -5,7 +5,7 @@ import Dialog from "./Dialog";
 // Puntito con número sobre una sección que tiene algo pendiente (un gasto
 // de los mails sin revisar, un servicio por vencer). No se va solo: queda
 // hasta que se resuelve lo que lo prende.
-function Insignia({ aviso }) {
+export function Insignia({ aviso }) {
   if (!aviso?.cantidad) return null;
   return (
     <span className="insignia" aria-hidden="true">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { borrarMeta, editarMeta } from "../api";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { parseMonto } from "../format";
 import { useValidacion } from "../hooks";
 import { playClick, playError, playSuccess } from "../sounds";
@@ -13,6 +14,7 @@ const aTexto = (n) => (n ? String(n).replace(".", ",") : "0");
 // Cambiar nombre, objetivo o lo ahorrado de una meta, o borrarla.
 export default function EditarMetaDialog({ meta, otrosNombres, onClose, onGuardado }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const inicial = { nombre: meta.nombre, objetivo: aTexto(meta.objetivo), actual: aTexto(meta.actual) };
   const [form, setForm] = useState(inicial);
   const [enviando, setEnviando] = useState(false);
@@ -53,7 +55,7 @@ export default function EditarMetaDialog({ meta, otrosNombres, onClose, onGuarda
   }
 
   async function borrar() {
-    if (!window.confirm(`¿Borrar la meta "${meta.nombre}"? No se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Borrar la meta "${meta.nombre}"?`, texto: "No se puede deshacer.", si: "Borrar", peligro: true }))) return;
     setBorrando(true);
     setError("");
     try {
