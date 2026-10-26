@@ -537,6 +537,7 @@ return (
 type="button"
 className={"btn btn-secondary btn-encabezado btn-campana" + (notisSinVer ? " btn-campana--nuevo" : "")}
 onClick={abrirNotificaciones}
+data-tour="campana"
 aria-haspopup="dialog"
 aria-label={notisSinVer ? `Notificaciones, ${notisSinVer} sin ver` : "Notificaciones"}
 title="Notificaciones"
@@ -765,7 +766,7 @@ return (
 ["servicios", "Servicios", "ph ph-receipt"],
 ["recurrentes", "Suscripciones", "ph ph-repeat"],
 ].map(([valor, texto, icono]) => (
-<label className="seg-opt" key={valor}>
+<label className="seg-opt" key={valor} data-tour={`elegir-${valor}`}>
 <input type="radio" name="servicios-o-subs" checked={actual === valor} onChange={() => onCambiar(valor)} />
 <i className={icono} aria-hidden="true" />
 {texto}
