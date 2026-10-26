@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { activarAvisoServicios, crearServicio, desmarcarServicio, getAvisoServicios, MENSAJE_FALTA_PERMISO, volverAEntrar } from "../api";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { aPesos, fmtFecha, fmtMoney, iconoPorCategoria, nombreMes, parseMonto } from "../format";
 import { useSeccion, useValidacion } from "../hooks";
 import { linkCalendario, notificacionesDisponibles, pedirPermisoNotificaciones, permisoNotificaciones } from "../recordatorios";
@@ -16,6 +17,7 @@ const VACIO = { nombre: "", diaVencimiento: "", categoria: "", monto: "", cuenta
 
 export default function ServiciosTab({ servicios, categorias, cuentas, cotizaciones, monedaPorCuenta, onCambio, onCambioConGasto }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const [form, setForm] = useState(VACIO);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
@@ -92,10 +94,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   }
 
   async function desmarcar(s) {
-    const pregunta = s.gastoRegistrado
-      ? `¿Volver "${s.nombre}" a pendiente? También se borra el gasto que se cargó al pagarlo.`
-      : `¿Volver "${s.nombre}" a pendiente?`;
-    if (!window.confirm(pregunta)) return;
+    if (!(await confirmar({ titulo: `¿Volver "${s.nombre}" a pendiente?`, texto: s.gastoRegistrado ? "También se borra el gasto que se cargó al pagarlo." : "", si: "Volver a pendiente" }))) return;
     setDesmarcando(s.nombre);
     try {
       const res = await desmarcarServicio(s.nombre);

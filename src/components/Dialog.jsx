@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from "react";
+import { useConfirmar } from "../confirmar";
 
 const ENFOCABLES =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -13,11 +14,22 @@ export default function Dialog({ titulo, onClose, sucio = false, variante, child
   const tituloId = useId();
   const sucioRef = useRef(sucio);
   const onCloseRef = useRef(onClose);
+  const confirmar = useConfirmar();
+  const confirmarRef = useRef(confirmar);
   sucioRef.current = sucio;
   onCloseRef.current = onClose;
+  confirmarRef.current = confirmar;
 
-  function intentarCerrar() {
-    if (sucioRef.current && !window.confirm("¿Cerrar sin guardar? Se pierde lo que cargaste.")) return;
+  async function intentarCerrar() {
+    if (sucioRef.current) {
+      const cerrar = await confirmarRef.current({
+        titulo: "¿Cerrar sin guardar?",
+        texto: "Se pierde lo que cargaste.",
+        si: "Cerrar igual",
+        no: "Seguir editando",
+      });
+      if (!cerrar) return;
+    }
     onCloseRef.current();
   }
 
@@ -28,6 +40,9 @@ export default function Dialog({ titulo, onClose, sucio = false, variante, child
     inicial.focus();
 
     function onKeyDown(e) {
+      // Con otro diálogo abierto encima (ej. el "¿Seguro?"), las teclas son
+      // de ese.
+      if (!panel.contains(document.activeElement)) return;
       if (e.key === "Escape") {
         e.preventDefault();
         intentarCerrar();

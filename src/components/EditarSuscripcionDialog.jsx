@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { borrarSuscripcion, editarSuscripcion } from "../api";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { parseMonto } from "../format";
 import { useValidacion } from "../hooks";
 import { playClick, playError, playSuccess } from "../sounds";
@@ -10,6 +11,7 @@ import Dialog from "./Dialog";
 
 export default function EditarSuscripcionDialog({ suscripcion, categorias, cuentas, onClose, onGuardado }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const inicial = {
     nombre: suscripcion.nombre || "",
     diaCobro: String(suscripcion.diaCobro || ""),
@@ -56,7 +58,7 @@ export default function EditarSuscripcionDialog({ suscripcion, categorias, cuent
   }
 
   async function borrar() {
-    if (!window.confirm(`¿Borrar la suscripción "${suscripcion.nombre}"? No se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Borrar la suscripción "${suscripcion.nombre}"?`, texto: "No se puede deshacer.", si: "Borrar", peligro: true }))) return;
     setBorrando(true);
     setError("");
     try {
