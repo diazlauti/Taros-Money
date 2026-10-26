@@ -10,6 +10,8 @@ import { avisarAccionTour } from "../tour";
 import Campo from "./Campo";
 import CategoriaChips from "./CategoriaChips";
 import Dialog from "./Dialog";
+import { Cargando, ErrorEstado, Skeleton } from "./Estado";
+import PrimeraCuenta from "./PrimeraCuenta";
 
 function fechaHoraActual() {
   const ahora = new Date();
@@ -22,8 +24,24 @@ function fechaHoraActual() {
 
 // "inicial" llega de un atajo o link (?nuevo=gasto&monto=…); "gastos" e
 // "ingresos" son los ya cargados, para ofrecer los frecuentes de un toque.
-export default function NuevoMovimientoDialog({ categorias, cuentas, gastos, ingresos, inicial, monedaPorCuenta, onClose, onGuardado }) {
+// "cuentasEstado" ({ cargando, error, recargar }) distingue "todavía no
+// llegaron" de "no tenés ninguna": sin cuentas no se puede guardar.
+export default function NuevoMovimientoDialog({
+  categorias,
+  cuentas: cuentasProp,
+  cuentasEstado,
+  gastos,
+  ingresos,
+  inicial,
+  monedaPorCuenta,
+  onClose,
+  onGuardado,
+  onCuentaCreada,
+}) {
   const { avisar } = useAvisos();
+  // La cuenta recién creada desde acá se usa ya, sin esperar la recarga.
+  const [cuentaNueva, setCuentaNueva] = useState(null);
+  const cuentas = cuentasProp?.length ? cuentasProp : cuentaNueva ? [cuentaNueva] : cuentasProp;
   const cuentaTarjeta = (cuentas || []).find((c) => c.esTarjeta) || null;
   const primeraNoTarjeta = (cuentas || []).find((c) => !c.esTarjeta) || null;
   const [tipo, setTipo] = useState(inicial?.tipo || "gasto");
@@ -57,8 +75,23 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, gastos, ing
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tipo]);
 
+  // Si las cuentas llegan después de abrir el formulario, se elige una.
+  useEffect(() => {
+    if (form.cuenta || !cuentas?.length) return;
+    const preferida = tipo === "ingreso" ? primeraNoTarjeta || cuentaTarjeta : cuentaTarjeta || primeraNoTarjeta;
+    if (preferida) campo("cuenta", preferida.nombre);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cuentas]);
+
   function campo(nombre, valor) {
     setForm((f) => ({ ...f, [nombre]: valor }));
+  }
+
+  function cuentaCreada(cuenta) {
+    setCuentaNueva(cuenta);
+    campo("cuenta", cuenta.nombre);
+    avisar(`Cuenta «${cuenta.nombre}» creada. Ahora anotá el movimiento.`);
+    onCuentaCreada?.();
   }
 
   // Un toque en un frecuente completa monto, descripción, categoría y cuenta;
@@ -82,6 +115,10 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, gastos, ing
   async function submit(e) {
     e.preventDefault();
     if (!v.intentar()) return;
+    if (!form.cuenta) {
+      setError("Elegí de qué cuenta sale la plata.");
+      return;
+    }
     setEnviando(true);
     setError("");
     try {
@@ -90,18 +127,20 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, gastos, ing
         hora: form.hora,
         monto: parseMonto(form.monto),
         descripcion: form.descripcion.trim(),
-        categoria: form.categoria,
+        // Un link de carga rápida puede traer una categoría que no existe
+        // (?cat=…): sin chip marcado, se guarda sin categoría.
+        categoria: Array.isArray(categorias) && !categorias.includes(form.categoria) ? "" : form.categoria,
       };
       // El backend acredita/descuenta solo de la cuenta elegida (o la deja
       // como "Cuscatlán" si no hay otra cuenta) en la misma llamada.
       if (tipo === "gasto") {
-        await agregarGasto({ ...payload, cuenta: form.cuenta || undefined });
+        await agregarGasto({ ...payload, cuenta: form.cuenta });
       } else {
-        await agregarIngreso({ ...payload, cuenta: form.cuenta || undefined });
+        await agregarIngreso({ ...payload, cuenta: form.cuenta });
       }
       playSuccess();
       avisar(tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado");
-      onGuardado?.();
+      onGuardado?.(tipo);
       onClose();
       avisarAccionTour("movimiento-creado");
     } catch (err) {
@@ -112,6 +151,30 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, gastos, ing
   }
 
   const sucio = form.monto !== "" || form.descripcion !== "";
+
+  if (!cuentas?.length) {
+    let contenido;
+    if (cuentasEstado?.cargando || (!cuentas && !cuentasEstado?.error)) {
+      contenido = (
+        <Cargando texto="Cargando tus cuentas…">
+          <div className="pila-chica">
+            <Skeleton ancho="40%" />
+            <Skeleton variante="boton" />
+            <Skeleton ancho="60%" />
+          </div>
+        </Cargando>
+      );
+    } else if (!cuentas) {
+      contenido = <ErrorEstado mensaje={cuentasEstado.error} onReintentar={cuentasEstado.recargar} />;
+    } else {
+      contenido = <PrimeraCuenta onCreada={cuentaCreada} onCancelar={onClose} />;
+    }
+    return (
+      <Dialog titulo="Nuevo movimiento" onClose={onClose}>
+        {contenido}
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog titulo="Nuevo movimiento" onClose={onClose} sucio={sucio && !enviando}>
@@ -181,7 +244,7 @@ export default function NuevoMovimientoDialog({ categorias, cuentas, gastos, ing
           )}
         </Campo>
 
-        {cuentas && cuentas.length > 0 && (
+        {cuentas.length > 0 && (
           <Campo etiqueta="Cuenta">
             {(p) => (
               <select {...p} className="input" value={form.cuenta} onChange={(e) => campo("cuenta", e.target.value)}>

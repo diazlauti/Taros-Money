@@ -16,6 +16,45 @@ export const MONEDAS = {
 
 export const CODIGOS_EXTRA = Object.keys(MONEDAS);
 
+// Monedas que agrega cada uno (ej. el peso uruguayo, o "USDT"): siempre con
+// valor fijo, porque no hay de dónde traer su cotización. Viven en la misma
+// config que las otras, marcadas con propia: true, y se registran acá cuando
+// llegan para que los montos se muestren con su símbolo.
+let propias = {};
+
+export function registrarMonedasPropias(config) {
+  propias = Object.fromEntries(
+    Object.entries(config || {})
+      .filter(([, c]) => c?.propia)
+      .map(([codigo, c]) => [
+        codigo,
+        {
+          nombre: c.nombre || codigo,
+          plural: c.nombre || codigo,
+          simbolo: c.simbolo || codigo + "$",
+          decimales: Number(c.decimales) === 0 ? 0 : 2,
+          icono: "ph ph-coins",
+          propia: true,
+        },
+      ]),
+  );
+}
+
+// Datos para mostrar una moneda (de las de siempre o propia), o undefined.
+export function infoMoneda(codigo) {
+  return MONEDAS[codigo] || propias[codigo];
+}
+
+// Código válido para una moneda propia: 3 o 4 letras, que no sea una de las que ya hay.
+export function errorCodigoPropio(codigo, ocupados = []) {
+  const c = String(codigo || "").trim().toUpperCase();
+  if (!c) return "Escribí un código corto, por ejemplo UYU.";
+  if (!/^[A-Z]{3,4}$/.test(c)) return "Usá 3 o 4 letras, sin números ni espacios. Ej: UYU, PYG, USDT.";
+  if (c === "ARS" || MONEDAS[c]) return "Esa moneda ya está en la lista de arriba.";
+  if (ocupados.includes(c)) return "Ya agregaste una moneda con ese código.";
+  return "";
+}
+
 export const TIPOS_DOLAR = [
   ["oficial", "Oficial"],
   ["blue", "Blue"],
@@ -30,7 +69,7 @@ export function nombreTipoDolar(tipo) {
 // "Pesos (ARS)", "Euros (EUR)"…
 export function etiquetaMoneda(codigo) {
   if (!codigo || codigo === "ARS") return "Pesos (ARS)";
-  const m = MONEDAS[codigo];
+  const m = infoMoneda(codigo);
   return m ? `${m.plural} (${codigo})` : codigo;
 }
 
@@ -43,7 +82,7 @@ async function pedirJson(url) {
     const control = new AbortController();
     const temporizador = setTimeout(() => control.abort(), TIEMPO_LIMITE_MS);
     try {
-      const res = await fetch(url, { signal: control.signal });
+      const res = await fetch(url, { signal: control.signal, cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (err) {

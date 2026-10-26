@@ -20,8 +20,10 @@ export default function PagarServicioDialog({ servicio, cuentas, monedaPorCuenta
     monto: servicio.monto ? String(servicio.monto).replace(".", ",") : "",
     fecha: ahora.fecha,
     cuenta: cuentaInicial,
-    registrarGasto: true,
+    // Sin cuenta no se puede anotar el gasto: solo se marca como pagado.
+    registrarGasto: (cuentas || []).length > 0,
   });
+  const sinCuentas = !(cuentas || []).length;
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const v = useValidacion(form, (f) => ({ monto: errorMonto(f.monto), fecha: f.fecha ? "" : "Elegí la fecha." }));
@@ -86,10 +88,19 @@ export default function PagarServicioDialog({ servicio, cuentas, monedaPorCuenta
           </Campo>
         </div>
         <label className="check">
-          <input type="checkbox" checked={form.registrarGasto} onChange={(e) => campo("registrarGasto", e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={form.registrarGasto}
+            disabled={sinCuentas}
+            onChange={(e) => campo("registrarGasto", e.target.checked)}
+          />
           <span>
             Registrarlo como gasto
-            <span className="texto-tenue texto-chico check-ayuda">Destildalo si ya lo cargaste o te llega por mail.</span>
+            <span className="texto-tenue texto-chico check-ayuda">
+              {sinCuentas
+                ? "Para anotarlo como gasto primero creá una cuenta en Cuentas."
+                : "Destildalo si ya lo cargaste o te llega por mail."}
+            </span>
           </span>
         </label>
         {form.registrarGasto && cuentas && cuentas.length > 0 && (

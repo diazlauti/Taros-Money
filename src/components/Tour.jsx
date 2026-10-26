@@ -12,13 +12,25 @@ const PASOS = [
     tab: "resumen",
     icono: "ph ph-hand-waving",
     titulo: "¡Te damos la bienvenida!",
-    texto: "Te mostramos en un par de minutos todo lo que podés hacer, con ejemplos. Podés saltearlo y verlo cuando quieras desde Configuración.",
+    texto: "Te mostramos en un par de minutos todo lo que podés hacer, con ejemplos. Después lo podés volver a ver cuando quieras desde Configuración.",
   },
   {
     tab: "resumen",
     icono: "ph ph-squares-four",
     titulo: "Resumen",
     texto: "Tu saldo, cuánto gastaste e ingresaste y en qué categorías. Arriba elegís el período: 7, 14, 30 o 90 días.",
+  },
+  {
+    tab: "cuentas",
+    icono: "ph ph-wallet",
+    titulo: "Primero, tu cuenta",
+    texto: "Cada gasto sale de una cuenta. Creá la que más usás (efectivo, banco, Mercado Pago) con la plata que tenés hoy y tocá «Agregar».",
+    espera: "cuenta-creada",
+    objetivo: "nueva-cuenta",
+    // Sin cuenta no se puede cargar nada: este paso no se saltea. Si ya
+    // tenés alguna, no aparece.
+    obligatorio: true,
+    soloSinCuentas: true,
   },
   {
     tab: "resumen",
@@ -55,6 +67,12 @@ const PASOS = [
     texto: "Lo que cargás seguido (el café, la SUBE) aparece como atajo en «Tus gastos frecuentes»: un toque y queda todo completo. Con la app instalada, mantené apretado el ícono para ir directo a «Nuevo gasto».",
   },
   {
+    tab: "movimientos",
+    icono: "ph ph-calculator",
+    titulo: "Calculadora de impuestos",
+    texto: "El botón de la calculadora, arriba, te dice cuánto termina saliendo en pesos algo que pagás en otra moneda o con impuestos encima. Ejemplo: una compra de US$ 20 en una app; ves el total con los impuestos y, si querés, la cargás como gasto.",
+  },
+  {
     tab: "cuentas",
     icono: "ph ph-wallet",
     titulo: "Cuentas",
@@ -70,13 +88,13 @@ const PASOS = [
     tab: "servicios",
     icono: "ph ph-receipt",
     titulo: "Servicios",
-    texto: "Las cuentas de todos los meses: luz, agua, internet, alquiler. Ejemplo: cargás «Luz», que vence el 10 y sale unos $25.000. Cuando la pagás tocás «Marcar pagado» y, si querés, se suma sola a tus gastos. Si algo está por vencer, te avisamos. En el celu está en «Más».",
+    texto: "Las cuentas de todos los meses: luz, agua, internet, alquiler. Ejemplo: cargás «Luz», que vence el 10 y sale unos $25.000. Cuando la pagás tocás «Marcar pagado» y, si querés, se suma sola a tus gastos. Si algo está por vencer, te avisamos.",
   },
   {
     tab: "recurrentes",
     icono: "ph ph-repeat",
     titulo: "Suscripciones",
-    texto: "Los pagos fijos que se cobran solos (streaming, gimnasio, la nube) y cuánto suman por mes. En el celu está en «Más».",
+    texto: "Los pagos fijos que se cobran solos (streaming, gimnasio, la nube) y cuánto suman por mes. Están junto a Servicios: arriba elegís cuál ver. En el celu, «Servicios y subs» está en «Más».",
   },
   {
     tab: "reportes",
@@ -103,10 +121,27 @@ const PASOS = [
     tab: "configuracion",
     icono: "ph ph-gear",
     titulo: "Configuración",
-    texto: "Tu planilla de Google, tus categorías, tema claro u oscuro y sonidos. Desde acá podés volver a ver este recorrido.",
+    texto: "Tu planilla de Google, tus categorías (con su ícono), tema claro u oscuro y sonidos. Desde acá podés volver a ver este recorrido.",
     seccion: "titulo-planilla",
   },
 ];
+
+// Si se saltea una práctica, algunos pasos dejan de tener sentido (no se
+// puede festejar un movimiento que no se cargó) o cambian el texto.
+const SALTEO = {
+  "movimiento-creado": { saltarHasta: "movimiento-borrado", etiqueta: "Saltear este paso" },
+  "movimiento-borrado": { saltarHasta: null, etiqueta: "Dejarlo así" },
+};
+const TEXTO_SI_NO_BORRO = {
+  "¡Perfecto!":
+    "Listo, el movimiento de prueba queda guardado. Si después lo querés sacar, tocalo en Movimientos y «Borrar». Y si solo querés corregir algo, tocalo y cambialo, sin borrarlo.",
+};
+// Segundos que hay que esperar antes de poder saltear una práctica: así se
+// intenta primero, pero nadie queda trabado.
+const ESPERA_SALTEO_S = 5;
+// En los pasos que se leen, «Siguiente» se habilita recién después de este
+// tiempo: así no se pasa todo de un tirón sin leer.
+const ESPERA_LECTURA_S = 3;
 
 const PASO_INSTALAR = {
   icono: "ph ph-device-mobile",
@@ -116,7 +151,9 @@ const PASO_INSTALAR = {
 
 // Recorrido de primera vez. Se marca como visto al terminarlo o saltearlo
 // (también con Esc), así no vuelve a aparecer solo.
-export default function Tour({ onIrA, onInstalar, onClose }) {
+// La primera vez no se puede saltear (ni con Esc): solo quien lo abre de
+// nuevo desde Configuración tiene «Saltear».
+export default function Tour({ hayCuentas, sePuedeSaltear = false, onIrA, onInstalar, onClose }) {
   // El paso de mails solo aparece si esta versión de la app los puede leer.
   const [pasos] = useState(() => {
     const base = PASOS.filter((p) => !p.soloConMails || mailsDisponible());
@@ -125,7 +162,14 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
   const [indice, setIndice] = useState(0);
   // Para animar el paso nuevo entrando desde el lado correcto.
   const [direccion, setDireccion] = useState("adelante");
+  // Las prácticas que se saltearon (para ajustar los textos que siguen).
+  const [salteadas, setSalteadas] = useState(() => new Set());
+  // En qué paso de práctica ya pasó la espera y se puede saltear.
+  const [salteableEn, setSalteableEn] = useState(-1);
+  // Después de saltear no se vuelve a los pasos que se pasaron de largo.
+  const [piso, setPiso] = useState(0);
   const paso = pasos[indice];
+  const textoPaso = (salteadas.has("movimiento-borrado") && TEXTO_SI_NO_BORRO[paso.titulo]) || paso.texto;
   const esUltimo = indice === pasos.length - 1;
 
   useEffect(() => {
@@ -154,7 +198,16 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
     raiz.dataset.tourObjetivo = paso.objetivo;
     const enfocar = setTimeout(() => {
       const selector = paso.objetivo === "borrar" ? '[data-tour="primer-movimiento"]' : `[data-tour="${paso.objetivo}"]`;
-      document.querySelector(selector)?.focus();
+      const el = document.querySelector(selector);
+      if (el?.matches("form")) {
+        // Un formulario entero: se sube arriba de todo para que el cartel no
+        // tape el botón, y se arranca por el primer campo.
+        el.querySelector("input")?.focus({ preventScroll: true });
+        const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        el.scrollIntoView({ block: "start", behavior: quieto ? "auto" : "smooth" });
+      } else {
+        el?.focus();
+      }
     }, 300);
 
     function onAccion(e) {
@@ -173,7 +226,45 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
     };
   }, [paso, pasos, indice, onIrA]);
 
+  // Después de unos segundos en una práctica aparece la opción de saltearla.
+  useEffect(() => {
+    if (!paso.espera) return undefined;
+    const t = setTimeout(() => setSalteableEn(indice), ESPERA_SALTEO_S * 1000);
+    return () => clearTimeout(t);
+  }, [paso, indice]);
+  const puedeSaltear = paso.espera && !paso.obligatorio && salteableEn === indice;
+
+  // En qué paso de lectura ya se puede seguir.
+  const [leidoEn, setLeidoEn] = useState(-1);
+  useEffect(() => {
+    if (paso.espera) return undefined;
+    const t = setTimeout(() => setLeidoEn(indice), ESPERA_LECTURA_S * 1000);
+    return () => clearTimeout(t);
+  }, [paso, indice]);
+  const puedeSeguir = leidoEn === indice;
+
+  // Saltear una práctica: sigue con el paso que corresponda sin obligar a
+  // cargar ni a borrar nada.
+  function saltearPractica() {
+    const regla = SALTEO[paso.espera] || {};
+    let destino = indice + 1;
+    if (regla.saltarHasta) {
+      const fin = pasos.findIndex((p, i) => i > indice && p.espera === regla.saltarHasta);
+      // También se saltea el festejo de después ("¡Perfecto!"), que habla de algo que no se hizo.
+      if (fin !== -1) destino = fin + 2;
+    }
+    destino = Math.min(destino, pasos.length - 1);
+    setSalteadas((s) => new Set([...s, paso.espera, regla.saltarHasta].filter(Boolean)));
+    setDireccion("adelante");
+    setIndice(destino);
+    setPiso(destino);
+    playPaso(destino, false);
+    if (pasos[destino].tab) onIrA(pasos[destino].tab);
+  }
+
   function irA(nuevo) {
+    // El paso de crear cuenta no hace falta si ya tenés una.
+    if (nuevo > indice && pasos[nuevo]?.soloSinCuentas && hayCuentas) nuevo++;
     const atras = nuevo < indice;
     setDireccion(atras ? "atras" : "adelante");
     setIndice(nuevo);
@@ -222,23 +313,35 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
           Paso {indice + 1} de {pasos.length}: {paso.titulo}. {paso.texto}
         </p>
         <div className="fila-separada">
-          <span className="tour-esperando">
-            <i className="ph ph-hourglass-medium" aria-hidden="true" />
-            Esperando que lo hagas…
-          </span>
-          <button type="button" className="btn btn-texto" onClick={cerrar}>
-            Saltear recorrido
-          </button>
+          {!puedeSaltear ? (
+            <span className="tour-esperando">
+              <i className="ph ph-hourglass-medium" aria-hidden="true" />
+              Esperando que lo hagas…
+            </span>
+          ) : (
+            <button type="button" className="btn btn-secondary tour-saltear-paso" onClick={saltearPractica}>
+              {(SALTEO[paso.espera] || {}).etiqueta || "Saltear este paso"}
+              <i className="ph ph-arrow-right" aria-hidden="true" />
+            </button>
+          )}
+          {sePuedeSaltear && (
+            <button type="button" className="btn btn-texto" onClick={cerrar}>
+              Saltear recorrido
+            </button>
+          )}
         </div>
+        <p className="visualmente-oculto" aria-live="polite">
+          {puedeSaltear ? "Si preferís, podés seguir sin hacerlo." : ""}
+        </p>
       </section>
     );
   }
 
   // No se puede volver a un paso de práctica ya hecho (habría que repetirlo).
-  const puedeVolver = indice > 0 && !pasos[indice - 1].espera;
+  const puedeVolver = indice > piso && !pasos[indice - 1].espera;
 
   return (
-    <Dialog titulo={paso.titulo} onClose={cerrar} variante="tour">
+    <Dialog titulo={paso.titulo} onClose={sePuedeSaltear || esUltimo ? cerrar : () => {}} variante="tour">
       <div key={indice} className={`tour-cuerpo tour-cuerpo--${direccion}`}>
         <span
           className={
@@ -254,12 +357,12 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
             </span>
           )}
         </span>
-        <p className="tour-texto">{paso.texto}</p>
+        <p className="tour-texto">{textoPaso}</p>
       </div>
 
       {puntos}
       <p className="visualmente-oculto" aria-live="polite">
-        Paso {indice + 1} de {pasos.length}: {paso.titulo}. {paso.texto}
+        Paso {indice + 1} de {pasos.length}: {paso.titulo}. {textoPaso}
       </p>
 
       <div className="dialog-actions dialog-actions--separadas">
@@ -267,10 +370,12 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
           <button type="button" className="btn btn-texto" onClick={cerrar}>
             {paso === PASO_INSTALAR ? "Ahora no" : "Cerrar"}
           </button>
-        ) : (
+        ) : sePuedeSaltear ? (
           <button type="button" className="btn btn-texto" onClick={cerrar}>
             Saltear
           </button>
+        ) : (
+          <span />
         )}
         <div className="fila">
           {puedeVolver && (
@@ -281,16 +386,32 @@ export default function Tour({ onIrA, onInstalar, onClose }) {
           )}
           {esUltimo ? (
             paso === PASO_INSTALAR ? (
-              <button type="button" className="btn btn-primary" onClick={instalar}>
+              <button
+                type="button"
+                className={"btn btn-primary" + (puedeSeguir ? "" : " btn-esperando")}
+                onClick={() => puedeSeguir && instalar()}
+                aria-disabled={!puedeSeguir}
+              >
                 Ver cómo
               </button>
             ) : (
-              <button type="button" className="btn btn-primary" onClick={cerrar}>
+              <button
+                type="button"
+                className={"btn btn-primary" + (puedeSeguir ? "" : " btn-esperando")}
+                onClick={() => puedeSeguir && cerrar()}
+                aria-disabled={!puedeSeguir}
+              >
                 ¡Listo!
               </button>
             )
           ) : (
-            <button type="button" className="btn btn-primary" onClick={() => irA(indice + 1)} data-autofocus>
+            <button
+              type="button"
+              className={"btn btn-primary" + (puedeSeguir ? "" : " btn-esperando")}
+              onClick={() => puedeSeguir && irA(indice + 1)}
+              aria-disabled={!puedeSeguir}
+              data-autofocus
+            >
               {indice === 0 ? "Empezar" : "Siguiente"}
               <i className="ph ph-arrow-right" aria-hidden="true" />
             </button>

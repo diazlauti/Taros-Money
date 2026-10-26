@@ -1,4 +1,5 @@
-import { aPesos, fmtMoney, fmtFecha, haceCuanto, iconoPorCategoria, nombreMes } from "../format";
+import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria, nombreMes } from "../format";
+import RevisionMails from "./RevisionMails";
 import { serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
 import { colorPorCategoria } from "../theme";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
@@ -327,7 +328,7 @@ return (
 
 // La detección de gastos en los mails, a mano en el Resumen: si está apagada
 // invita a activarla; si está prendida muestra qué falta revisar.
-function MailsCard({ config, cantidadARevisar, revisando, onRevisar, onVerARevisar, onActivar }) {
+function MailsCard({ config, cantidadARevisar, revision, revisando, dias, onCambiarDias, onCambiarModo, onRevisar, onVerARevisar, onActivar }) {
 const modo = config.data?.modo || "apagado";
 let contenido;
 
@@ -354,32 +355,27 @@ Activar
 } else {
 contenido = (
 <>
-<p className="mails-card-cuenta" aria-live="polite">
-{cantidadARevisar === 0 ? (
-"Todo revisado. No hay movimientos de tus mails esperando."
-) : (
-<>
-<strong>{cantidadARevisar}</strong>{" "}
-{cantidadARevisar === 1 ? "movimiento de tus mails para revisar" : "movimientos de tus mails para revisar"}
-</>
-)}
-</p>
-{config.data?.ultimaRevision && (
-<p className="texto-tenue texto-chico">
-<i className="ph ph-clock" aria-hidden="true" /> Última revisión: {haceCuanto(config.data.ultimaRevision)}
-</p>
-)}
-<div className="fila">
 {cantidadARevisar > 0 && (
-<button type="button" className="btn btn-primary" onClick={onVerARevisar}>
-Revisarlos
-</button>
-)}
-<button type="button" className="btn btn-secondary" onClick={onRevisar} disabled={revisando}>
-<i className="ph ph-envelope-simple" aria-hidden="true" />
-{revisando ? "Revisando mails…" : "Revisar ahora"}
+<div className="fila-separada">
+<p className="mails-card-cuenta" aria-live="polite">
+<strong>{cantidadARevisar}</strong> para revisar
+</p>
+<button type="button" className="btn btn-secondary" onClick={onVerARevisar}>
+Ver
 </button>
 </div>
+)}
+<RevisionMails
+compacto
+revision={revision}
+revisando={revisando}
+dias={dias}
+onCambiarDias={onCambiarDias}
+onRevisar={onRevisar}
+onVerEncontrados={onVerARevisar}
+modo={modo}
+onCambiarModo={onCambiarModo}
+/>
 </>
 );
 }

@@ -4,8 +4,11 @@ import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
-import AjustesMails from "./AjustesMails";
+import { iconoDeCategoria } from "../iconos";
+import ModoMails from "./ModoMails";
+import RevisionMails from "./RevisionMails";
 import Campo from "./Campo";
+import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
@@ -13,13 +16,6 @@ const OPCIONES_TEMA = [
   ["auto", "Automático"],
   ["light", "Claro"],
   ["dark", "Oscuro"],
-];
-
-const OPCIONES_MAILS = [
-  ["apagado", "Apagado", "No se lee ningún mail."],
-  ["al_abrir", "Al abrir la app", "Cada vez que entrás, se fija si hay compras nuevas."],
-  ["boton", "Con un botón", "Solo cuando tocás \"Revisar mails\" en Movimientos."],
-  ["siempre", "Siempre", "Se revisa sola cada media hora, aunque no abras la app."],
 ];
 
 export default function ConfiguracionTab({
@@ -30,11 +26,16 @@ export default function ConfiguracionTab({
   onMonedasGuardadas,
   configMails,
   onCambiarModoMails,
+  revisionMails,
   revisandoMails,
   onRevisarMails,
+  diasMails,
+  onCambiarDiasMails,
   categorias,
   onAgregarCategoria,
   onBorrarCategoria,
+  onEditarCategoria,
+  iconosSoloEsteDispositivo,
   tema,
   onCambiarTema,
   sonido,
@@ -50,6 +51,7 @@ export default function ConfiguracionTab({
   const [guardandoCategoria, setGuardandoCategoria] = useState(false);
   const [borrandoCategoria, setBorrandoCategoria] = useState(null);
   const [errorCategoria, setErrorCategoria] = useState("");
+  const [categoriaIcono, setCategoriaIcono] = useState(null);
   const lista = categorias.data || [];
   const errorNombre = errorNombreNuevo(nuevaCategoria, lista, "categoría");
   const errorVisible = tocado || nuevaCategoria ? errorNombre : "";
@@ -116,26 +118,6 @@ export default function ConfiguracionTab({
     );
   }
 
-  const [guardandoMails, setGuardandoMails] = useState(false);
-  const [errorMails, setErrorMails] = useState("");
-
-  // Se llama directo desde el click: la primera vez abre la ventana de
-  // Google para dar permiso de leer el Gmail.
-  async function cambiarModoMails(modo) {
-    setGuardandoMails(true);
-    setErrorMails("");
-    try {
-      await onCambiarModoMails(modo);
-      playSuccess();
-      if (modo === "apagado") avisar("Listo, ya no se revisan tus mails");
-    } catch (err) {
-      playError();
-      setErrorMails(err.message || "No se pudo cambiar. Probá de nuevo.");
-    } finally {
-      setGuardandoMails(false);
-    }
-  }
-
   let mails = null;
   if (configMails) {
     const modoMails = configMails.data?.modo || "apagado";
@@ -148,49 +130,20 @@ export default function ConfiguracionTab({
     } else if (configMails.error && !configMails.data) {
       mails = <ErrorEstado mensaje={configMails.error} onReintentar={configMails.recargar} />;
     } else {
-      mails = (
-        <>
-          <fieldset className="field" disabled={guardandoMails}>
-            <legend>Cuándo revisarlos</legend>
-            <div className="seg seg-vertical">
-              {OPCIONES_MAILS.map(([valor, texto, ayuda]) => (
-                <label className="seg-opt" key={valor}>
-                  <input
-                    type="radio"
-                    name="modo-mails"
-                    checked={modoMails === valor}
-                    onChange={() => cambiarModoMails(valor)}
-                  />
-                  <span className="seg-opt-texto">
-                    {texto}
-                    <span className="seg-opt-ayuda">{ayuda}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-            <p className="field-ayuda" aria-live="polite">
-              {guardandoMails ? "Guardando…" : ""}
-            </p>
-          </fieldset>
-          {modoMails !== "apagado" && (
-            <button
-              type="button"
-              className="btn btn-secondary btn-alinear-inicio"
-              onClick={onRevisarMails}
-              disabled={revisandoMails || guardandoMails}
-            >
-              <i className="ph ph-envelope-simple" aria-hidden="true" />
-              {revisandoMails ? "Revisando mails…" : "Revisar mails ahora"}
-            </button>
-          )}
-          {errorMails && (
-            <p className="mensaje-error" role="alert">
-              {errorMails}
-            </p>
-          )}
-          {modoMails !== "apagado" && <AjustesMails modo={modoMails} />}
-        </>
-      );
+      mails =
+        modoMails === "apagado" ? (
+          <ModoMails modo={modoMails} onCambiar={onCambiarModoMails} />
+        ) : (
+          <RevisionMails
+            revision={revisionMails}
+            revisando={revisandoMails}
+            dias={diasMails}
+            modo={modoMails}
+            onCambiarModo={onCambiarModoMails}
+            onCambiarDias={onCambiarDiasMails}
+            onRevisar={onRevisarMails}
+          />
+        );
     }
   }
 
@@ -213,8 +166,17 @@ export default function ConfiguracionTab({
     chips = (
       <ul className="lista chips">
         {lista.map((c) => (
-          <li key={c} className="tag tag-borrable">
-            {c}
+          <li key={c} className="tag tag-borrable tag-con-icono">
+            <button
+              type="button"
+              className="tag-editar"
+              onClick={() => setCategoriaIcono(c)}
+              aria-label={`Editar ${c}`}
+              aria-haspopup="dialog"
+            >
+              <i className={iconoDeCategoria(c)} aria-hidden="true" />
+              {c}
+            </button>
             <button
               type="button"
               className="btn btn-icono"
@@ -248,11 +210,12 @@ export default function ConfiguracionTab({
           <h2 className="card-kicker" id="titulo-mails">
             Gastos desde tus mails
           </h2>
-          <p className="texto-intro">
-            Buscamos en tu Gmail los mails de compras, pagos y transferencias (Mercado Pago y los bancos que elijas) y
-            los cargamos solos en Movimientos con la etiqueta "A revisar", para que confirmes o corrijas cada uno. La
-            primera vez Google te va a pedir permiso para leer tus mails. Solo se leen, nunca se borran ni se mandan.
-          </p>
+          {configMails.data?.modo === "apagado" && (
+            <p className="texto-intro">
+              Cargo solos los gastos de los mails de tus compras y pagos; vos solo confirmás. Solo leo, nunca borro ni
+              mando nada.
+            </p>
+          )}
           {mails}
         </section>
       )}
@@ -263,8 +226,24 @@ export default function ConfiguracionTab({
         <h2 className="card-kicker" id="titulo-categorias-config">
           Categorías
         </h2>
-        <p className="texto-intro">Aparecen para elegir al cargar un gasto, ingreso o suscripción.</p>
+        <p className="texto-intro">
+          Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá una para cambiarle el nombre o el ícono.
+        </p>
         {chips}
+        {iconosSoloEsteDispositivo && lista.length > 0 && (
+          <p className="texto-chico texto-tenue">
+            <i className="ph ph-info" aria-hidden="true" /> Por ahora los íconos que elegís se guardan solo en este
+            dispositivo.
+          </p>
+        )}
+        {categoriaIcono && (
+          <EditarCategoriaDialog
+            categoria={categoriaIcono}
+            otras={lista.filter((c) => c !== categoriaIcono)}
+            onGuardar={onEditarCategoria}
+            onClose={() => setCategoriaIcono(null)}
+          />
+        )}
 
         <form className="form-buscar" onSubmit={agregar} noValidate>
           <Campo etiqueta="Nueva categoría" error={errorVisible}>

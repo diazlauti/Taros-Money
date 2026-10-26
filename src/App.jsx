@@ -4,6 +4,9 @@ getSaldo,
 getResumen,
 getGastos,
 getCategorias,
+getIconosCategorias,
+guardarIconoCategoria,
+renombrarCategoria,
 agregarCategoria,
 borrarCategoria,
 getIngresos,
@@ -23,10 +26,12 @@ mailsDisponible,
 idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
-import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS } from "./theme";
+import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
 import { fmtMoney, mapaMonedas } from "./format";
-import { cotizacionesParaGuardar, resolverCotizaciones, traerCotizaciones } from "./monedas";
+import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
+import { iconoDeCategoria, registrarIconos } from "./iconos";
 import { notificar } from "./notificaciones";
+import { ahoraArgentina, diasMailsGuardados, guardarDiasMails, ultimaRevisionMails } from "./revisionMails";
 import { avisarServiciosUrgentes } from "./recordatorios";
 import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
@@ -49,6 +54,7 @@ import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
 import { leerNuevoDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
+import CalculadoraDialog from "./components/CalculadoraDialog";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
@@ -98,7 +104,11 @@ return (
 }
 
 if (!autenticado) {
-return <Login onSuccess={() => setAutenticado(true)} />;
+return (
+<ConfirmarProvider>
+<Login onSuccess={() => setAutenticado(true)} />
+</ConfirmarProvider>
+);
 }
 
 return (
@@ -127,7 +137,10 @@ const [inicialNuevo, setInicialNuevo] = useState(leerNuevoDeUrl);
 const [dialogOpen, setDialogOpen] = useState(() => inicialNuevo !== null);
 // El recorrido aparece solo la primera vez; después se abre desde Configuración.
 const [tourAbierto, setTourAbierto] = useState(() => !tourVisto() && inicialNuevo === null);
+// Abierto a mano desde Configuración: ahí sí se puede saltear.
+const [tourDesdeConfig, setTourDesdeConfig] = useState(false);
 const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
+const [calculadoraAbierta, setCalculadoraAbierta] = useState(false);
 
 useEffect(() => {
 if (inicialNuevo) limpiarNuevoDeUrl();
@@ -138,6 +151,7 @@ const resumen = useSeccion(() => getResumen(dias), [dias]);
 const gastos = useSeccion(() => getGastos(dias), [dias]);
 const ingresos = useSeccion(() => getIngresos(dias), [dias]);
 const categorias = useSeccion(getCategorias, []);
+const iconosCategorias = useSeccion(getIconosCategorias, []);
 const cuentas = useSeccion(getCuentas, []);
 const metas = useSeccion(getMetas, []);
 const suscripciones = useSeccion(getSuscripciones, []);
@@ -171,6 +185,10 @@ const monedaPorCuenta = useMemo(() => mapaMonedas(cuentas.data), [cuentas.data])
 // Con cuánto se pasa cada moneda a pesos: la automática de hoy si llegó, si
 // no la fija o la última guardada.
 const configMonedas = monedas.data?.monedas;
+// Monedas propias e íconos elegidos: se registran antes de dibujar, así
+// cualquier monto o categoría de la app los usa.
+registrarMonedasPropias(configMonedas);
+registrarIconos(iconosCategorias.data?.iconos);
 const cotizaciones = useMemo(
 () => resolverCotizaciones(configMonedas, cotizacionesHoy.data),
 [configMonedas, cotizacionesHoy.data],
@@ -197,6 +215,28 @@ tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [configMonedas, cotizacionesHoy.data]);
 
+// La cotización cambia durante el día y la app instalada queda abierta días
+// enteros: se vuelve a pedir cada 15 minutos mientras se ve la app, y al
+// volver a ella si pasaron más de 10. El efecto de arriba la guarda si cambió.
+const ultimaCotizacion = useRef(Date.now());
+const recargarCotizaciones = cotizacionesHoy.recargar;
+useEffect(() => {
+const refrescar = (minimoMs) => {
+if (document.visibilityState !== "visible" || Date.now() - ultimaCotizacion.current < minimoMs) return;
+ultimaCotizacion.current = Date.now();
+recargarCotizaciones();
+};
+const intervalo = setInterval(() => refrescar(14 * 60 * 1000), 15 * 60 * 1000);
+const alVolver = () => refrescar(10 * 60 * 1000);
+document.addEventListener("visibilitychange", alVolver);
+window.addEventListener("focus", alVolver);
+return () => {
+clearInterval(intervalo);
+document.removeEventListener("visibilitychange", alVolver);
+window.removeEventListener("focus", alVolver);
+};
+}, [recargarCotizaciones]);
+
 const recargarTodo = useCallback(() => {
 saldo.recargar();
 resumen.recargar();
@@ -210,14 +250,40 @@ tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, servicios, tendencia]);
 
+// Después de cargar, editar o borrar un movimiento: solo lo que depende de
+// los movimientos (metas, servicios y suscripciones no cambian). Con un gasto
+// nuevo no hace falta pedir los ingresos, y al revés.
+const recargarMovimientos = useCallback(
+(tipo) => {
+saldo.recargar();
+resumen.recargar();
+cuentas.recargar();
+tendencia.recargar();
+if (tipo !== "ingreso") gastos.recargar();
+if (tipo !== "gasto") ingresos.recargar();
+},
+// eslint-disable-next-line react-hooks/exhaustive-deps
+[saldo, resumen, gastos, ingresos, cuentas, tendencia],
+);
+
 // --- Gastos desde tus mails ---
 const [revisandoMails, setRevisandoMails] = useState(false);
+// Resultado de la última revisión hecha desde este dispositivo (incluido el
+// error), para mostrarlo fijo y no solo en un aviso que desaparece.
+const [revisionLocal, setRevisionLocal] = useState(null);
+// Cuántos días para atrás revisa el botón (7, 14 o 30).
+const [diasMails, setDiasMails] = useState(diasMailsGuardados);
+function cambiarDiasMails(d) {
+setDiasMails(d);
+guardarDiasMails(d);
+}
 // Desde la tarjeta del Resumen se puede abrir Movimientos ya filtrado.
 const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
 const modoMails = configMails.data?.modo || "apagado";
 const planillaId = idDePlanilla(urlPlanilla.data);
 
 const cantidadARevisar = [...(gastos.data || []), ...(ingresos.data || [])].filter((g) => g.aRevisar).length;
+const revisionMails = ultimaRevisionMails(revisionLocal, configMails.data);
 
 // interactivo=true solo desde un click: si hace falta, abre la ventana de
 // permisos de Google. Devuelve el resultado o tira el error.
@@ -227,6 +293,16 @@ if (!planillaId) throw new Error("Todavía no se encontró tu planilla. Probá d
 setRevisandoMails(true);
 try {
 const resultado = await revisarMails(planillaId, dias, { interactivo });
+setRevisionLocal({
+cuando: resultado?.revisadoEl || ahoraArgentina(),
+nuevos: resultado?.nuevos || 0,
+yaEstaban: resultado?.yaEstaban || 0,
+encontrados: (resultado?.encontrados || []).slice(0, 3),
+revisados: resultado?.revisados,
+dias: resultado?.dias,
+noLeidos: resultado?.noLeidos,
+fallaron: resultado?.fallaron,
+});
 // Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
 // como "mientras no estabas".
 marcarVistos((resultado?.encontrados || []).map(claveGasto));
@@ -239,6 +315,9 @@ cuentas.recargar();
 tendencia.recargar();
 }
 return resultado;
+} catch (err) {
+setRevisionLocal({ cuando: ahoraArgentina(), error: err.message || "No se pudieron revisar tus mails." });
+throw err;
 } finally {
 setRevisandoMails(false);
 }
@@ -254,9 +333,10 @@ const avisarResultadoMails = useCallback(
 const encontrados = resultado?.encontrados || [];
 const n = resultado?.nuevos || encontrados.length;
 if (n === 0) {
-if (!siempreAvisar) return;
-avisar("No encontré movimientos nuevos en tus mails.");
-notificar("Taros Money", "Revisé tus mails: no hay nada nuevo.");
+// Al abrir también se avisa (antes no decía nada y parecía que no
+// andaba), pero sin notificación del sistema.
+avisar("Revisé tus mails: no hay movimientos nuevos.");
+if (siempreAvisar) notificar("Taros Money", "Revisé tus mails: no hay nada nuevo.");
 return;
 }
 const detalle = encontrados
@@ -285,9 +365,13 @@ avisar(`${titulo} en tus mails. Revisalos en Movimientos.`);
 notificar(titulo, "Están en Movimientos con la etiqueta \"A revisar\".");
 }, [modoMails, gastos.data, avisar]);
 
-async function revisarMailsConBoton() {
+// "d" llega como número desde la tarjeta de revisión; desde otros botones
+// llega el evento del click, y ahí se usan los días elegidos.
+async function revisarMailsConBoton(d) {
+const dias = typeof d === "number" ? d : diasMails;
+if (dias !== diasMails) cambiarDiasMails(dias);
 try {
-avisarResultadoMails(await revisarMisMails({ interactivo: true }));
+avisarResultadoMails(await revisarMisMails({ interactivo: true, dias }));
 } catch (err) {
 avisar(err.message || "No se pudieron revisar tus mails. Probá de nuevo.", "error");
 }
@@ -343,6 +427,51 @@ await borrarCategoria(nombre);
 categorias.recargar();
 }
 
+// Editar una categoría: primero el nombre, después el ícono.
+async function editarCategoria(nombre, { nombre: nuevo, icono }) {
+let actual = nombre;
+if (nuevo && nuevo !== nombre) {
+await renombrarCategoria(nombre, nuevo);
+actual = nuevo;
+categorias.recargar();
+gastos.recargar();
+ingresos.recargar();
+suscripciones.recargar();
+resumen.recargar();
+}
+// Con nombre nuevo se guarda el ícono que se ve, así no se pierde el que
+// salía por el nombre viejo (ej. «Comida» → hamburguesa).
+if (icono && (actual !== nombre || icono !== iconoDeCategoria(nombre))) await guardarIconoCategoria(actual, icono);
+iconosCategorias.recargar();
+}
+
+// Puntitos en el menú: lo que quedó pendiente se sigue marcando hasta que
+// se resuelve (un gasto de los mails sin revisar, un servicio por vencer).
+const serviciosUrgentes = useMemo(
+() => serviciosConEstado(servicios.data).filter((s) => s.estado === "vencido" || s.estado === "pronto").length,
+[servicios.data],
+);
+const avisosMenu = {
+movimientos: cantidadARevisar
+? { cantidad: cantidadARevisar, texto: `${cantidadARevisar} ${cantidadARevisar === 1 ? "movimiento" : "movimientos"} para revisar` }
+: null,
+servicios: serviciosUrgentes
+? { cantidad: serviciosUrgentes, texto: `${serviciosUrgentes} ${serviciosUrgentes === 1 ? "servicio vencido o por vencer" : "servicios vencidos o por vencer"}` }
+: null,
+};
+const totalAvisos = cantidadARevisar + serviciosUrgentes;
+
+// Con la app instalada, el mismo número aparece sobre el ícono (donde el
+// sistema lo permite).
+useEffect(() => {
+try {
+if (totalAvisos > 0) navigator.setAppBadge?.(totalAvisos)?.catch?.(() => {});
+else navigator.clearAppBadge?.()?.catch?.(() => {});
+} catch {
+/* el navegador no lo soporta: no pasa nada */
+}
+}, [totalAvisos]);
+
 const abrirNuevo = () => {
 setInicialNuevo(null);
 setDialogOpen(true);
@@ -352,16 +481,27 @@ function irA(tab) {
 setFiltroMovimientos("todos");
 setActiveTab(tab);
 }
-const activeItem = NAV_ITEMS.find((i) => i.id === activeTab) || NAV_ITEMS[0];
+
+const activeItem = NAV_ITEMS.find((i) => i.id === seccionDelMenu(activeTab)) || NAV_ITEMS[0];
 
 return (
 <div className="app-shell">
-<Sidebar activeTab={activeTab} onSelect={irA} />
+<Sidebar activeTab={activeTab} onSelect={irA} avisos={avisosMenu} />
 
 <main className="main">
 <header className="main-header">
 <i className="ph ph-wallet brand-icono" role="img" aria-label="Taros Money" />
 <h1>{activeItem.label}</h1>
+<button
+type="button"
+className="btn btn-secondary btn-calculadora"
+onClick={() => setCalculadoraAbierta(true)}
+aria-haspopup="dialog"
+title="Calculadora de impuestos"
+>
+<i className="ph ph-calculator" aria-hidden="true" />
+<span className="visualmente-oculto">Calculadora de impuestos</span>
+</button>
 <button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento">
 <i className="ph ph-plus" aria-hidden="true" />
 Nuevo movimiento
@@ -388,8 +528,12 @@ mailsDisponible()
 ? {
 config: configMails,
 cantidadARevisar,
+revision: revisionMails,
 revisando: revisandoMails,
 onRevisar: revisarMailsConBoton,
+dias: diasMails,
+onCambiarDias: cambiarDiasMails,
+onCambiarModo: cambiarModoMails,
 onVerARevisar: () => {
 setFiltroMovimientos("revisar");
 setActiveTab("movimientos");
@@ -411,7 +555,7 @@ monedaPorCuenta={monedaPorCuenta}
 dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
-onCambio={recargarTodo}
+onCambio={() => recargarMovimientos()}
 mailsActivos={modoMails !== "apagado"}
 filtroInicial={filtroMovimientos}
 revisandoMails={revisandoMails}
@@ -431,6 +575,10 @@ onIrAMonedas={() => setActiveTab("configuracion")}
 
 {activeTab === "metas" && <MetasTab metas={metas} onCambio={metas.recargar} />}
 
+{(activeTab === "servicios" || activeTab === "recurrentes") && (
+<ElegirServiciosOSubs actual={activeTab} onCambiar={setActiveTab} />
+)}
+
 {activeTab === "servicios" && (
 <ServiciosTab
 servicios={servicios}
@@ -439,7 +587,10 @@ cuentas={cuentas.data}
 cotizaciones={cotizaciones}
 monedaPorCuenta={monedaPorCuenta}
 onCambio={servicios.recargar}
-onCambioConGasto={recargarTodo}
+onCambioConGasto={() => {
+servicios.recargar();
+recargarMovimientos("gasto");
+}}
 />
 )}
 
@@ -468,17 +619,25 @@ recargarTodo();
 }}
 configMails={mailsDisponible() ? configMails : null}
 onCambiarModoMails={cambiarModoMails}
+revisionMails={revisionMails}
 revisandoMails={revisandoMails}
 onRevisarMails={revisarMailsConBoton}
+diasMails={diasMails}
+onCambiarDiasMails={cambiarDiasMails}
 categorias={categorias}
 onAgregarCategoria={agregarCategoriaYRecargar}
 onBorrarCategoria={borrarCategoriaYRecargar}
+onEditarCategoria={editarCategoria}
+iconosSoloEsteDispositivo={!!iconosCategorias.data?.soloEsteDispositivo}
 tema={tema}
 onCambiarTema={onCambiarTema}
 sonido={sonido}
 onToggleSonido={alternarSonido}
 onCerrarSesion={onCerrarSesion}
-onVerTour={() => setTourAbierto(true)}
+onVerTour={() => {
+setTourDesdeConfig(true);
+setTourAbierto(true);
+}}
 onInstalar={() => setGuiaInstalarAbierta(true)}
 />
 )}
@@ -486,23 +645,27 @@ onInstalar={() => setGuiaInstalarAbierta(true)}
 </div>
 </main>
 
-<BottomNav activeTab={activeTab} onSelect={irA} />
+<BottomNav activeTab={activeTab} onSelect={irA} avisos={avisosMenu} />
 
 {dialogOpen && (
 <NuevoMovimientoDialog
 categorias={categorias.data}
 cuentas={cuentas.data}
+cuentasEstado={cuentas}
 gastos={gastos.data}
 ingresos={ingresos.data}
 inicial={inicialNuevo}
 monedaPorCuenta={monedaPorCuenta}
 onClose={() => setDialogOpen(false)}
-onGuardado={recargarTodo}
+onGuardado={recargarMovimientos}
+onCuentaCreada={cuentas.recargar}
 />
 )}
 
 {tourAbierto && (
 <Tour
+sePuedeSaltear={tourDesdeConfig}
+hayCuentas={(cuentas.data || []).some((c) => !c.esTarjeta)}
 onIrA={setActiveTab}
 onClose={() => setTourAbierto(false)}
 onInstalar={() => {
@@ -513,7 +676,47 @@ setGuiaInstalarAbierta(true);
 )}
 
 {guiaInstalarAbierta && <InstalarAppDialog onClose={() => setGuiaInstalarAbierta(false)} />}
+
+{calculadoraAbierta && (
+<CalculadoraDialog
+cotizaciones={cotizaciones}
+configMonedas={configMonedas}
+cotizacionesHoy={cotizacionesHoy}
+onClose={() => setCalculadoraAbierta(false)}
+onCargarGasto={(datos) => {
+setCalculadoraAbierta(false);
+setInicialNuevo(datos);
+setDialogOpen(true);
+}}
+/>
+)}
 </div>
+);
+}
+
+// Arriba de "Servicios y subs": cuál de las dos listas ver.
+function ElegirServiciosOSubs({ actual, onCambiar }) {
+return (
+<fieldset className="field ancho-contenido">
+<legend className="visualmente-oculto">Qué ver</legend>
+<div className="seg seg-ancho">
+{[
+["servicios", "Servicios", "ph ph-receipt"],
+["recurrentes", "Suscripciones", "ph ph-repeat"],
+].map(([valor, texto, icono]) => (
+<label className="seg-opt" key={valor}>
+<input type="radio" name="servicios-o-subs" checked={actual === valor} onChange={() => onCambiar(valor)} />
+<i className={icono} aria-hidden="true" />
+{texto}
+</label>
+))}
+</div>
+<p className="texto-chico texto-tenue">
+{actual === "servicios"
+? "Las facturas que pagás vos (luz, agua, alquiler): vencen, te avisamos y las marcás como pagadas."
+: "Lo que se cobra solo todos los meses (Netflix, Spotify, el gimnasio): ves cuánto suma y cuándo se cobra."}
+</p>
+</fieldset>
 );
 }
 

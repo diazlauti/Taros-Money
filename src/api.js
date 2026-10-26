@@ -4,6 +4,7 @@
 // logueado — por eso cada quien termina leyendo/escribiendo su propia
 // planilla, sin que el backend tenga que saber de PINes ni sesiones.
 import { cerrarSesion, obtenerTokenActual, obtenerTokenMails, olvidarTokenMails } from "./auth";
+import { guardarIconosLocales, leerIconosLocales } from "./iconos";
 
 const SCRIPT_ID = import.meta.env.VITE_APPS_SCRIPT_ID;
 // Proyecto aparte "Taros Money Mails" (el único que lee Gmail). Si no está
@@ -65,6 +66,16 @@ function mensajeDelBackend(data) {
   // del aviso por mail): Google responde con un error técnico en inglés.
   if (/required permissions|do not have permission/i.test(crudo)) {
     return MENSAJE_FALTA_PERMISO;
+  }
+  // Límites y fallas de Google: llegan en inglés y no dicen nada útil.
+  if (/too many times|quota|limit exceeded|rate limit/i.test(crudo)) {
+    return "Google limitó el uso por hoy. Probá de nuevo en un rato (a más tardar mañana se libera).";
+  }
+  if (/too many simultaneous|lock|timed out waiting/i.test(crudo)) {
+    return "Hay muchas cosas guardándose a la vez. Esperá unos segundos y probá de nuevo.";
+  }
+  if (/exceeded maximum execution time|service (spreadsheets|unavailable)|internal error|server error|try again later/i.test(crudo)) {
+    return MENSAJE_GOOGLE;
   }
   return crudo || "No se pudo completar. Probá de nuevo.";
 }
@@ -200,6 +211,35 @@ export function agregarCategoria(nombre) {
 
 export function borrarCategoria(nombre) {
   return escribir("borrarCategoria", [nombre]);
+}
+
+// Íconos elegidos para las categorías. Si el backend todavía no tiene el
+// archivo de íconos, se guardan en este dispositivo.
+export async function getIconosCategorias() {
+  try {
+    return { iconos: (await leer("obtenerIconosCategorias")) || {} };
+  } catch (err) {
+    if (!err.noDisponible) throw err;
+    return { iconos: leerIconosLocales(), soloEsteDispositivo: true };
+  }
+}
+
+export async function guardarIconoCategoria(nombre, icono) {
+  try {
+    return { iconos: (await escribir("guardarIconoCategoria", [nombre, icono])) || {} };
+  } catch (err) {
+    if (!err.noDisponible) throw err;
+    const iconos = { ...leerIconosLocales() };
+    if (icono) iconos[nombre] = icono;
+    else delete iconos[nombre];
+    guardarIconosLocales(iconos);
+    return { iconos, soloEsteDispositivo: true };
+  }
+}
+
+// Le cambia el nombre en la lista y en todo lo que ya la usaba.
+export function renombrarCategoria(nombreViejo, nombreNuevo) {
+  return escribir("renombrarCategoria", [nombreViejo, nombreNuevo]);
 }
 
 export function agregarGasto(gasto) {
