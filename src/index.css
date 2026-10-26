@@ -3021,3 +3021,12 @@ pointer-events: none;
 z-index: 0;
 animation: backdrop-in var(--dur-slow) var(--ease-out);
 }
+
+/* Avisos en este dispositivo: prendidos. */
+.aviso-inline--ok {
+color: var(--color-text);
+}
+
+.aviso-inline--ok i {
+color: var(--exito);
+}

@@ -9,6 +9,7 @@ import RevisionMails from "./RevisionMails";
 import Campo from "./Campo";
 import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
+import AvisosPushCard from "./AvisosPushCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
 const OPCIONES_TEMA = [
@@ -217,6 +218,8 @@ export default function ConfiguracionTab({
           {mails}
         </section>
       )}
+
+      <AvisosPushCard onInstalar={onInstalar} />
 
       <MonedasCard monedas={monedas} cotizacionesHoy={cotizacionesHoy} cuentas={cuentas} onGuardadas={onMonedasGuardadas} />
 

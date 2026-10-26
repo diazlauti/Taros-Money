@@ -471,3 +471,21 @@ export function getAvisoServicios() {
 export function activarAvisoServicios(activo) {
   return escribir("activarAvisoServicios", [activo, window.location.origin]);
 }
+
+// Avisos en el celu con la app cerrada (push). "suscripcion" es la del
+// navegador (endpoint + claves); el backend la guarda para este usuario.
+export function getPush(endpoint) {
+  return leer("obtenerPush", [endpoint || ""]);
+}
+
+export function activarPushBackend(suscripcion) {
+  return escribir("activarPush", [suscripcion, window.location.origin]);
+}
+
+export function desactivarPushBackend(endpoint) {
+  return escribir("desactivarPush", [endpoint]);
+}
+
+export function probarPushBackend(endpoint) {
+  return escribir("probarPush", [endpoint]);
+}

@@ -51,7 +51,7 @@ import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
 import Login from "./components/Login";
 import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
-import { leerNuevoDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
+import { leerNuevoDeUrl, leerVerDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
 import CalculadoraDialog from "./components/CalculadoraDialog";
 
@@ -122,7 +122,9 @@ setAutenticado(false);
 
 function PanelPrincipal({ tema, onCambiarTema, onCerrarSesion }) {
 const [sonido, setSonido] = useState(sonidoHabilitado);
-const [activeTab, setActiveTab] = useState("resumen");
+// Si se abrió tocando un aviso del celu (?ver=…), arranca en esa sección.
+const [verInicial] = useState(leerVerDeUrl);
+const [activeTab, setActiveTab] = useState(() => (verInicial === "revisar" ? "movimientos" : verInicial || "resumen"));
 const [dias, setDias] = useState(30);
 // Si se entró por un atajo del ícono o un link (?nuevo=gasto&monto=…), se
 // abre directo el formulario completo y el recorrido queda para otra vez.
@@ -136,8 +138,8 @@ const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
 const [calculadoraAbierta, setCalculadoraAbierta] = useState(false);
 
 useEffect(() => {
-if (inicialNuevo) limpiarNuevoDeUrl();
-}, [inicialNuevo]);
+if (inicialNuevo || verInicial) limpiarNuevoDeUrl();
+}, [inicialNuevo, verInicial]);
 
 const saldo = useSeccion(getSaldo, []);
 const resumen = useSeccion(() => getResumen(dias), [dias]);
@@ -271,7 +273,7 @@ setDiasMails(d);
 guardarDiasMails(d);
 }
 // Desde la tarjeta del Resumen se puede abrir Movimientos ya filtrado.
-const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
+const [filtroMovimientos, setFiltroMovimientos] = useState(() => (verInicial === "revisar" ? "revisar" : "todos"));
 const modoMails = configMails.data?.modo || "apagado";
 const planillaId = idDePlanilla(urlPlanilla.data);
 
