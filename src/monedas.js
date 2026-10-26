@@ -82,7 +82,7 @@ async function pedirJson(url) {
     const control = new AbortController();
     const temporizador = setTimeout(() => control.abort(), TIEMPO_LIMITE_MS);
     try {
-      const res = await fetch(url, { signal: control.signal });
+      const res = await fetch(url, { signal: control.signal, cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (err) {

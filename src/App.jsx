@@ -208,6 +208,28 @@ tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [configMonedas, cotizacionesHoy.data]);
 
+// La cotización cambia durante el día y la app instalada queda abierta días
+// enteros: se vuelve a pedir cada 15 minutos mientras se ve la app, y al
+// volver a ella si pasaron más de 10. El efecto de arriba la guarda si cambió.
+const ultimaCotizacion = useRef(Date.now());
+const recargarCotizaciones = cotizacionesHoy.recargar;
+useEffect(() => {
+const refrescar = (minimoMs) => {
+if (document.visibilityState !== "visible" || Date.now() - ultimaCotizacion.current < minimoMs) return;
+ultimaCotizacion.current = Date.now();
+recargarCotizaciones();
+};
+const intervalo = setInterval(() => refrescar(14 * 60 * 1000), 15 * 60 * 1000);
+const alVolver = () => refrescar(10 * 60 * 1000);
+document.addEventListener("visibilitychange", alVolver);
+window.addEventListener("focus", alVolver);
+return () => {
+clearInterval(intervalo);
+document.removeEventListener("visibilitychange", alVolver);
+window.removeEventListener("focus", alVolver);
+};
+}, [recargarCotizaciones]);
+
 const recargarTodo = useCallback(() => {
 saldo.recargar();
 resumen.recargar();
