@@ -909,6 +909,200 @@ font-weight: var(--weight-bold);
 white-space: nowrap;
 }
 
+/* Movimientos agrupados por día (estilo resumen del banco): ícono redondo
+   con el color de la categoría, monto y hora a la derecha, y el saldo de
+   cada día en la cabecera. */
+
+.mov-buscar {
+position: relative;
+display: block;
+}
+
+.mov-buscar > i {
+position: absolute;
+inset-inline-start: var(--space-3);
+top: 50%;
+transform: translateY(-50%);
+font-size: var(--icon-md);
+color: var(--color-text-dim);
+pointer-events: none;
+}
+
+.mov-buscar .input {
+padding-inline-start: calc(var(--space-3) + var(--icon-md) + var(--space-2));
+border-radius: var(--radius-pill);
+}
+
+.mov-filtros {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+min-width: 0;
+}
+
+/* En el celu los chips se deslizan de costado en vez de ocupar 3 renglones. */
+.chips-desliza {
+flex-wrap: nowrap;
+overflow-x: auto;
+scrollbar-width: none;
+padding-block: var(--space-1);
+margin-inline: calc(-1 * var(--space-1));
+padding-inline: var(--space-1);
+scroll-padding-inline: var(--space-1);
+}
+
+.chips-desliza::-webkit-scrollbar {
+display: none;
+}
+
+.chips-desliza > * {
+flex: none;
+}
+
+.chip-categoria i {
+color: var(--color-text);
+background: color-mix(in srgb, var(--mov-color) 35%, transparent);
+border-radius: var(--radius-pill);
+padding: var(--space-1);
+font-size: var(--icon-sm);
+}
+
+.chip-categoria[aria-pressed="true"] i {
+color: var(--color-on-accent);
+background: transparent;
+}
+
+.mov-rango-orden {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+justify-content: space-between;
+gap: var(--space-2);
+}
+
+.mov-rango-orden > .chips {
+min-width: 0;
+max-width: 100%;
+}
+
+.mov-orden {
+display: flex;
+align-items: center;
+gap: var(--space-2);
+}
+
+.mov-orden label {
+display: inline-flex;
+font-size: var(--icon-md);
+color: var(--color-accent-text);
+}
+
+.mov-orden .input {
+width: auto;
+font-size: var(--text-sm);
+border-radius: var(--radius-pill);
+padding-inline: var(--space-3);
+}
+
+.mov-resumen {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: var(--space-2) var(--space-4);
+}
+
+.mov-resumen p {
+margin: 0;
+display: flex;
+align-items: baseline;
+gap: var(--space-2);
+}
+
+.mov-resumen strong {
+font-size: var(--text-lg);
+}
+
+.mov-limpiar {
+display: inline-flex;
+align-items: center;
+gap: var(--space-1);
+margin-inline-start: auto;
+font-size: var(--text-sm);
+}
+
+.mov-dias {
+display: flex;
+flex-direction: column;
+gap: var(--space-4);
+}
+
+.mov-dia-cabecera {
+display: flex;
+flex-wrap: wrap;
+align-items: baseline;
+justify-content: space-between;
+gap: var(--space-1) var(--space-2);
+padding-bottom: var(--space-2);
+border-bottom: var(--border) solid var(--color-divider);
+}
+
+.mov-dia-titulo {
+margin: 0;
+font-family: var(--font-heading);
+font-size: var(--text-md);
+font-weight: var(--weight-bold);
+color: var(--color-text);
+}
+
+.mov-dia-saldo {
+margin: 0;
+font-size: var(--text-sm);
+}
+
+button.movimiento.mov-fila {
+grid-template-columns: var(--icono-circulo) minmax(0, 1fr) auto;
+gap: var(--space-3);
+padding: var(--space-3) var(--space-1);
+}
+
+.mov-icono {
+display: inline-grid;
+place-items: center;
+width: var(--icono-circulo);
+height: var(--icono-circulo);
+border-radius: var(--radius-pill);
+border: var(--border) solid var(--ink);
+background: color-mix(in srgb, var(--mov-color) 30%, var(--color-surface));
+color: var(--color-text);
+font-size: var(--icon-md);
+}
+
+.mov-fila .movimiento-desc {
+font-size: var(--text-md);
+font-weight: var(--weight-medium);
+}
+
+.mov-detalle {
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+.mov-fila .tag {
+margin-top: var(--space-1);
+}
+
+.mov-derecha {
+display: flex;
+flex-direction: column;
+align-items: flex-end;
+gap: var(--space-1);
+}
+
+.mov-fila .movimiento-monto {
+font-size: var(--text-md);
+}
+
 /* --- Barra de progreso --- */
 
 .progreso-pista {

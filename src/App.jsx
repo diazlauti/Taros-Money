@@ -594,6 +594,7 @@ ingresos={ingresos}
 categorias={categorias.data}
 cuentas={cuentas.data}
 monedaPorCuenta={monedaPorCuenta}
+cotizaciones={cotizaciones}
 dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
