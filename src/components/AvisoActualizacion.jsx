@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { actualizarAhora, descartarPorAhora, useHayVersionNueva } from "../actualizacion";
 
-// Cartel de arriba: «Hay una versión nueva · Actualizar». Se ve en cualquier
-// pantalla (también en el login) y no tapa nada importante.
+// Cartel de arriba: «Hay una versión nueva · Actualizar». Solo se muestra
+// con la sesión abierta (App.jsx), no en la landing ni en el login.
 export default function AvisoActualizacion() {
   const hayNueva = useHayVersionNueva();
   const [actualizando, setActualizando] = useState(false);
