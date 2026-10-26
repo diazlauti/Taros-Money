@@ -56,7 +56,7 @@ import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
 import { leerNuevoDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
-import CalculadoraDialog from "./components/CalculadoraDialog";
+import CalculadoraTab from "./components/CalculadoraTab";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
@@ -136,7 +136,6 @@ const [tourAbierto, setTourAbierto] = useState(() => !tourVisto() && inicialNuev
 // Abierto a mano desde Configuración: ahí sí se puede saltear.
 const [tourDesdeConfig, setTourDesdeConfig] = useState(false);
 const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
-const [calculadoraAbierta, setCalculadoraAbierta] = useState(false);
 // Qué notificaciones ya se vieron en este dispositivo. Al abrir el panel se
 // guarda una copia para marcar con «Nuevo» lo que no se había visto.
 const [vistas, setVistas] = useState(leerVistas);
@@ -485,17 +484,13 @@ gastos.error && !gastos.data && { cual: "tus movimientos", mensaje: gastos.error
 
 function abrirNotificaciones() {
 setNotisAbiertas(new Set(vistas));
-marcarVistas(idsNotis);
-setVistas(leerVistas());
 }
 
-// Si llega algo nuevo con el panel abierto, también queda visto.
-const idsNotisClave = idsNotis.join("|");
-useEffect(() => {
-if (!notisAbiertas) return;
-marcarVistas(idsNotisClave.split("|"));
+// El panel marca como visto lo de la pestaña que se está mirando.
+const marcarNotisVistas = useCallback((ids) => {
+marcarVistas(ids);
 setVistas(leerVistas());
-}, [notisAbiertas, idsNotisClave]);
+}, []);
 
 // Con la app instalada, el mismo número aparece sobre el ícono (donde el
 // sistema lo permite).
@@ -530,17 +525,7 @@ return (
 <h1>{activeItem.label}</h1>
 <button
 type="button"
-className="btn btn-secondary btn-calculadora"
-onClick={() => setCalculadoraAbierta(true)}
-aria-haspopup="dialog"
-title="Calculadora de impuestos"
->
-<i className="ph ph-calculator" aria-hidden="true" />
-<span className="visualmente-oculto">Calculadora de impuestos</span>
-</button>
-<button
-type="button"
-className={"btn btn-secondary btn-calculadora btn-campana" + (notisSinVer ? " btn-campana--nuevo" : "")}
+className={"btn btn-secondary btn-encabezado btn-campana" + (notisSinVer ? " btn-campana--nuevo" : "")}
 onClick={abrirNotificaciones}
 aria-haspopup="dialog"
 aria-label={notisSinVer ? `Notificaciones, ${notisSinVer} sin ver` : "Notificaciones"}
@@ -657,6 +642,18 @@ onCambio={suscripciones.recargar}
 
 {activeTab === "reportes" && <ReportesTab tendencia={tendencia} onNuevo={abrirNuevo} />}
 
+{activeTab === "calculadora" && (
+<CalculadoraTab
+cotizaciones={cotizaciones}
+configMonedas={configMonedas}
+cotizacionesHoy={cotizacionesHoy}
+onCargarGasto={(datos) => {
+setInicialNuevo(datos);
+setDialogOpen(true);
+}}
+/>
+)}
+
 {activeTab === "configuracion" && (
 <ConfiguracionTab
 urlPlanilla={urlPlanilla}
@@ -733,6 +730,8 @@ pendientes={pendientes}
 cargando={servicios.cargando || suscripciones.cargando || gastos.cargando}
 errores={erroresNotis}
 vistasAlAbrir={notisAbiertas}
+vistas={vistas}
+onVer={marcarNotisVistas}
 onIr={({ tab, filtro }) => {
 setNotisAbiertas(null);
 setFiltroMovimientos(filtro || "todos");
@@ -742,19 +741,6 @@ onClose={() => setNotisAbiertas(null)}
 />
 )}
 
-{calculadoraAbierta && (
-<CalculadoraDialog
-cotizaciones={cotizaciones}
-configMonedas={configMonedas}
-cotizacionesHoy={cotizacionesHoy}
-onClose={() => setCalculadoraAbierta(false)}
-onCargarGasto={(datos) => {
-setCalculadoraAbierta(false);
-setInicialNuevo(datos);
-setDialogOpen(true);
-}}
-/>
-)}
 </div>
 );
 }

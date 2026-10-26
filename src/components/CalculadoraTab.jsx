@@ -3,17 +3,16 @@ import { calcularImpuestos, guardarAjustesCalculadora, leerAjustesCalculadora, M
 import { fmtMoney, parseMonto } from "../format";
 import { fmtCotizacion, infoMoneda, valorAutomatico } from "../monedas";
 import Campo from "./Campo";
-import Dialog from "./Dialog";
 
 // "1565" → "1565"; 1549.2 → "1549,2" (como se escribe acá).
 function aTexto(n) {
   return n ? String(Math.round(n * 100) / 100).replace(".", ",") : "";
 }
 
-// Cuánto termina saliendo en pesos algo que se paga en otra moneda (o con
+// Sección «Calculadora» del menú. Cuánto termina saliendo en pesos algo que se paga en otra moneda (o con
 // impuestos encima). Los porcentajes se editan y quedan guardados en este
 // dispositivo.
-export default function CalculadoraDialog({ cotizaciones, configMonedas, cotizacionesHoy, onCargarGasto, onClose }) {
+export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacionesHoy, onCargarGasto }) {
   const [ajustes, setAjustes] = useState(leerAjustesCalculadora);
   const [montoTexto, setMontoTexto] = useState("");
   const [intentado, setIntentado] = useState(false);
@@ -90,8 +89,11 @@ export default function CalculadoraDialog({ cotizaciones, configMonedas, cotizac
   }
 
   return (
-    <Dialog titulo="Calculadora de impuestos" onClose={onClose}>
+    <section className="card ancho-form" aria-labelledby="titulo-calculadora">
       <div className="pila">
+        <h2 className="card-kicker" id="titulo-calculadora">
+          Calculadora de impuestos
+        </h2>
         <p className="texto-intro">
           ¿Cuánto te sale en pesos algo que pagás en dólares, con todos los impuestos? Elegí qué se cobra y cuánto.
         </p>
@@ -108,7 +110,6 @@ export default function CalculadoraDialog({ cotizaciones, configMonedas, cotizac
                 placeholder="Ej: 9,99"
                 value={montoTexto}
                 onChange={(e) => setMontoTexto(e.target.value)}
-                data-autofocus
               />
             )}
           </Campo>
@@ -265,16 +266,11 @@ export default function CalculadoraDialog({ cotizaciones, configMonedas, cotizac
           Es una cuenta aproximada: los impuestos cambian seguido, revisalos en el resumen de tu tarjeta.
         </p>
 
-        <div className="dialog-actions dialog-actions--separadas">
-          <button type="button" className="btn btn-texto" onClick={onClose}>
-            Cerrar
-          </button>
-          <button type="button" className="btn btn-primary" onClick={cargar}>
-            <i className="ph ph-plus" aria-hidden="true" />
-            Cargar como gasto
-          </button>
-        </div>
+        <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={cargar}>
+          <i className="ph ph-plus" aria-hidden="true" />
+          Cargar como gasto
+        </button>
       </div>
-    </Dialog>
+    </section>
   );
 }

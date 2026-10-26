@@ -2771,13 +2771,13 @@ line-height: 1;
 animation: tour-pop var(--dur-slow) var(--ease-bounce);
 }
 
-.btn-calculadora {
+.btn-encabezado {
 min-width: var(--tap);
 padding-left: var(--space-2);
 padding-right: var(--space-2);
 }
 
-.btn-calculadora i {
+.btn-encabezado i {
 font-size: var(--icon-md);
 }
 
@@ -3148,4 +3148,11 @@ color: var(--exito);
 .texto-si-entra {
 display: none;
 }
+}
+
+/* Pestañas del panel de Notificaciones: mitad y mitad. */
+.notis .seg-opt {
+flex: 1;
+justify-content: center;
+gap: var(--space-2);
 }

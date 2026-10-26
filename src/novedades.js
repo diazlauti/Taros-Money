@@ -7,7 +7,7 @@ export const NOVEDADES = [
     fecha: "2026-10-26",
     icono: "ph ph-bell",
     titulo: "Notificaciones",
-    texto: "Acá ves en un solo lugar los mails para revisar, los servicios por vencer, las suscripciones que se cobran pronto y lo nuevo de la app.",
+    texto: "Tocá la campanita: en «Avisos» ves los mails para revisar, los servicios por vencer y las suscripciones que se cobran pronto; en «Novedades», lo nuevo de la app.",
   },
   {
     id: "2026-10-26-mails-no-leidos",
@@ -35,7 +35,7 @@ export const NOVEDADES = [
     fecha: "2026-10-24",
     icono: "ph ph-calculator",
     titulo: "Calculadora de impuestos",
-    texto: "Calculá cuánto te sale en pesos una compra en dólares con los impuestos, y cargala como gasto con un toque.",
+    texto: "Calculá cuánto te sale en pesos una compra en dólares con los impuestos, y cargala como gasto con un toque. Ahora está en el menú: «Calculadora».",
   },
   {
     id: "2026-10-24-categorias",
