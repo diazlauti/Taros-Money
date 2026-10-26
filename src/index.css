@@ -26,6 +26,7 @@
 --color-skeleton: rgba(26, 31, 69, 0.1);
 --ink: #1a1f45;
 --error: #b3261e;
+--color-on-error: #ffffff;
 --exito: #1e6b3a;
 --color-ingreso: var(--exito);
 --color-gasto: #5f6688;
@@ -78,6 +79,7 @@
 --content-max: 480px;
 --form-max: 360px;
 --dialog-max: 420px;
+--dialog-confirmar-max: 360px;
 --card-min: 192px;
 --field-min: 136px;
 --donut: 128px;
@@ -114,6 +116,7 @@
 --dur-slow: 400ms;
 --dur-pulse: 1400ms;
 --dur-aviso: 3200ms;
+--dur-aviso-accion: 8000ms;
 --dur-flotar: 4000ms;
 --ease-out: ease;
 --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -122,6 +125,7 @@
 --z-tour: 12;
 --z-aviso: 15;
 --z-dialog: 20;
+--z-confirmar: 25;
 
 color-scheme: light;
 }
@@ -148,6 +152,7 @@ color-scheme: light;
 --color-skeleton: rgba(244, 241, 255, 0.12);
 --ink: #f4f1ff;
 --error: #ff8f9c;
+--color-on-error: #1a1f45;
 --exito: #8ee66b;
 --color-gasto: #9aa0c8;
 color-scheme: dark;
@@ -172,6 +177,7 @@ color-scheme: dark;
 --color-skeleton: rgba(244, 241, 255, 0.12);
 --ink: #f4f1ff;
 --error: #ff8f9c;
+--color-on-error: #1a1f45;
 --exito: #8ee66b;
 --color-gasto: #9aa0c8;
 color-scheme: dark;
@@ -1321,6 +1327,22 @@ color: var(--exito);
 color: var(--error);
 }
 
+/* Aviso con botón («Deshacer»): se puede tocar aunque el resto de la capa
+   deje pasar los toques. */
+.aviso--accion {
+pointer-events: auto;
+padding-right: var(--space-1);
+}
+
+.aviso-boton {
+min-height: var(--tap);
+padding: 0 var(--space-3);
+text-decoration: none;
+border-radius: var(--radius-pill);
+color: var(--color-accent-text);
+font-weight: var(--weight-bold);
+}
+
 @media (min-width: 781px) {
 .avisos { bottom: var(--space-4); }
 }
@@ -2148,6 +2170,21 @@ opacity: 0;
 }
 
 /* --- Recorrido y guía de instalación --- */
+
+/* "¿Seguro?" propio (components/Confirmar.jsx): va arriba de cualquier
+   otro diálogo abierto. */
+.dialog-backdrop--confirmar {
+z-index: var(--z-confirmar);
+}
+
+.dialog-backdrop--confirmar .dialog {
+max-width: var(--dialog-confirmar-max);
+}
+
+.btn-primary--peligro {
+background: var(--error);
+color: var(--color-on-error);
+}
 
 .dialog-backdrop--tour {
 align-items: flex-end;

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { confirmarTodosLosDeMails } from "../api";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { playError, playSuccess } from "../sounds";
 import { fmtMoney, fmtFecha, iconoPorCategoria } from "../format";
 import { PERIODOS } from "../theme";
@@ -30,6 +31,7 @@ export default function MovimientosTab({
   const [confirmando, setConfirmando] = useState(false);
   const [errorConfirmar, setErrorConfirmar] = useState("");
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
 
   const combinados = useMemo(() => {
     const g = (gastos.data || []).map((x) => ({ ...x, tipo: "gasto" }));
@@ -56,7 +58,7 @@ export default function MovimientosTab({
   async function confirmarTodos() {
     const sinConfirmar = combinados.filter((t) => t.sinConfirmar).length;
     const aclaracion = sinConfirmar > 0 ? ` ${sinConfirmar} sin confirmar se suman a tus gastos.` : "";
-    if (!window.confirm(`¿Confirmar los ${cantidadARevisar} movimientos tal como están?${aclaracion}`)) return;
+    if (!(await confirmar({ titulo: `¿Confirmar los ${cantidadARevisar} movimientos tal como están?`, texto: aclaracion.trim(), si: "Confirmar todos" }))) return;
     setConfirmando(true);
     setErrorConfirmar("");
     try {

@@ -39,6 +39,7 @@ import { useAvisos } from "./avisos";
 import { sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav } from "./components/Layout";
 import AvisosProvider from "./components/Avisos";
+import ConfirmarProvider from "./components/Confirmar";
 import ResumenTab from "./components/ResumenTab";
 import MovimientosTab from "./components/MovimientosTab";
 import CuentasTab from "./components/CuentasTab";
@@ -103,11 +104,16 @@ return (
 }
 
 if (!autenticado) {
-return <Login onSuccess={() => setAutenticado(true)} />;
+return (
+<ConfirmarProvider>
+<Login onSuccess={() => setAutenticado(true)} />
+</ConfirmarProvider>
+);
 }
 
 return (
 <AvisosProvider>
+<ConfirmarProvider>
 <PanelPrincipal
 tema={tema}
 onCambiarTema={cambiarTema}
@@ -116,6 +122,7 @@ cerrarSesion();
 setAutenticado(false);
 }}
 />
+</ConfirmarProvider>
 </AvisosProvider>
 );
 }
