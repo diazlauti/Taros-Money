@@ -67,6 +67,16 @@ function mensajeDelBackend(data) {
   if (/required permissions|do not have permission/i.test(crudo)) {
     return MENSAJE_FALTA_PERMISO;
   }
+  // Límites y fallas de Google: llegan en inglés y no dicen nada útil.
+  if (/too many times|quota|limit exceeded|rate limit/i.test(crudo)) {
+    return "Google limitó el uso por hoy. Probá de nuevo en un rato (a más tardar mañana se libera).";
+  }
+  if (/too many simultaneous|lock|timed out waiting/i.test(crudo)) {
+    return "Hay muchas cosas guardándose a la vez. Esperá unos segundos y probá de nuevo.";
+  }
+  if (/exceeded maximum execution time|service (spreadsheets|unavailable)|internal error|server error|try again later/i.test(crudo)) {
+    return MENSAJE_GOOGLE;
+  }
   return crudo || "No se pudo completar. Probá de nuevo.";
 }
 

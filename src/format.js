@@ -48,7 +48,9 @@ export function parseMonto(texto) {
   const tienePunto = t.includes(".");
   const tieneComa = t.includes(",");
   if (tienePunto && tieneComa) {
-    t = t.replace(/\./g, "").replace(",", ".");
+    // El que está más a la derecha es el de los decimales: "1.000,50" y
+    // también "1,000.50" (antes este último daba 1,0005).
+    t = t.lastIndexOf(",") > t.lastIndexOf(".") ? t.replace(/\./g, "").replace(",", ".") : t.replace(/,/g, "");
   } else if (tieneComa) {
     t = t.replace(",", ".");
   } else if (tienePunto && /^-?\d{1,3}(\.\d{3})+$/.test(t)) {
