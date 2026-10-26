@@ -3,7 +3,7 @@
 // ejecuta cada función del backend con el token OAuth de quien está
 // logueado — por eso cada quien termina leyendo/escribiendo su propia
 // planilla, sin que el backend tenga que saber de PINes ni sesiones.
-import { cerrarSesion, obtenerTokenActual, obtenerTokenMails, olvidarTokenMails } from "./auth";
+import { cerrarSesion, obtenerTokenActual, obtenerTokenMails, olvidarTokenMails, tokenRechazado } from "./auth";
 import { guardarIconosLocales, leerIconosLocales } from "./iconos";
 
 const SCRIPT_ID = import.meta.env.VITE_APPS_SCRIPT_ID;
@@ -94,7 +94,7 @@ const API_PRINCIPAL = {
     throw err;
   },
   rechazado() {
-    cerrarSesion();
+    tokenRechazado();
     dispararSesionVencida();
     const err = new Error("Tu sesión venció. Iniciá sesión de nuevo.");
     err.requiereLogin = true;

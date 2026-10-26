@@ -1446,6 +1446,13 @@ font-size: var(--icon-sm);
 color: var(--color-text);
 }
 
+.login-cuenta {
+margin: 0;
+text-align: center;
+font-size: var(--text-sm);
+color: var(--color-text-dim);
+overflow-wrap: anywhere;
+}
 .login-espera {
 margin: 0;
 display: flex;
