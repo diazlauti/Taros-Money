@@ -2,12 +2,13 @@ import { iconoDeCategoria } from "./iconos";
 import { infoMoneda } from "./monedas";
 
 // $650.000 (ARS, sin centavos — así se maneja la plata en la planilla),
-// US$1,234.56 (USD, con centavos, para las cuentas en dólares), €1.234,56,
+// US$1.234,56 (USD, con centavos, para las cuentas en dólares), €1.234,56,
 // R$1.234,56 o CLP$12.500 (el peso chileno no usa centavos).
 export function fmtMoney(n, moneda = "ARS") {
   const v = Number(n) || 0;
   if (moneda === "USD") {
-    return "US$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const signo = v < 0 ? "-" : "";
+    return signo + "US$" + Math.abs(v).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   const extra = infoMoneda(moneda);
   if (extra) {
@@ -48,7 +49,9 @@ export function parseMonto(texto) {
   const tienePunto = t.includes(".");
   const tieneComa = t.includes(",");
   if (tienePunto && tieneComa) {
-    t = t.replace(/\./g, "").replace(",", ".");
+    // El que está más a la derecha es el de los decimales: "1.000,50" y
+    // también "1,000.50" (antes este último daba 1,0005).
+    t = t.lastIndexOf(",") > t.lastIndexOf(".") ? t.replace(/\./g, "").replace(",", ".") : t.replace(/,/g, "");
   } else if (tieneComa) {
     t = t.replace(",", ".");
   } else if (tienePunto && /^-?\d{1,3}(\.\d{3})+$/.test(t)) {

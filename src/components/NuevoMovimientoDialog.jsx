@@ -127,7 +127,9 @@ export default function NuevoMovimientoDialog({
         hora: form.hora,
         monto: parseMonto(form.monto),
         descripcion: form.descripcion.trim(),
-        categoria: form.categoria,
+        // Un link de carga rápida puede traer una categoría que no existe
+        // (?cat=…): sin chip marcado, se guarda sin categoría.
+        categoria: Array.isArray(categorias) && !categorias.includes(form.categoria) ? "" : form.categoria,
       };
       // El backend acredita/descuenta solo de la cuenta elegida (o la deja
       // como "Cuscatlán" si no hay otra cuenta) en la misma llamada.
@@ -138,7 +140,7 @@ export default function NuevoMovimientoDialog({
       }
       playSuccess();
       avisar(tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado");
-      onGuardado?.();
+      onGuardado?.(tipo);
       onClose();
       avisarAccionTour("movimiento-creado");
     } catch (err) {

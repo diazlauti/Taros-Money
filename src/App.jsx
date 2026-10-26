@@ -208,6 +208,28 @@ tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [configMonedas, cotizacionesHoy.data]);
 
+// La cotización cambia durante el día y la app instalada queda abierta días
+// enteros: se vuelve a pedir cada 15 minutos mientras se ve la app, y al
+// volver a ella si pasaron más de 10. El efecto de arriba la guarda si cambió.
+const ultimaCotizacion = useRef(Date.now());
+const recargarCotizaciones = cotizacionesHoy.recargar;
+useEffect(() => {
+const refrescar = (minimoMs) => {
+if (document.visibilityState !== "visible" || Date.now() - ultimaCotizacion.current < minimoMs) return;
+ultimaCotizacion.current = Date.now();
+recargarCotizaciones();
+};
+const intervalo = setInterval(() => refrescar(14 * 60 * 1000), 15 * 60 * 1000);
+const alVolver = () => refrescar(10 * 60 * 1000);
+document.addEventListener("visibilitychange", alVolver);
+window.addEventListener("focus", alVolver);
+return () => {
+clearInterval(intervalo);
+document.removeEventListener("visibilitychange", alVolver);
+window.removeEventListener("focus", alVolver);
+};
+}, [recargarCotizaciones]);
+
 const recargarTodo = useCallback(() => {
 saldo.recargar();
 resumen.recargar();
@@ -220,6 +242,22 @@ servicios.recargar();
 tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, servicios, tendencia]);
+
+// Después de cargar, editar o borrar un movimiento: solo lo que depende de
+// los movimientos (metas, servicios y suscripciones no cambian). Con un gasto
+// nuevo no hace falta pedir los ingresos, y al revés.
+const recargarMovimientos = useCallback(
+(tipo) => {
+saldo.recargar();
+resumen.recargar();
+cuentas.recargar();
+tendencia.recargar();
+if (tipo !== "ingreso") gastos.recargar();
+if (tipo !== "gasto") ingresos.recargar();
+},
+// eslint-disable-next-line react-hooks/exhaustive-deps
+[saldo, resumen, gastos, ingresos, cuentas, tendencia],
+);
 
 // --- Gastos desde tus mails ---
 const [revisandoMails, setRevisandoMails] = useState(false);
@@ -255,6 +293,8 @@ yaEstaban: resultado?.yaEstaban || 0,
 encontrados: (resultado?.encontrados || []).slice(0, 3),
 revisados: resultado?.revisados,
 dias: resultado?.dias,
+noLeidos: resultado?.noLeidos,
+fallaron: resultado?.fallaron,
 });
 // Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
 // como "mientras no estabas".
@@ -508,7 +548,7 @@ monedaPorCuenta={monedaPorCuenta}
 dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
-onCambio={recargarTodo}
+onCambio={() => recargarMovimientos()}
 mailsActivos={modoMails !== "apagado"}
 filtroInicial={filtroMovimientos}
 revisandoMails={revisandoMails}
@@ -540,7 +580,10 @@ cuentas={cuentas.data}
 cotizaciones={cotizaciones}
 monedaPorCuenta={monedaPorCuenta}
 onCambio={servicios.recargar}
-onCambioConGasto={recargarTodo}
+onCambioConGasto={() => {
+servicios.recargar();
+recargarMovimientos("gasto");
+}}
 />
 )}
 
@@ -607,7 +650,7 @@ ingresos={ingresos.data}
 inicial={inicialNuevo}
 monedaPorCuenta={monedaPorCuenta}
 onClose={() => setDialogOpen(false)}
-onGuardado={recargarTodo}
+onGuardado={recargarMovimientos}
 onCuentaCreada={cuentas.recargar}
 />
 )}

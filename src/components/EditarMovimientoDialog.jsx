@@ -168,6 +168,11 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
                     {c.nombre}
                   </option>
                 ))}
+                {/* Si la cuenta ya se borró, igual se muestra la del movimiento:
+                    sin esto el select mostraba otra cuenta y guardaba la vieja. */}
+                {form.cuenta && !cuentas.some((c) => c.nombre === form.cuenta) && (
+                  <option value={form.cuenta}>{form.cuenta} (borrada)</option>
+                )}
               </select>
             )}
           </Campo>
