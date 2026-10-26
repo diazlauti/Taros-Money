@@ -539,7 +539,7 @@ title="Notificaciones"
 <button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento" aria-label="Nuevo movimiento">
 <i className="ph ph-plus" aria-hidden="true" />
 {/* En celus angostos dice solo «Nuevo» para que entre el título. */}
-Nuevo<span className="texto-si-entra">movimiento</span>
+<span>Nuevo<span className="texto-si-entra"> movimiento</span></span>
 </button>
 </header>
 
