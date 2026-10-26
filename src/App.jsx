@@ -243,6 +243,22 @@ tendencia.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, servicios, tendencia]);
 
+// Después de cargar, editar o borrar un movimiento: solo lo que depende de
+// los movimientos (metas, servicios y suscripciones no cambian). Con un gasto
+// nuevo no hace falta pedir los ingresos, y al revés.
+const recargarMovimientos = useCallback(
+(tipo) => {
+saldo.recargar();
+resumen.recargar();
+cuentas.recargar();
+tendencia.recargar();
+if (tipo !== "ingreso") gastos.recargar();
+if (tipo !== "gasto") ingresos.recargar();
+},
+// eslint-disable-next-line react-hooks/exhaustive-deps
+[saldo, resumen, gastos, ingresos, cuentas, tendencia],
+);
+
 // --- Gastos desde tus mails ---
 const [revisandoMails, setRevisandoMails] = useState(false);
 // Resultado de la última revisión hecha desde este dispositivo (incluido el
@@ -532,7 +548,7 @@ monedaPorCuenta={monedaPorCuenta}
 dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
-onCambio={recargarTodo}
+onCambio={() => recargarMovimientos()}
 mailsActivos={modoMails !== "apagado"}
 filtroInicial={filtroMovimientos}
 revisandoMails={revisandoMails}
@@ -564,7 +580,10 @@ cuentas={cuentas.data}
 cotizaciones={cotizaciones}
 monedaPorCuenta={monedaPorCuenta}
 onCambio={servicios.recargar}
-onCambioConGasto={recargarTodo}
+onCambioConGasto={() => {
+servicios.recargar();
+recargarMovimientos("gasto");
+}}
 />
 )}
 
@@ -631,7 +650,7 @@ ingresos={ingresos.data}
 inicial={inicialNuevo}
 monedaPorCuenta={monedaPorCuenta}
 onClose={() => setDialogOpen(false)}
-onGuardado={recargarTodo}
+onGuardado={recargarMovimientos}
 onCuentaCreada={cuentas.recargar}
 />
 )}

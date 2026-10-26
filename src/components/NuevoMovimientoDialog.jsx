@@ -140,7 +140,7 @@ export default function NuevoMovimientoDialog({
       }
       playSuccess();
       avisar(tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado");
-      onGuardado?.();
+      onGuardado?.(tipo);
       onClose();
       avisarAccionTour("movimiento-creado");
     } catch (err) {
