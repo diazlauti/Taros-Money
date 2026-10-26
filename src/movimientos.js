@@ -1,6 +1,6 @@
 // Cuentas de la pantalla Movimientos: rango de días, filtros, orden,
 // agrupado por día y saldo de cada día. Sin React, para poder leerlo solo.
-import { aPesos, fmtMoney } from "./format";
+import { aPesos } from "./format";
 
 // "3 días" se filtra acá con lo que ya vino (el backend trae como mínimo 7);
 // el resto cambia el período que se le pide al backend.
@@ -77,57 +77,26 @@ export function ordenar(lista, orden, monedaPorCuenta = {}, cotizaciones = {}) {
   return copia.sort((a, b) => claveFecha(b).localeCompare(claveFecha(a)));
 }
 
-// Suma con signo de varios movimientos. Si son todos de la misma moneda la
-// devuelve en esa moneda; si se mezclan, en pesos con la cotización (≈); y si
-// falta alguna cotización, una por moneda ("$1.000 · US$20,00").
-export function saldoDe(lista, monedaPorCuenta = {}, cotizaciones = {}) {
-  const porMoneda = {};
-  for (const t of lista) {
-    const moneda = monedaPorCuenta[t.cuenta] || "ARS";
-    porMoneda[moneda] = (porMoneda[moneda] || 0) + conSigno(t);
+// Saldo estimado al final de cada día: lo que hay hoy en tus cuentas (en
+// pesos con la cotización) menos lo que pasó después de ese día. Ej.: si el
+// lunes a las 23:59 tenías $975, el lunes dice $975. Nunca queda negativo.
+// Devuelve { "2026-10-25": 975, ... } o null si no hay cuentas cargadas.
+export function saldosPorDia(movimientos, cuentas, monedaPorCuenta = {}, cotizaciones = {}) {
+  if (!cuentas?.length) return null;
+  let saldo = cuentas.reduce((suma, c) => suma + (aPesos(Number(c.saldo) || 0, c.moneda, cotizaciones) ?? 0), 0);
+  const netoPorDia = {};
+  for (const t of movimientos) {
+    const fecha = (t.fecha || "").slice(0, 10);
+    if (!fecha) continue;
+    const enPesos = aPesos(conSigno(t), monedaPorCuenta[t.cuenta] || "ARS", cotizaciones) ?? 0;
+    netoPorDia[fecha] = (netoPorDia[fecha] || 0) + enPesos;
   }
-  const monedas = Object.keys(porMoneda);
-  if (monedas.length <= 1) {
-    const moneda = monedas[0] || "ARS";
-    const valor = porMoneda[moneda] || 0;
-    return { valor, texto: conSignoTexto(valor, moneda), aproximado: false };
+  const resultado = {};
+  for (const fecha of Object.keys(netoPorDia).sort().reverse()) {
+    resultado[fecha] = Math.max(0, saldo);
+    saldo -= netoPorDia[fecha];
   }
-  let total = 0;
-  for (const moneda of monedas) {
-    const enPesos = aPesos(porMoneda[moneda], moneda, cotizaciones);
-    if (enPesos === null) {
-      const valor = porMoneda.ARS ?? porMoneda[monedas[0]];
-      return { valor, texto: monedas.map((m) => conSignoTexto(porMoneda[m], m)).join(" · "), aproximado: false };
-    }
-    total += enPesos;
-  }
-  return { valor: total, texto: conSignoTexto(total, "ARS"), aproximado: true };
-}
-
-function conSignoTexto(valor, moneda) {
-  const redondo = Math.abs(valor) < 0.005 ? 0 : valor;
-  return (redondo > 0 ? "+" : redondo < 0 ? "-" : "") + fmtMoney(Math.abs(redondo), moneda);
-}
-
-// Total de gastos y de ingresos (en positivo) para el resumen de arriba.
-export function totales(lista, monedaPorCuenta = {}, cotizaciones = {}) {
-  const gastos = saldoDe(
-    lista.filter((t) => t.tipo === "gasto").map((t) => ({ ...t, tipo: "ingreso" })),
-    monedaPorCuenta,
-    cotizaciones
-  );
-  const ingresos = saldoDe(
-    lista.filter((t) => t.tipo === "ingreso"),
-    monedaPorCuenta,
-    cotizaciones
-  );
-  const sinSigno = (s) => ({ ...s, texto: s.texto.replace(/^\+/, "").replace(/ · \+/g, " · ") });
-  return {
-    gastos: sinSigno(gastos),
-    ingresos: sinSigno(ingresos),
-    cantidadGastos: lista.filter((t) => t.tipo === "gasto").length,
-    cantidadIngresos: lista.filter((t) => t.tipo === "ingreso").length,
-  };
+  return resultado;
 }
 
 // Lista ya ordenada por fecha → [{ fecha, movimientos }] respetando ese orden.

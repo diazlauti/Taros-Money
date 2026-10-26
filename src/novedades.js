@@ -7,7 +7,7 @@ export const NOVEDADES = [
     fecha: "2026-10-26",
     icono: "ph ph-list-bullets",
     titulo: "Movimientos más fáciles de leer",
-    texto: "Ahora se agrupan por día con la hora de cada uno y el saldo del día. Filtrás con un toque por tipo o categoría, elegís 3, 7, 14, 30 o 90 días y ordenás por fecha o por monto.",
+    texto: "Ahora se agrupan por día, con la hora de cada uno y el saldo que te quedaba al final del día. En «Filtros» elegís tipo, categorías, 3 a 90 días y el orden (por fecha o por monto).",
   },
   {
     id: "2026-10-26-deshacer-recorrido",

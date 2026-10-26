@@ -14,11 +14,11 @@ import {
   horaCorta,
   nombreDia,
   ordenar,
-  saldoDe,
-  totales,
+  saldosPorDia,
 } from "../movimientos";
 import { PERIODOS } from "../theme";
 import Campo from "./Campo";
+import Dialog from "./Dialog";
 import EditarMovimientoDialog from "./EditarMovimientoDialog";
 import { Cargando, ErrorEstado, SkeletonFilas, Vacio } from "./Estado";
 
@@ -53,6 +53,7 @@ export default function MovimientosTab({
   const [categoriasElegidas, setCategoriasElegidas] = useState([]);
   const [rangoLocal, setRangoLocal] = useState(null);
   const [orden, setOrden] = useState("recientes");
+  const [viendoFiltros, setViendoFiltros] = useState(false);
   const [editando, setEditando] = useState(null);
   const [confirmando, setConfirmando] = useState(false);
   const [errorConfirmar, setErrorConfirmar] = useState("");
@@ -103,10 +104,16 @@ export default function MovimientosTab({
     cotizaciones
   );
   const porFecha = orden === "recientes" || orden === "antiguos";
-  const resumen = totales(filtrados, monedaPorCuenta, cotizaciones);
+  // Con todos los movimientos que vinieron (no solo los filtrados): el saldo
+  // de un día depende de todo lo que pasó después.
+  const saldos = useMemo(
+    () => saldosPorDia(combinados, cuentas, monedaPorCuenta, cotizaciones),
+    [combinados, cuentas, monedaPorCuenta, cotizaciones]
+  );
 
-  const hayFiltros =
-    filtroActivo !== "todos" || textoBusqueda || categoriasElegidas.length > 0 || orden !== "recientes" || rangoLocal;
+  // Cuántos filtros hay puestos (para el número del botón «Filtros»).
+  const cantidadFiltros =
+    (filtroActivo !== "todos" ? 1 : 0) + categoriasElegidas.length + (orden !== "recientes" ? 1 : 0) + (rangoLocal ? 1 : 0);
 
   function limpiarFiltros() {
     setFiltro("todos");
@@ -245,7 +252,7 @@ export default function MovimientosTab({
     contenido = (
       <div className="mov-dias">
         {agruparPorDia(filtrados).map((grupo, gi) => {
-          const saldo = saldoDe(grupo.movimientos, monedaPorCuenta, cotizaciones);
+          const saldo = saldos?.[grupo.fecha];
           const idTitulo = `mov-dia-${grupo.fecha || "sin-fecha"}`;
           return (
             <section className="mov-dia" key={grupo.fecha || gi} aria-labelledby={idTitulo}>
@@ -253,13 +260,9 @@ export default function MovimientosTab({
                 <h3 className="mov-dia-titulo" id={idTitulo}>
                   {nombreDia(grupo.fecha)}
                 </h3>
-                <p className="mov-dia-saldo">
-                  <span className="texto-tenue">Saldo del día</span>{" "}
-                  <strong className={saldo.valor > 0 ? "es-ingreso" : undefined}>
-                    {saldo.aproximado ? "≈ " : ""}
-                    {saldo.texto}
-                  </strong>
-                </p>
+                {saldo !== undefined && (
+                  <p className="mov-dia-saldo texto-tenue">Saldo del día {fmtMoney(saldo)}</p>
+                )}
               </header>
               <ul className="lista">
                 {grupo.movimientos.map((t, i) => (
@@ -283,86 +286,49 @@ export default function MovimientosTab({
 
   return (
     <>
-      <Campo etiqueta="Buscar">
-        {(p) => (
-          <span className="mov-buscar">
-            <i className="ph ph-magnifying-glass" aria-hidden="true" />
-            <input
-              {...p}
-              className="input"
-              type="search"
-              placeholder="Descripción o categoría"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
-          </span>
-        )}
-      </Campo>
-
-      <div className="mov-filtros">
-        <div className="fila-separada">
-          <div className="chips chips-desliza" role="radiogroup" aria-label="Mostrar">
-            {[
-              ["todos", "Todos", "ph ph-list"],
-              ["gasto", "Gastos", "ph ph-arrow-up-right"],
-              ["ingreso", "Ingresos", "ph ph-arrow-down-left"],
-              ...(cantidadARevisar > 0 ? [["revisar", `A revisar (${cantidadARevisar})`, "ph ph-envelope-simple"]] : []),
-            ].map(([valor, texto, icono]) => (
-              <label className="chip-radio" key={valor}>
-                <input type="radio" name="filtro-mov" checked={filtroActivo === valor} onChange={() => setFiltro(valor)} />
-                <i className={icono} aria-hidden="true" />
-                {texto}
-              </label>
-            ))}
-          </div>
-          {mailsActivos && (
-            <button type="button" className="btn btn-secondary" onClick={onRevisarMails} disabled={revisandoMails}>
-              <i className="ph ph-envelope-simple" aria-hidden="true" />
-              {revisandoMails ? "Revisando mails…" : "Revisar mails"}
-            </button>
+      <div className="mov-barra">
+        <Campo etiqueta="Buscar">
+          {(p) => (
+            <span className="mov-buscar">
+              <i className="ph ph-magnifying-glass" aria-hidden="true" />
+              <input
+                {...p}
+                className="input"
+                type="search"
+                placeholder="Buscar"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </span>
           )}
-        </div>
-
-        {categoriasChips.length > 0 && (
-          <div className="chips chips-desliza" role="group" aria-label="Categorías">
-            {categoriasChips.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className="chip chip-categoria"
-                aria-pressed={categoriasElegidas.includes(c)}
-                onClick={() => alternarCategoria(c)}
-                style={{ "--mov-color": colorDeCategoria(c) }}
-              >
-                <i className={iconoPorCategoria(c === SIN_CATEGORIA ? "" : c)} aria-hidden="true" />
-                {c}
-              </button>
-            ))}
-          </div>
+        </Campo>
+        <button
+          type="button"
+          className={"btn btn-secondary mov-btn-filtros" + (cantidadFiltros ? " mov-btn-filtros--activo" : "")}
+          onClick={() => setViendoFiltros(true)}
+          aria-haspopup="dialog"
+          aria-label={cantidadFiltros ? `Filtros, ${cantidadFiltros} puestos` : "Filtros"}
+        >
+          <i className="ph ph-sliders-horizontal" aria-hidden="true" />
+          Filtros
+          {cantidadFiltros > 0 && (
+            <span className="mov-filtros-cantidad" aria-hidden="true">
+              {cantidadFiltros}
+            </span>
+          )}
+        </button>
+        {mailsActivos && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-encabezado"
+            onClick={onRevisarMails}
+            disabled={revisandoMails}
+            aria-label={revisandoMails ? "Revisando mails…" : "Revisar mails"}
+            title="Revisar mails"
+          >
+            <i className={revisandoMails ? "ph ph-spinner" : "ph ph-envelope-simple"} aria-hidden="true" />
+          </button>
         )}
-
-        <div className="mov-rango-orden">
-          <div className="chips chips-desliza" role="group" aria-label="Período">
-            {RANGOS.map((r) => (
-              <button key={r} type="button" className="chip" aria-pressed={rangoActivo === r} onClick={() => elegirRango(r)}>
-                {r} días
-              </button>
-            ))}
-          </div>
-          <div className="mov-orden">
-            <label htmlFor={idOrden}>
-              <i className="ph ph-sort-descending" aria-hidden="true" />
-              <span className="visualmente-oculto">Ordenar</span>
-            </label>
-            <select id={idOrden} className="input" value={orden} onChange={(e) => setOrden(e.target.value)}>
-              {ORDENES.map(([valor, texto]) => (
-                <option key={valor} value={valor}>
-                  {texto}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
       </div>
 
       {filtroActivo === "revisar" && (
@@ -384,42 +350,91 @@ export default function MovimientosTab({
         </div>
       )}
 
-      {!cargando && !error && filtrados.length > 0 && (
-        <div className="mov-resumen" aria-live="polite">
-          {resumen.cantidadGastos > 0 && (
-            <p>
-              <span className="texto-tenue">
-                Gastaste{resumen.cantidadGastos > 1 ? ` (${resumen.cantidadGastos})` : ""}
-              </span>
-              <strong>
-                {resumen.gastos.aproximado ? "≈ " : ""}
-                {resumen.gastos.texto}
-              </strong>
-            </p>
-          )}
-          {resumen.cantidadIngresos > 0 && (
-            <p>
-              <span className="texto-tenue">
-                Entró{resumen.cantidadIngresos > 1 ? ` (${resumen.cantidadIngresos})` : ""}
-              </span>
-              <strong className="es-ingreso">
-                {resumen.ingresos.aproximado ? "≈ " : ""}
-                {resumen.ingresos.texto}
-              </strong>
-            </p>
-          )}
-          {hayFiltros && (
-            <button type="button" className="btn-link mov-limpiar" onClick={limpiarFiltros}>
-              <i className="ph ph-x" aria-hidden="true" />
-              Sacar filtros
-            </button>
-          )}
-        </div>
-      )}
+      <p className="visualmente-oculto" aria-live="polite">
+        {!cargando && !error ? `${filtrados.length} movimientos` : ""}
+      </p>
 
       <section className="card mov-card" aria-label="Movimientos" aria-busy={gastos.actualizando || ingresos.actualizando || undefined}>
         {contenido}
       </section>
+
+      {viendoFiltros && (
+        <Dialog titulo="Filtros" onClose={() => setViendoFiltros(false)}>
+          <div className="mov-filtros">
+            <fieldset className="field mov-grupo">
+              <legend>Mostrar</legend>
+              <div className="chips" role="radiogroup" aria-label="Mostrar">
+                {[
+                  ["todos", "Todos", "ph ph-list"],
+                  ["gasto", "Gastos", "ph ph-arrow-up-right"],
+                  ["ingreso", "Ingresos", "ph ph-arrow-down-left"],
+                  ...(cantidadARevisar > 0 ? [["revisar", `A revisar (${cantidadARevisar})`, "ph ph-envelope-simple"]] : []),
+                ].map(([valor, texto, icono]) => (
+                  <label className="chip-radio" key={valor}>
+                    <input type="radio" name="filtro-mov" checked={filtroActivo === valor} onChange={() => setFiltro(valor)} />
+                    <i className={icono} aria-hidden="true" />
+                    {texto}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            {categoriasChips.length > 0 && (
+              <fieldset className="field mov-grupo">
+                <legend>Categorías</legend>
+                <div className="chips" role="group" aria-label="Categorías">
+                  {categoriasChips.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className="chip chip-categoria"
+                      aria-pressed={categoriasElegidas.includes(c)}
+                      onClick={() => alternarCategoria(c)}
+                      style={{ "--mov-color": colorDeCategoria(c) }}
+                    >
+                      <i className={iconoPorCategoria(c === SIN_CATEGORIA ? "" : c)} aria-hidden="true" />
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+
+            <fieldset className="field mov-grupo">
+              <legend>Período</legend>
+              <div className="chips" role="group" aria-label="Período">
+                {RANGOS.map((r) => (
+                  <button key={r} type="button" className="chip" aria-pressed={rangoActivo === r} onClick={() => elegirRango(r)}>
+                    {r} días
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="field">
+              <label htmlFor={idOrden}>Ordenar</label>
+              <select id={idOrden} className="input" value={orden} onChange={(e) => setOrden(e.target.value)}>
+                {ORDENES.map(([valor, texto]) => (
+                  <option key={valor} value={valor}>
+                    {texto}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mov-filtros-acciones">
+              {cantidadFiltros > 0 && (
+                <button type="button" className="btn btn-secondary" onClick={limpiarFiltros}>
+                  Sacar filtros
+                </button>
+              )}
+              <button type="button" className="btn btn-primary" onClick={() => setViendoFiltros(false)}>
+                Ver {filtrados.length === 1 ? "1 movimiento" : `${filtrados.length} movimientos`}
+              </button>
+            </div>
+          </div>
+        </Dialog>
+      )}
 
       {editando && (
         <EditarMovimientoDialog
