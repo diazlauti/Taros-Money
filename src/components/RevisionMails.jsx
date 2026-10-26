@@ -1,5 +1,6 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { getAjustesMails } from "../api";
+import { hayTokenMailsVigente } from "../auth";
 import { nombresDeRemitentes } from "../bancosMails";
 import { fmtMoney, haceCuanto } from "../format";
 import { DIAS_REVISION_MAILS, OPCIONES_DIAS_MAILS, avisosRevisionMails } from "../revisionMails";
@@ -368,10 +369,19 @@ export default function RevisionMails({
   const [ajustes, setAjustes] = useState(null);
   const [bancos, setBancos] = useState(bancosCache || []);
 
-  // Cada vez que se cierran los ajustes se vuelven a leer los bancos, por si
-  // agregó alguno. Si falla no pasa nada: el progreso dice "bancos" a secas.
+  // Los bancos se leen una vez y otra cada vez que se cierran los ajustes,
+  // por si agregó alguno. No en cada cambio de pestaña, y solo con el permiso
+  // de mails vigente: renovarlo abre y cierra una ventanita de Google. Si no
+  // se pueden leer, el progreso dice "bancos" a secas.
+  const abrioAjustes = useRef(false);
   useEffect(() => {
-    if (ajustes) return;
+    if (ajustes) {
+      abrioAjustes.current = true;
+      return;
+    }
+    if (bancosCache && !abrioAjustes.current) return;
+    abrioAjustes.current = false;
+    if (!hayTokenMailsVigente()) return;
     let cancelado = false;
     getAjustesMails()
       .then((a) => {
