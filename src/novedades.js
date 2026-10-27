@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-27-movimientos-por-dia",
+    fecha: "2026-10-27",
+    icono: "ph ph-list-bullets",
+    titulo: "Movimientos más fáciles de leer",
+    texto: "Ahora se agrupan por día, con la hora de cada uno y el saldo que te quedaba al final del día. En «Filtros» elegís tipo, categorías, 3 a 90 días y el orden (por fecha o por monto).",
+  },
+  {
     id: "2026-10-26-actualizar-sola",
     fecha: "2026-10-26",
     icono: "ph ph-arrow-circle-up",
