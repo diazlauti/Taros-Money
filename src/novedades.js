@@ -3,11 +3,18 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
-    id: "2026-10-26-movimientos-por-dia",
-    fecha: "2026-10-26",
+    id: "2026-10-27-movimientos-por-dia",
+    fecha: "2026-10-27",
     icono: "ph ph-list-bullets",
     titulo: "Movimientos más fáciles de leer",
     texto: "Ahora se agrupan por día, con la hora de cada uno y el saldo que te quedaba al final del día. En «Filtros» elegís tipo, categorías, 3 a 90 días y el orden (por fecha o por monto).",
+  },
+  {
+    id: "2026-10-26-actualizar-sola",
+    fecha: "2026-10-26",
+    icono: "ph ph-arrow-circle-up",
+    titulo: "La app se actualiza sola",
+    texto: "Cuando haya una versión nueva te aparece arriba «Hay una versión nueva · Actualizar». Ya no hace falta reinstalarla. También podés fijarte en Configuración › Ayuda.",
   },
   {
     id: "2026-10-26-deshacer-recorrido",
