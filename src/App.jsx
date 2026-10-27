@@ -27,7 +27,7 @@ idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa, sesionRecordada } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
-import { fmtMoney, mapaMonedas } from "./format";
+import { fmtFecha, fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
 import { iconoDeCategoria, registrarIconos } from "./iconos";
 import { notificar } from "./notificaciones";
@@ -37,8 +37,13 @@ import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
 import { useAvisos } from "./avisos";
 import { sonidoHabilitado, toggleSonido } from "./sounds";
-import { Sidebar, BottomNav } from "./components/Layout";
+import { Sidebar, BottomNav, Insignia } from "./components/Layout";
+import NotificacionesDialog from "./components/NotificacionesDialog";
+import { armarPendientes, leerVistas, marcarVistas } from "./bandeja";
+import { NOVEDADES } from "./novedades";
 import AvisosProvider from "./components/Avisos";
+import AvisoActualizacion from "./components/AvisoActualizacion";
+import ConfirmarProvider from "./components/Confirmar";
 import ResumenTab from "./components/ResumenTab";
 import MovimientosTab from "./components/MovimientosTab";
 import CuentasTab from "./components/CuentasTab";
@@ -51,9 +56,9 @@ import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
 import Login from "./components/Login";
 import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
-import { leerNuevoDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
+import { leerNuevoDeUrl, leerVerDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
-import CalculadoraDialog from "./components/CalculadoraDialog";
+import CalculadoraTab from "./components/CalculadoraTab";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
@@ -103,11 +108,16 @@ return (
 }
 
 if (!autenticado) {
-return <Login onSuccess={() => setAutenticado(true)} recordada={sesionRecordada()} />;
+return (
+<ConfirmarProvider>
+<Login onSuccess={() => setAutenticado(true)} recordada={sesionRecordada()} />
+</ConfirmarProvider>
+);
 }
 
 return (
 <AvisosProvider>
+<ConfirmarProvider>
 <PanelPrincipal
 tema={tema}
 onCambiarTema={cambiarTema}
@@ -116,13 +126,18 @@ cerrarSesion();
 setAutenticado(false);
 }}
 />
+</ConfirmarProvider>
+{/* Solo adentro de la app: en la landing y el login no se ofrece. */}
+<AvisoActualizacion />
 </AvisosProvider>
 );
 }
 
 function PanelPrincipal({ tema, onCambiarTema, onCerrarSesion }) {
 const [sonido, setSonido] = useState(sonidoHabilitado);
-const [activeTab, setActiveTab] = useState("resumen");
+// Si se abrió tocando un aviso del celu (?ver=…), arranca en esa sección.
+const [verInicial] = useState(leerVerDeUrl);
+const [activeTab, setActiveTab] = useState(() => (verInicial === "revisar" ? "movimientos" : verInicial || "resumen"));
 const [dias, setDias] = useState(30);
 // Si se entró por un atajo del ícono o un link (?nuevo=gasto&monto=…), se
 // abre directo el formulario completo y el recorrido queda para otra vez.
@@ -133,11 +148,14 @@ const [tourAbierto, setTourAbierto] = useState(() => !tourVisto() && inicialNuev
 // Abierto a mano desde Configuración: ahí sí se puede saltear.
 const [tourDesdeConfig, setTourDesdeConfig] = useState(false);
 const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
-const [calculadoraAbierta, setCalculadoraAbierta] = useState(false);
+// Qué notificaciones ya se vieron en este dispositivo. Al abrir el panel se
+// guarda una copia para marcar con «Nuevo» lo que no se había visto.
+const [vistas, setVistas] = useState(leerVistas);
+const [notisAbiertas, setNotisAbiertas] = useState(null);
 
 useEffect(() => {
-if (inicialNuevo) limpiarNuevoDeUrl();
-}, [inicialNuevo]);
+if (inicialNuevo || verInicial) limpiarNuevoDeUrl();
+}, [inicialNuevo, verInicial]);
 
 const saldo = useSeccion(getSaldo, []);
 const resumen = useSeccion(() => getResumen(dias), [dias]);
@@ -271,11 +289,26 @@ setDiasMails(d);
 guardarDiasMails(d);
 }
 // Desde la tarjeta del Resumen se puede abrir Movimientos ya filtrado.
-const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
+const [filtroMovimientos, setFiltroMovimientos] = useState(() => (verInicial === "revisar" ? "revisar" : "todos"));
 const modoMails = configMails.data?.modo || "apagado";
 const planillaId = idDePlanilla(urlPlanilla.data);
 
-const cantidadARevisar = [...(gastos.data || []), ...(ingresos.data || [])].filter((g) => g.aRevisar).length;
+// Lo que falta revisar de los mails, lo más nuevo primero. La tarjeta de
+// mails lo muestra tal cual: así, al confirmar o descartar, se actualiza sola.
+const pendientesMails = useMemo(
+() =>
+[
+...(gastos.data || []).filter((g) => g.aRevisar).map((g) => ({ ...g, tipo: "gasto" })),
+...(ingresos.data || []).filter((g) => g.aRevisar).map((g) => ({ ...g, tipo: "ingreso" })),
+].sort((a, b) => `${b.fecha || ""} ${b.hora || ""}`.localeCompare(`${a.fecha || ""} ${a.hora || ""}`)),
+[gastos.data, ingresos.data],
+);
+const cantidadARevisar = pendientesMails.length;
+const cargandoPendientes = gastos.cargando || gastos.actualizando || ingresos.cargando || ingresos.actualizando;
+function verPendientesEnMovimientos() {
+setFiltroMovimientos("revisar");
+setActiveTab("movimientos");
+}
 const revisionMails = ultimaRevisionMails(revisionLocal, configMails.data);
 
 // interactivo=true solo desde un click: si hace falta, abre la ventana de
@@ -295,6 +328,7 @@ revisados: resultado?.revisados,
 dias: resultado?.dias,
 noLeidos: resultado?.noLeidos,
 fallaron: resultado?.fallaron,
+remitentes: resultado?.remitentes,
 });
 // Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
 // como "mientras no estabas".
@@ -334,11 +368,11 @@ return;
 }
 const detalle = encontrados
 .slice(0, 3)
-.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto)}`)
+.map((g) => `${g.descripcion || "Sin descripción"} ${g.monto == null ? "(sin monto)" : `${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto, g.moneda || "ARS")}`}${g.fecha ? ` (${fmtFecha(g.fecha)})` : ""}`)
 .join(", ");
 const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
 const titulo = n === 1 ? "Encontré 1 movimiento en tus mails" : `Encontré ${n} movimientos en tus mails`;
-avisar(`${titulo}: ${detalle}${resto}. Revisalos en Movimientos.`);
+avisar(`${titulo}: ${detalle}${resto}. Te los dejé para revisar en el Resumen.`);
 notificar(titulo, `${detalle}${resto}. Tocá para revisarlos.`);
 },
 [avisar]
@@ -454,6 +488,38 @@ servicios: serviciosUrgentes
 };
 const totalAvisos = cantidadARevisar + serviciosUrgentes;
 
+// --- Notificaciones ---
+const pendientes = useMemo(
+() =>
+armarPendientes({
+cantidadARevisar,
+servicios: serviciosConEstado(servicios.data),
+suscripciones: suscripciones.data || [],
+monedaPorCuenta,
+}),
+[cantidadARevisar, servicios.data, suscripciones.data, monedaPorCuenta],
+);
+const idsNotis = [...pendientes.map((p) => p.id), ...NOVEDADES.map((n) => n.id)];
+const notisSinVer = idsNotis.filter((id) => !vistas.has(id)).length;
+const avisoCampana = notisSinVer
+? { cantidad: notisSinVer, texto: `${notisSinVer} sin ver` }
+: null;
+const erroresNotis = [
+servicios.error && !servicios.data && { cual: "tus servicios", mensaje: servicios.error, reintentar: servicios.recargar },
+suscripciones.error && !suscripciones.data && { cual: "tus suscripciones", mensaje: suscripciones.error, reintentar: suscripciones.recargar },
+gastos.error && !gastos.data && { cual: "tus movimientos", mensaje: gastos.error, reintentar: gastos.recargar },
+].filter(Boolean);
+
+function abrirNotificaciones() {
+setNotisAbiertas(new Set(vistas));
+}
+
+// El panel marca como visto lo de la pestaña que se está mirando.
+const marcarNotisVistas = useCallback((ids) => {
+marcarVistas(ids);
+setVistas(leerVistas());
+}, []);
+
 // Con la app instalada, el mismo número aparece sobre el ícono (donde el
 // sistema lo permite).
 useEffect(() => {
@@ -487,17 +553,22 @@ return (
 <h1>{activeItem.label}</h1>
 <button
 type="button"
-className="btn btn-secondary btn-calculadora"
-onClick={() => setCalculadoraAbierta(true)}
+className={"btn btn-secondary btn-encabezado btn-campana" + (notisSinVer ? " btn-campana--nuevo" : "")}
+onClick={abrirNotificaciones}
+data-tour="campana"
 aria-haspopup="dialog"
-title="Calculadora de impuestos"
+aria-label={notisSinVer ? `Notificaciones, ${notisSinVer} sin ver` : "Notificaciones"}
+title="Notificaciones"
 >
-<i className="ph ph-calculator" aria-hidden="true" />
-<span className="visualmente-oculto">Calculadora de impuestos</span>
+<span className="con-insignia">
+<i className={notisSinVer ? "ph ph-bell-ringing" : "ph ph-bell"} aria-hidden="true" />
+<Insignia aviso={avisoCampana} />
+</span>
 </button>
-<button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento">
+<button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento" aria-label="Nuevo movimiento">
 <i className="ph ph-plus" aria-hidden="true" />
-Nuevo movimiento
+{/* En celus angostos dice solo «Nuevo» para que entre el título. */}
+<span>Nuevo<span className="texto-si-entra"> movimiento</span></span>
 </button>
 </header>
 
@@ -520,17 +591,17 @@ mails={
 mailsDisponible()
 ? {
 config: configMails,
-cantidadARevisar,
 revision: revisionMails,
 revisando: revisandoMails,
 onRevisar: revisarMailsConBoton,
 dias: diasMails,
 onCambiarDias: cambiarDiasMails,
 onCambiarModo: cambiarModoMails,
-onVerARevisar: () => {
-setFiltroMovimientos("revisar");
-setActiveTab("movimientos");
-},
+pendientes: pendientesMails,
+cargandoPendientes,
+categorias: categorias.data,
+onCambio: recargarMovimientos,
+onVerARevisar: verPendientesEnMovimientos,
 onActivar: () => setActiveTab("configuracion"),
 }
 : null
@@ -545,6 +616,7 @@ ingresos={ingresos}
 categorias={categorias.data}
 cuentas={cuentas.data}
 monedaPorCuenta={monedaPorCuenta}
+cotizaciones={cotizaciones}
 dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
@@ -600,6 +672,18 @@ onCambio={suscripciones.recargar}
 
 {activeTab === "reportes" && <ReportesTab tendencia={tendencia} onNuevo={abrirNuevo} />}
 
+{activeTab === "calculadora" && (
+<CalculadoraTab
+cotizaciones={cotizaciones}
+configMonedas={configMonedas}
+cotizacionesHoy={cotizacionesHoy}
+onCargarGasto={(datos) => {
+setInicialNuevo(datos);
+setDialogOpen(true);
+}}
+/>
+)}
+
 {activeTab === "configuracion" && (
 <ConfiguracionTab
 urlPlanilla={urlPlanilla}
@@ -615,6 +699,11 @@ onCambiarModoMails={cambiarModoMails}
 revisionMails={revisionMails}
 revisandoMails={revisandoMails}
 onRevisarMails={revisarMailsConBoton}
+pendientesMails={pendientesMails}
+cargandoPendientesMails={cargandoPendientes}
+monedaPorCuenta={monedaPorCuenta}
+onCambioMovimientos={recargarMovimientos}
+onVerPendientesMails={verPendientesEnMovimientos}
 diasMails={diasMails}
 onCambiarDiasMails={cambiarDiasMails}
 categorias={categorias}
@@ -670,19 +759,23 @@ setGuiaInstalarAbierta(true);
 
 {guiaInstalarAbierta && <InstalarAppDialog onClose={() => setGuiaInstalarAbierta(false)} />}
 
-{calculadoraAbierta && (
-<CalculadoraDialog
-cotizaciones={cotizaciones}
-configMonedas={configMonedas}
-cotizacionesHoy={cotizacionesHoy}
-onClose={() => setCalculadoraAbierta(false)}
-onCargarGasto={(datos) => {
-setCalculadoraAbierta(false);
-setInicialNuevo(datos);
-setDialogOpen(true);
+{notisAbiertas && (
+<NotificacionesDialog
+pendientes={pendientes}
+cargando={servicios.cargando || suscripciones.cargando || gastos.cargando}
+errores={erroresNotis}
+vistasAlAbrir={notisAbiertas}
+vistas={vistas}
+onVer={marcarNotisVistas}
+onIr={({ tab, filtro }) => {
+setNotisAbiertas(null);
+setFiltroMovimientos(filtro || "todos");
+setActiveTab(tab);
 }}
+onClose={() => setNotisAbiertas(null)}
 />
 )}
+
 </div>
 );
 }
@@ -697,7 +790,7 @@ return (
 ["servicios", "Servicios", "ph ph-receipt"],
 ["recurrentes", "Suscripciones", "ph ph-repeat"],
 ].map(([valor, texto, icono]) => (
-<label className="seg-opt" key={valor}>
+<label className="seg-opt" key={valor} data-tour={`elegir-${valor}`}>
 <input type="radio" name="servicios-o-subs" checked={actual === valor} onChange={() => onCambiar(valor)} />
 <i className={icono} aria-hidden="true" />
 {texto}

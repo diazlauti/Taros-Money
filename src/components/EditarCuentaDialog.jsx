@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { borrarCuenta, renombrarCuenta } from "../api";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { fmtMoney } from "../format";
 import { useValidacion } from "../hooks";
 import { playClick, playError, playSuccess } from "../sounds";
@@ -12,6 +13,7 @@ import Dialog from "./Dialog";
 // nombre en los gastos, ingresos, suscripciones y servicios que la usan.
 export default function EditarCuentaDialog({ cuenta, otrosNombres, onClose, onGuardado }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const [nombre, setNombre] = useState(cuenta.nombre);
   const [enviando, setEnviando] = useState(false);
   const [borrando, setBorrando] = useState(false);
@@ -41,7 +43,7 @@ export default function EditarCuentaDialog({ cuenta, otrosNombres, onClose, onGu
   async function borrar() {
     const saldo = Number(cuenta.saldo) || 0;
     const aviso = saldo !== 0 ? ` Todavía tiene ${fmtMoney(saldo, cuenta.moneda)}.` : "";
-    if (!window.confirm(`¿Borrar la cuenta "${cuenta.nombre}"?${aviso} Los movimientos que ya cargaste quedan como están.`)) return;
+    if (!(await confirmar({ titulo: `¿Borrar la cuenta "${cuenta.nombre}"?`, texto: `${aviso.trim()} Los movimientos que ya cargaste quedan como están.`.trim(), si: "Borrar", peligro: true }))) return;
     setBorrando(true);
     setError("");
     try {

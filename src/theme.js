@@ -47,6 +47,7 @@ export const NAV_ITEMS = [
 { id: "metas", label: "Metas", icon: "ph ph-target" },
 { id: "servicios", label: "Servicios y subs", icon: "ph ph-receipt" },
 { id: "reportes", label: "Reportes", icon: "ph ph-chart-line" },
+{ id: "calculadora", label: "Calculadora", icon: "ph ph-calculator" },
 { id: "configuracion", label: "Configuración", icon: "ph ph-gear" },
 ];
 

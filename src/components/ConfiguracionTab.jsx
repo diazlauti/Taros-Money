@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
+import { buscarActualizacion, NUMERO_VERSION } from "../actualizacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import { iconoDeCategoria } from "../iconos";
@@ -9,6 +11,7 @@ import RevisionMails from "./RevisionMails";
 import Campo from "./Campo";
 import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
+import AvisosPushCard from "./AvisosPushCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
 const OPCIONES_TEMA = [
@@ -28,6 +31,11 @@ export default function ConfiguracionTab({
   revisionMails,
   revisandoMails,
   onRevisarMails,
+  pendientesMails,
+  cargandoPendientesMails,
+  monedaPorCuenta,
+  onCambioMovimientos,
+  onVerPendientesMails,
   diasMails,
   onCambiarDiasMails,
   categorias,
@@ -44,6 +52,7 @@ export default function ConfiguracionTab({
   onInstalar,
 }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const [nuevaCategoria, setNuevaCategoria] = useState("");
   const [tocado, setTocado] = useState(false);
   const [guardandoCategoria, setGuardandoCategoria] = useState(false);
@@ -76,7 +85,7 @@ export default function ConfiguracionTab({
   }
 
   async function borrar(nombre) {
-    if (!window.confirm(`¿Borrar la categoría "${nombre}"? Los movimientos que ya la usan no cambian.`)) return;
+    if (!(await confirmar({ titulo: `¿Borrar la categoría "${nombre}"?`, texto: "Los movimientos que ya la usan no cambian.", si: "Borrar", peligro: true }))) return;
     setBorrandoCategoria(nombre);
     setErrorCategoria("");
     try {
@@ -140,6 +149,13 @@ export default function ConfiguracionTab({
             onCambiarModo={onCambiarModoMails}
             onCambiarDias={onCambiarDiasMails}
             onRevisar={onRevisarMails}
+            pendientes={pendientesMails}
+            cargandoPendientes={cargandoPendientesMails}
+            categorias={categorias.data}
+            cuentas={cuentas}
+            monedaPorCuenta={monedaPorCuenta}
+            onVerTodos={onVerPendientesMails}
+            onCambio={onCambioMovimientos}
           />
         );
     }
@@ -217,6 +233,8 @@ export default function ConfiguracionTab({
           {mails}
         </section>
       )}
+
+      <AvisosPushCard onInstalar={onInstalar} />
 
       <MonedasCard monedas={monedas} cotizacionesHoy={cotizacionesHoy} cuentas={cuentas} onGuardadas={onMonedasGuardadas} />
 
@@ -318,6 +336,7 @@ export default function ConfiguracionTab({
             Atajo: con la app instalada, mantené apretado su ícono para cargar un gasto o un ingreso directo (en
             Android y en la compu).
           </p>
+          <BuscarActualizacion />
         </div>
       </section>
 
@@ -330,6 +349,42 @@ export default function ConfiguracionTab({
           Cerrar sesión
         </button>
       </section>
+    </div>
+  );
+}
+
+// Solo se avisa si no se pudo fijar: si hay versión nueva ya aparece el
+// cartel de arriba, y si no hay, no hace falta decir nada.
+const SIN_CONEXION = "No pude fijarme: parece que no hay conexión.";
+
+// La app se actualiza sola, pero en el iPhone instalada no hay botón de
+// recargar: con esto se puede pedir que se fije ya.
+function BuscarActualizacion() {
+  const [estado, setEstado] = useState("");
+
+  async function buscar() {
+    setEstado("buscando");
+    playClick();
+    const resultado = await buscarActualizacion();
+    setEstado(resultado);
+    if (resultado === "sin-conexion") playError();
+  }
+
+  return (
+    <div className="pila-chica">
+      <button
+        type="button"
+        className="btn btn-secondary btn-alinear-inicio"
+        disabled={estado === "buscando"}
+        onClick={buscar}
+      >
+        <i className="ph ph-arrows-clockwise" aria-hidden="true" />
+        {estado === "buscando" ? "Buscando…" : "Buscar actualización"}
+      </button>
+      {NUMERO_VERSION && <p className="field-ayuda">Versión {NUMERO_VERSION}</p>}
+      <p className="field-ayuda" aria-live="polite">
+        {estado === "sin-conexion" ? SIN_CONEXION : ""}
+      </p>
     </div>
   );
 }
