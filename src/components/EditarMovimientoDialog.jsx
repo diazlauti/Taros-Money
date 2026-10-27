@@ -29,6 +29,8 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   const esGasto = tipo === "gasto";
   // Vino de un remitente desconocido: todavía no está en la planilla.
   const sinConfirmar = esGasto && movimiento.sinConfirmar;
+  // El mail de la compra no decía el precio: el monto arranca vacío.
+  const sinMonto = sinConfirmar && movimiento.sinMonto;
   // Lo que eligió la última vez que confirmó un gasto en este comercio.
   const sugerencia = esGasto && movimiento.aRevisar && !movimiento.categoria ? movimiento.sugerencia : null;
   const cuentaSugerida = cuentas?.some((c) => c.nombre === sugerencia?.cuenta) ? sugerencia.cuenta : "";
@@ -48,7 +50,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
     hora: movimiento.hora || "",
     categoria: sugerencia?.categoria || movimiento.categoria || "",
     descripcion: movimiento.descripcion || "",
-    monto: String(movimiento.monto ?? "").replace(".", ","),
+    monto: sinMonto ? "" : String(movimiento.monto ?? "").replace(".", ","),
     cuenta: cuentaSugerida || cuentaInicial,
   };
   const [form, setForm] = useState(inicial);
@@ -127,7 +129,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       const monto = fmtMoney(movimiento.monto, monedaPorCuenta?.[movimiento.cuenta] || "ARS");
       const nombre = movimiento.descripcion || "sin descripción";
       const seguro = await confirmar({
-        titulo: `¿Descartar "${nombre}" de ${monto}?`,
+        titulo: sinMonto ? `¿Descartar "${nombre}"?` : `¿Descartar "${nombre}" de ${monto}?`,
         texto: "No se va a sumar a tus gastos.",
         si: "Descartar",
         peligro: true,
@@ -161,7 +163,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   // siendo el del mail): así no se anotan US$4,99 como $4,99.
   const monedaCuenta = cuentas?.find((c) => c.nombre === form.cuenta)?.moneda || "ARS";
   const monedaDistinta =
-    sinConfirmar && monedaMail !== monedaCuenta && parseMonto(form.monto) === Number(movimiento.monto);
+    sinConfirmar && !sinMonto && monedaMail !== monedaCuenta && parseMonto(form.monto) === Number(movimiento.monto);
 
   const sucio = Object.keys(inicial).some((k) => inicial[k] !== form[k]);
 
@@ -175,8 +177,9 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
         {movimiento.aRevisar && (
           <p className="aviso-inline">
             <i className="ph ph-envelope-simple" aria-hidden="true" />
-            Lo encontramos en un mail de {movimiento.origenMail}. Revisá el monto, elegí la categoría y la cuenta, y
-            confirmalo.
+            {sinMonto
+              ? `Lo encontramos en un mail de ${movimiento.origenMail}, pero no decía el precio. Poné cuánto gastaste, elegí la categoría y la cuenta, y confirmalo.`
+              : `Lo encontramos en un mail de ${movimiento.origenMail}. Revisá el monto, elegí la categoría y la cuenta, y confirmalo.`}
             {sinConfirmar && " Hasta que lo confirmes no se suma a tus gastos ni a tus saldos."}
             {sugerencia?.categoria && ` Elegimos la categoría que usaste la última vez en ${movimiento.descripcion}.`}
           </p>
@@ -198,7 +201,8 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
               autoComplete="off"
               value={form.monto}
               onChange={(e) => campo("monto", e.target.value)}
-              onBlur={() => v.tocar("monto")}
+              // Sin monto arranca vacío: que no marque error apenas se abre.
+              onBlur={() => (form.monto || !sinMonto) && v.tocar("monto")}
             />
           )}
         </Campo>

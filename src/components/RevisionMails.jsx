@@ -151,7 +151,9 @@ function Cabeza({ estado, pendientes, pie }) {
 // Una fila por pendiente: comercio, de qué mail vino, fecha y monto.
 function Pendiente({ mov, moneda, onAbrir }) {
   const esIngreso = mov.tipo === "ingreso";
-  const monto = fmtMoney(mov.monto, moneda);
+  // El mail no decía el precio: lo completa la persona al revisarlo.
+  const sinMonto = !esIngreso && mov.sinMonto;
+  const monto = sinMonto ? "sin monto" : fmtMoney(mov.monto, moneda);
   const nombre = mov.descripcion || "Sin descripción";
   return (
     <li>
@@ -159,7 +161,7 @@ function Pendiente({ mov, moneda, onAbrir }) {
         type="button"
         className="pendiente"
         onClick={() => onAbrir(mov)}
-        aria-label={`Revisar ${esIngreso ? "ingreso" : "gasto"} ${nombre}, ${esIngreso ? "más" : "menos"} ${monto}, del ${fmtFecha(mov.fecha)}${mov.sinConfirmar ? ", sin confirmar" : ""}`}
+        aria-label={`Revisar ${esIngreso ? "ingreso" : "gasto"} ${nombre}, ${sinMonto ? "sin monto, completalo" : `${esIngreso ? "más" : "menos"} ${monto}`}, del ${fmtFecha(mov.fecha)}${mov.sinConfirmar ? ", sin confirmar" : ""}`}
       >
         <span className={"pendiente-avatar" + (esIngreso ? " es-ingreso" : "")} aria-hidden="true">
           {nombre.trim().charAt(0).toUpperCase() || "?"}
@@ -170,13 +172,17 @@ function Pendiente({ mov, moneda, onAbrir }) {
             {/* El remitente solo si dice algo más que el nombre (Steam · Steam no). */}
             {mov.origenMail && mov.origenMail.toLowerCase() !== nombre.toLowerCase() ? `${mov.origenMail} · ` : ""}
             {fmtFecha(mov.fecha)}
-            {mov.sinConfirmar && <span className="pendiente-sin-confirmar"> · sin confirmar</span>}
+            {mov.sinConfirmar && <span className="pendiente-sin-confirmar"> · {sinMonto ? "poné el monto" : "sin confirmar"}</span>}
           </span>
         </span>
-        <span className={"movimiento-monto" + (esIngreso ? " es-ingreso" : "")}>
-          {esIngreso ? "+" : "-"}
-          {monto}
-        </span>
+        {sinMonto ? (
+          <span className="pendiente-sin-monto">Sin monto</span>
+        ) : (
+          <span className={"movimiento-monto" + (esIngreso ? " es-ingreso" : "")}>
+            {esIngreso ? "+" : "-"}
+            {monto}
+          </span>
+        )}
         <i className="ph ph-caret-right pendiente-flecha" aria-hidden="true" />
       </button>
     </li>

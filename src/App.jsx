@@ -366,7 +366,7 @@ return;
 }
 const detalle = encontrados
 .slice(0, 3)
-.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto, g.moneda || "ARS")}${g.fecha ? ` (${fmtFecha(g.fecha)})` : ""}`)
+.map((g) => `${g.descripcion || "Sin descripción"} ${g.monto == null ? "(sin monto)" : `${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto, g.moneda || "ARS")}`}${g.fecha ? ` (${fmtFecha(g.fecha)})` : ""}`)
 .join(", ");
 const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
 const titulo = n === 1 ? "Encontré 1 movimiento en tus mails" : `Encontré ${n} movimientos en tus mails`;

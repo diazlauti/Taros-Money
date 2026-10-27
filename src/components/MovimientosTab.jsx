@@ -124,7 +124,7 @@ export default function MovimientosTab({
         </p>
         <ul className="lista">
           {filtrados.map((t, i) => {
-            const monto = fmtMoney(t.monto, t.moneda || monedaPorCuenta[t.cuenta] || "ARS");
+            const monto = t.sinMonto ? "sin monto" : fmtMoney(t.monto, t.moneda || monedaPorCuenta[t.cuenta] || "ARS");
             const esIngreso = t.tipo === "ingreso";
             return (
               <li key={`${t.tipo}-${t.fecha}-${t.hora || ""}-${t.monto}-${i}`}>
@@ -149,10 +149,14 @@ export default function MovimientosTab({
                       </span>
                     )}
                   </span>
-                  <span className={"movimiento-monto" + (esIngreso ? " es-ingreso" : "")}>
-                    {esIngreso ? "+" : "-"}
-                    {monto}
-                  </span>
+                  {t.sinMonto ? (
+                    <span className="pendiente-sin-monto">Sin monto</span>
+                  ) : (
+                    <span className={"movimiento-monto" + (esIngreso ? " es-ingreso" : "")}>
+                      {esIngreso ? "+" : "-"}
+                      {monto}
+                    </span>
+                  )}
                   <i className="ph ph-pencil-simple icono-editar" aria-hidden="true" />
                 </button>
               </li>
