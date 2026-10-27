@@ -72,7 +72,30 @@ export function avisosRevisionMails(revision) {
   if (fallaron.length > 0) {
     avisos.push(`Esta vez no pude revisar ${fallaron.join(" ni ")}. Lo intento de nuevo en la próxima revisión.`);
   }
-  return avisos;
+  return avisos.concat(avisosRemitentes(revision));
+}
+
+// Qué pasó con cada remitente que agregó la persona. Si no llegó ningún mail
+// suyo, lo más probable es que le escriba a otra casilla (pasa mucho con
+// Steam o las apps de delivery); si llegaron pero ninguno era una compra,
+// puede que el formato no se entienda.
+export function avisosRemitentes(revision) {
+  const lista = Array.isArray(revision?.remitentes) ? revision.remitentes : [];
+  const dias = revision?.dias ? ` en los últimos ${revision.dias} días` : "";
+  return lista
+    .map((r) => {
+      if (!r?.remitente) return null;
+      if (r.mails === 0 && !r.llegoAlgo) {
+        return `De ${r.remitente} no llegó ningún mail${dias}. Fijate que te escriba a este Gmail y no a otra casilla.`;
+      }
+      if (r.mails > 0 && r.compras === 0) {
+        return r.mails === 1
+          ? `De ${r.remitente} llegó 1 mail${dias}, pero no era una compra con monto.`
+          : `De ${r.remitente} llegaron ${r.mails} mails${dias}, pero ninguno era una compra con monto.`;
+      }
+      return null;
+    })
+    .filter(Boolean);
 }
 
 // Qué dice la cabeza de la tarjeta de mails. Manda lo que falta revisar

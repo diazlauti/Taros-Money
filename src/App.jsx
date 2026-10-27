@@ -310,6 +310,7 @@ revisados: resultado?.revisados,
 dias: resultado?.dias,
 noLeidos: resultado?.noLeidos,
 fallaron: resultado?.fallaron,
+remitentes: resultado?.remitentes,
 });
 // Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
 // como "mientras no estabas".
@@ -349,7 +350,7 @@ return;
 }
 const detalle = encontrados
 .slice(0, 3)
-.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto)}`)
+.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto, g.moneda || "ARS")}`)
 .join(", ");
 const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
 const titulo = n === 1 ? "Encontré 1 movimiento en tus mails" : `Encontré ${n} movimientos en tus mails`;

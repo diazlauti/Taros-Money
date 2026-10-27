@@ -31,8 +31,14 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   // Un gasto sin confirmar todavía no tiene cuenta (antes llegaba como
   // "Cuscatlán" y el select mostraba "Cuscatlán (borrada)"): arranca en la
   // primera cuenta de la persona.
+  // Si el mail vino en otra moneda (Steam cobra en dólares), arranca en una
+  // cuenta de esa moneda.
+  const monedaMail = sinConfirmar ? movimiento.moneda || "ARS" : "ARS";
+  const cuentaDeLaMoneda = cuentas?.find((c) => (c.moneda || "ARS") === monedaMail)?.nombre;
   const cuentaInicial =
-    sinConfirmar && !cuentas?.some((c) => c.nombre === movimiento.cuenta) ? cuentas?.[0]?.nombre || "" : movimiento.cuenta || "";
+    sinConfirmar && !cuentas?.some((c) => c.nombre === movimiento.cuenta)
+      ? cuentaDeLaMoneda || cuentas?.[0]?.nombre || ""
+      : movimiento.cuenta || "";
   const inicial = {
     fecha: movimiento.fecha || "",
     hora: movimiento.hora || "",
@@ -117,6 +123,12 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
     }
   }
 
+  // Aviso si la cuenta elegida no es de la moneda del mail (y el monto sigue
+  // siendo el del mail): así no se anotan US$4,99 como $4,99.
+  const monedaCuenta = cuentas?.find((c) => c.nombre === form.cuenta)?.moneda || "ARS";
+  const monedaDistinta =
+    sinConfirmar && monedaMail !== monedaCuenta && parseMonto(form.monto) === Number(movimiento.monto);
+
   const sucio = Object.keys(inicial).some((k) => inicial[k] !== form[k]);
 
   return (
@@ -133,6 +145,13 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
             confirmalo.
             {sinConfirmar && " Hasta que lo confirmes no se suma a tus gastos ni a tus saldos."}
             {sugerencia?.categoria && ` Elegimos la categoría que usaste la última vez en ${movimiento.descripcion}.`}
+          </p>
+        )}
+        {monedaDistinta && (
+          <p className="aviso-inline" role="status">
+            <i className="ph ph-currency-circle-dollar" aria-hidden="true" />
+            El mail dice {fmtMoney(movimiento.monto, monedaMail)}, pero «{form.cuenta}» está en {monedaCuenta}. Elegí una
+            cuenta en {monedaMail} o cambiá el monto a {monedaCuenta}.
           </p>
         )}
         <Campo etiqueta="Monto" error={v.visible("monto")}>

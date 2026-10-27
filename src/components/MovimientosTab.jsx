@@ -122,7 +122,7 @@ export default function MovimientosTab({
         </p>
         <ul className="lista">
           {filtrados.map((t, i) => {
-            const monto = fmtMoney(t.monto, monedaPorCuenta[t.cuenta] || "ARS");
+            const monto = fmtMoney(t.monto, t.moneda || monedaPorCuenta[t.cuenta] || "ARS");
             const esIngreso = t.tipo === "ingreso";
             return (
               <li key={`${t.tipo}-${t.fecha}-${t.hora || ""}-${t.monto}-${i}`}>

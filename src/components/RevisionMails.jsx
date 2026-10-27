@@ -21,10 +21,16 @@ import ModoMails from "./ModoMails";
 // Los bancos que agregó la persona salen por nombre y resaltados.
 const SEGUNDOS_POR_PASO = 3.5;
 
-function armarPasos(bancos) {
+// Mercado Pago y Steam ya tienen su paso: si la persona los agregó como
+// remitentes, no se repiten.
+const YA_TIENEN_PASO = /^(mercado ?pago|steam|steampowered)$/i;
+
+function armarPasos(bancosTodos) {
+  const bancos = bancosTodos.filter((b) => !YA_TIENEN_PASO.test(b));
   return [
     { texto: "Conectando con tu Gmail…" },
     { texto: "Buscando en", nombre: "Mercado Pago" },
+    { texto: "Buscando en", nombre: "Steam" },
     ...(bancos.length > 0
       ? bancos.map((b) => ({ texto: "Buscando en", nombre: b, propio: true }))
       : [{ texto: "Buscando en los mails de bancos…" }]),
@@ -216,7 +222,7 @@ function Consejos({ dias, onIrABusqueda, onRevisar, onClose }) {
           <i className="ph ph-bank" aria-hidden="true" />
           <div className="pila-chica">
             <p>
-              <strong>Sumá tu banco.</strong> Sin ayuda solo reconozco Mercado Pago.
+              <strong>Sumá tu banco o la tienda.</strong> Sin ayuda solo reconozco Mercado Pago y Steam.
             </p>
             {onIrABusqueda && (
               <button
@@ -502,7 +508,7 @@ export default function RevisionMails({
               <Pendiente
                 key={`${mov.tipo}-${mov.idMail || ""}-${mov.fecha}-${mov.hora || ""}-${mov.monto}-${i}`}
                 mov={mov}
-                moneda={monedaPorCuenta[mov.cuenta] || "ARS"}
+                moneda={mov.moneda || monedaPorCuenta[mov.cuenta] || "ARS"}
                 onAbrir={abrir}
               />
             ))}
