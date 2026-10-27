@@ -1,5 +1,7 @@
 import { useState } from "react";
 import {
+  agregarGasto,
+  agregarIngreso,
   borrarGasto,
   borrarIngreso,
   confirmarGastoDeMail,
@@ -9,6 +11,7 @@ import {
   ignorarRemitenteMail,
 } from "../api";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { fmtMoney, parseMonto } from "../format";
 import { useValidacion } from "../hooks";
 import { playClick, playError, playSuccess } from "../sounds";
@@ -22,6 +25,7 @@ import Dialog from "./Dialog";
 // tienen hora en la planilla).
 export default function EditarMovimientoDialog({ movimiento, tipo, categorias, cuentas, monedaPorCuenta, onClose, onGuardado }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const esGasto = tipo === "gasto";
   // Vino de un remitente desconocido: todavía no está en la planilla.
   const sinConfirmar = esGasto && movimiento.sinConfirmar;
@@ -94,20 +98,50 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
     }
   }
 
+  // Vuelve a cargar el movimiento tal como estaba (la planilla también
+  // vuelve a descontarlo o sumarlo de la cuenta, igual que al cargarlo).
+  async function deshacerBorrado() {
+    const original = {
+      fecha: movimiento.fecha,
+      categoria: movimiento.categoria || "",
+      descripcion: movimiento.descripcion || "",
+      monto: movimiento.monto,
+      cuenta: movimiento.cuenta,
+      ...(esGasto ? { hora: movimiento.hora } : {}),
+    };
+    try {
+      await (esGasto ? agregarGasto : agregarIngreso)(original);
+      playSuccess();
+      avisar(esGasto ? "Listo, el gasto volvió" : "Listo, el ingreso volvió");
+      onGuardado?.();
+    } catch (err) {
+      playError();
+      avisar(err.message || "No pude volver a cargarlo. Cargalo de nuevo a mano.", "error");
+    }
+  }
+
   async function borrar() {
-    const monto = fmtMoney(movimiento.monto, monedaPorCuenta?.[movimiento.cuenta] || "ARS");
-    const nombre = movimiento.descripcion || "sin descripción";
-    const pregunta = sinConfirmar
-      ? `¿Descartar "${nombre}" de ${monto}? No se va a sumar a tus gastos.`
-      : `¿Borrar el ${esGasto ? "gasto" : "ingreso"} "${nombre}" de ${monto}? No se puede deshacer.`;
-    if (!window.confirm(pregunta)) return;
+    // Borrar se puede deshacer desde el aviso, así que no pregunta. Descartar
+    // un gasto de un mail sin confirmar no, así que ahí sí.
+    if (sinConfirmar) {
+      const monto = fmtMoney(movimiento.monto, monedaPorCuenta?.[movimiento.cuenta] || "ARS");
+      const nombre = movimiento.descripcion || "sin descripción";
+      const seguro = await confirmar({
+        titulo: `¿Descartar "${nombre}" de ${monto}?`,
+        texto: "No se va a sumar a tus gastos.",
+        si: "Descartar",
+        peligro: true,
+      });
+      if (!seguro) return;
+    }
     setBorrando(true);
     setError("");
     try {
       if (sinConfirmar) await descartarGastoDeMail(movimiento.idMail);
       else await (esGasto ? borrarGasto : borrarIngreso)(criterio);
       playClick();
-      avisar(sinConfirmar ? "Gasto descartado" : esGasto ? "Gasto borrado" : "Ingreso borrado");
+      if (sinConfirmar) avisar("Gasto descartado");
+      else avisar(esGasto ? "Gasto borrado" : "Ingreso borrado", "exito", { accion: "Deshacer", onAccion: deshacerBorrado });
       if (puedeIgnorar && ignorar) {
         ignorarRemitenteMail(movimiento.origenMail)
           .then(() => avisar(`Listo: no vamos a mostrar más mails de ${movimiento.origenMail}`))

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { borrarServicio, editarServicio } from "../api";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { parseMonto } from "../format";
 import { useValidacion } from "../hooks";
 import { playClick, playError, playSuccess } from "../sounds";
@@ -10,6 +11,7 @@ import Dialog from "./Dialog";
 
 export default function EditarServicioDialog({ servicio, categorias, cuentas, onClose, onGuardado }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const inicial = {
     nombre: servicio.nombre || "",
     diaVencimiento: String(servicio.diaVencimiento || ""),
@@ -53,7 +55,7 @@ export default function EditarServicioDialog({ servicio, categorias, cuentas, on
   }
 
   async function borrar() {
-    if (!window.confirm(`¿Borrar el servicio "${servicio.nombre}"? Los gastos que ya registraste quedan como están.`)) return;
+    if (!(await confirmar({ titulo: `¿Borrar el servicio "${servicio.nombre}"?`, texto: "Los gastos que ya registraste quedan como están.", si: "Borrar", peligro: true }))) return;
     setBorrando(true);
     setError("");
     try {

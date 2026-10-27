@@ -37,8 +37,13 @@ import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
 import { useAvisos } from "./avisos";
 import { sonidoHabilitado, toggleSonido } from "./sounds";
-import { Sidebar, BottomNav } from "./components/Layout";
+import { Sidebar, BottomNav, Insignia } from "./components/Layout";
+import NotificacionesDialog from "./components/NotificacionesDialog";
+import { armarPendientes, leerVistas, marcarVistas } from "./bandeja";
+import { NOVEDADES } from "./novedades";
 import AvisosProvider from "./components/Avisos";
+import AvisoActualizacion from "./components/AvisoActualizacion";
+import ConfirmarProvider from "./components/Confirmar";
 import ResumenTab from "./components/ResumenTab";
 import MovimientosTab from "./components/MovimientosTab";
 import CuentasTab from "./components/CuentasTab";
@@ -53,7 +58,7 @@ import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
 import { leerNuevoDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
-import CalculadoraDialog from "./components/CalculadoraDialog";
+import CalculadoraTab from "./components/CalculadoraTab";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
@@ -103,11 +108,16 @@ return (
 }
 
 if (!autenticado) {
-return <Login onSuccess={() => setAutenticado(true)} />;
+return (
+<ConfirmarProvider>
+<Login onSuccess={() => setAutenticado(true)} />
+</ConfirmarProvider>
+);
 }
 
 return (
 <AvisosProvider>
+<ConfirmarProvider>
 <PanelPrincipal
 tema={tema}
 onCambiarTema={cambiarTema}
@@ -116,6 +126,9 @@ cerrarSesion();
 setAutenticado(false);
 }}
 />
+</ConfirmarProvider>
+{/* Solo adentro de la app: en la landing y el login no se ofrece. */}
+<AvisoActualizacion />
 </AvisosProvider>
 );
 }
@@ -133,7 +146,10 @@ const [tourAbierto, setTourAbierto] = useState(() => !tourVisto() && inicialNuev
 // Abierto a mano desde Configuración: ahí sí se puede saltear.
 const [tourDesdeConfig, setTourDesdeConfig] = useState(false);
 const [guiaInstalarAbierta, setGuiaInstalarAbierta] = useState(false);
-const [calculadoraAbierta, setCalculadoraAbierta] = useState(false);
+// Qué notificaciones ya se vieron en este dispositivo. Al abrir el panel se
+// guarda una copia para marcar con «Nuevo» lo que no se había visto.
+const [vistas, setVistas] = useState(leerVistas);
+const [notisAbiertas, setNotisAbiertas] = useState(null);
 
 useEffect(() => {
 if (inicialNuevo) limpiarNuevoDeUrl();
@@ -470,6 +486,38 @@ servicios: serviciosUrgentes
 };
 const totalAvisos = cantidadARevisar + serviciosUrgentes;
 
+// --- Notificaciones ---
+const pendientes = useMemo(
+() =>
+armarPendientes({
+cantidadARevisar,
+servicios: serviciosConEstado(servicios.data),
+suscripciones: suscripciones.data || [],
+monedaPorCuenta,
+}),
+[cantidadARevisar, servicios.data, suscripciones.data, monedaPorCuenta],
+);
+const idsNotis = [...pendientes.map((p) => p.id), ...NOVEDADES.map((n) => n.id)];
+const notisSinVer = idsNotis.filter((id) => !vistas.has(id)).length;
+const avisoCampana = notisSinVer
+? { cantidad: notisSinVer, texto: `${notisSinVer} sin ver` }
+: null;
+const erroresNotis = [
+servicios.error && !servicios.data && { cual: "tus servicios", mensaje: servicios.error, reintentar: servicios.recargar },
+suscripciones.error && !suscripciones.data && { cual: "tus suscripciones", mensaje: suscripciones.error, reintentar: suscripciones.recargar },
+gastos.error && !gastos.data && { cual: "tus movimientos", mensaje: gastos.error, reintentar: gastos.recargar },
+].filter(Boolean);
+
+function abrirNotificaciones() {
+setNotisAbiertas(new Set(vistas));
+}
+
+// El panel marca como visto lo de la pestaña que se está mirando.
+const marcarNotisVistas = useCallback((ids) => {
+marcarVistas(ids);
+setVistas(leerVistas());
+}, []);
+
 // Con la app instalada, el mismo número aparece sobre el ícono (donde el
 // sistema lo permite).
 useEffect(() => {
@@ -503,17 +551,22 @@ return (
 <h1>{activeItem.label}</h1>
 <button
 type="button"
-className="btn btn-secondary btn-calculadora"
-onClick={() => setCalculadoraAbierta(true)}
+className={"btn btn-secondary btn-encabezado btn-campana" + (notisSinVer ? " btn-campana--nuevo" : "")}
+onClick={abrirNotificaciones}
+data-tour="campana"
 aria-haspopup="dialog"
-title="Calculadora de impuestos"
+aria-label={notisSinVer ? `Notificaciones, ${notisSinVer} sin ver` : "Notificaciones"}
+title="Notificaciones"
 >
-<i className="ph ph-calculator" aria-hidden="true" />
-<span className="visualmente-oculto">Calculadora de impuestos</span>
+<span className="con-insignia">
+<i className={notisSinVer ? "ph ph-bell-ringing" : "ph ph-bell"} aria-hidden="true" />
+<Insignia aviso={avisoCampana} />
+</span>
 </button>
-<button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento">
+<button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento" aria-label="Nuevo movimiento">
 <i className="ph ph-plus" aria-hidden="true" />
-Nuevo movimiento
+{/* En celus angostos dice solo «Nuevo» para que entre el título. */}
+<span>Nuevo<span className="texto-si-entra"> movimiento</span></span>
 </button>
 </header>
 
@@ -616,6 +669,18 @@ onCambio={suscripciones.recargar}
 
 {activeTab === "reportes" && <ReportesTab tendencia={tendencia} onNuevo={abrirNuevo} />}
 
+{activeTab === "calculadora" && (
+<CalculadoraTab
+cotizaciones={cotizaciones}
+configMonedas={configMonedas}
+cotizacionesHoy={cotizacionesHoy}
+onCargarGasto={(datos) => {
+setInicialNuevo(datos);
+setDialogOpen(true);
+}}
+/>
+)}
+
 {activeTab === "configuracion" && (
 <ConfiguracionTab
 urlPlanilla={urlPlanilla}
@@ -691,19 +756,23 @@ setGuiaInstalarAbierta(true);
 
 {guiaInstalarAbierta && <InstalarAppDialog onClose={() => setGuiaInstalarAbierta(false)} />}
 
-{calculadoraAbierta && (
-<CalculadoraDialog
-cotizaciones={cotizaciones}
-configMonedas={configMonedas}
-cotizacionesHoy={cotizacionesHoy}
-onClose={() => setCalculadoraAbierta(false)}
-onCargarGasto={(datos) => {
-setCalculadoraAbierta(false);
-setInicialNuevo(datos);
-setDialogOpen(true);
+{notisAbiertas && (
+<NotificacionesDialog
+pendientes={pendientes}
+cargando={servicios.cargando || suscripciones.cargando || gastos.cargando}
+errores={erroresNotis}
+vistasAlAbrir={notisAbiertas}
+vistas={vistas}
+onVer={marcarNotisVistas}
+onIr={({ tab, filtro }) => {
+setNotisAbiertas(null);
+setFiltroMovimientos(filtro || "todos");
+setActiveTab(tab);
 }}
+onClose={() => setNotisAbiertas(null)}
 />
 )}
+
 </div>
 );
 }
@@ -718,7 +787,7 @@ return (
 ["servicios", "Servicios", "ph ph-receipt"],
 ["recurrentes", "Suscripciones", "ph ph-repeat"],
 ].map(([valor, texto, icono]) => (
-<label className="seg-opt" key={valor}>
+<label className="seg-opt" key={valor} data-tour={`elegir-${valor}`}>
 <input type="radio" name="servicios-o-subs" checked={actual === valor} onChange={() => onCambiar(valor)} />
 <i className={icono} aria-hidden="true" />
 {texto}

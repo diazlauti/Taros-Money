@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useAvisos } from "../avisos";
+import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
+import { buscarActualizacion, FECHA_VERSION } from "../actualizacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import { iconoDeCategoria } from "../iconos";
@@ -49,6 +51,7 @@ export default function ConfiguracionTab({
   onInstalar,
 }) {
   const { avisar } = useAvisos();
+  const confirmar = useConfirmar();
   const [nuevaCategoria, setNuevaCategoria] = useState("");
   const [tocado, setTocado] = useState(false);
   const [guardandoCategoria, setGuardandoCategoria] = useState(false);
@@ -81,7 +84,7 @@ export default function ConfiguracionTab({
   }
 
   async function borrar(nombre) {
-    if (!window.confirm(`¿Borrar la categoría "${nombre}"? Los movimientos que ya la usan no cambian.`)) return;
+    if (!(await confirmar({ titulo: `¿Borrar la categoría "${nombre}"?`, texto: "Los movimientos que ya la usan no cambian.", si: "Borrar", peligro: true }))) return;
     setBorrandoCategoria(nombre);
     setErrorCategoria("");
     try {
@@ -330,6 +333,7 @@ export default function ConfiguracionTab({
             Atajo: con la app instalada, mantené apretado su ícono para cargar un gasto o un ingreso directo (en
             Android y en la compu).
           </p>
+          <BuscarActualizacion />
         </div>
       </section>
 
@@ -342,6 +346,51 @@ export default function ConfiguracionTab({
           Cerrar sesión
         </button>
       </section>
+    </div>
+  );
+}
+
+const TEXTO_BUSQUEDA = {
+  nueva: "Hay una versión nueva: tocá «Actualizar» arriba.",
+  "al-dia": "Ya tenés la última versión.",
+  "sin-conexion": "No pude fijarme: parece que no hay conexión. Probá de nuevo en un rato.",
+};
+
+function fechaVersion() {
+  if (!FECHA_VERSION) return "";
+  const fecha = new Date(FECHA_VERSION);
+  if (Number.isNaN(fecha.getTime())) return "";
+  return fecha.toLocaleString("es-AR", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+// La app se actualiza sola, pero en el iPhone instalada no hay botón de
+// recargar: con esto se puede pedir que se fije ya.
+function BuscarActualizacion() {
+  const [estado, setEstado] = useState("");
+  const fecha = fechaVersion();
+
+  async function buscar() {
+    setEstado("buscando");
+    playClick();
+    const resultado = await buscarActualizacion();
+    setEstado(resultado);
+    if (resultado === "sin-conexion") playError();
+  }
+
+  return (
+    <div className="pila-chica">
+      <button
+        type="button"
+        className="btn btn-secondary btn-alinear-inicio"
+        disabled={estado === "buscando"}
+        onClick={buscar}
+      >
+        <i className="ph ph-arrows-clockwise" aria-hidden="true" />
+        {estado === "buscando" ? "Buscando…" : "Buscar actualización"}
+      </button>
+      <p className="field-ayuda" aria-live="polite">
+        {TEXTO_BUSQUEDA[estado] || (fecha ? `Versión del ${fecha}.` : "")}
+      </p>
     </div>
   );
 }
