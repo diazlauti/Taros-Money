@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-27-reportes",
+    fecha: "2026-10-27",
+    icono: "ph ph-chart-bar",
+    titulo: "Reportes renovados",
+    texto: "Elegí un mes y mirá cuánto te sobró, en qué se fue la plata (con flechas contra el mes anterior) y el gasto más grande. Tocá una barra del gráfico para ver ese mes.",
+  },
+  {
     id: "2026-10-26-actualizar-sola",
     fecha: "2026-10-26",
     icono: "ph ph-arrow-circle-up",

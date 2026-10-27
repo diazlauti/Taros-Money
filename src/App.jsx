@@ -651,7 +651,14 @@ onCambio={suscripciones.recargar}
 />
 )}
 
-{activeTab === "reportes" && <ReportesTab tendencia={tendencia} onNuevo={abrirNuevo} />}
+{activeTab === "reportes" && (
+<ReportesTab
+tendencia={tendencia}
+monedaPorCuenta={monedaPorCuenta}
+cotizaciones={cotizaciones}
+onNuevo={abrirNuevo}
+/>
+)}
 
 {activeTab === "calculadora" && (
 <CalculadoraTab
