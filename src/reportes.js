@@ -122,3 +122,28 @@ export function diaCorto(fecha) {
   const nombres = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   return `${nombres[d.getDay()]} ${d.getDate()}`;
 }
+
+// Tramos de la dona sobre una vuelta de 1000: { categoria, desde, largo,
+// conIcono, x, y } con x/y en % del cuadro (dónde va el ícono, al medio del
+// tramo). Entre tramo y tramo queda un hueco chico.
+export function segmentosDona(lista, { hueco = 12, minimo = 6, pctIcono = 0.08 } = {}) {
+  const total = lista.reduce((s, c) => s + c.total, 0);
+  if (!total) return [];
+  const conHueco = lista.length > 1 ? hueco : 0;
+  let desde = 0;
+  return lista.map((c) => {
+    const parte = (c.total / total) * 1000;
+    const largo = Math.max(minimo, parte - conHueco);
+    const angulo = ((desde + largo / 2) / 1000) * 2 * Math.PI - Math.PI / 2;
+    const tramo = {
+      categoria: c.categoria,
+      desde,
+      largo,
+      conIcono: c.total / total >= pctIcono,
+      x: Math.round((50 + 40 * Math.cos(angulo)) * 10) / 10,
+      y: Math.round((50 + 40 * Math.sin(angulo)) * 10) / 10,
+    };
+    desde += parte;
+    return tramo;
+  });
+}

@@ -5,9 +5,9 @@ export const NOVEDADES = [
   {
     id: "2026-10-27-reportes",
     fecha: "2026-10-27",
-    icono: "ph ph-chart-bar",
+    icono: "ph ph-chart-donut",
     titulo: "Reportes renovados",
-    texto: "Elegí un mes y mirá cuánto te sobró, en qué se fue la plata (con flechas contra el mes anterior) y el gasto más grande. Tocá una barra del gráfico para ver ese mes.",
+    texto: "Ahora ves en qué se te fue la plata de cada mes en una dona por categoría, y si gastaste más o menos que el mes anterior. Con las flechitas cambiás de mes, y en «Más números» tenés el promedio por día y el gasto más grande.",
   },
   {
     id: "2026-10-27-avisos-push",
