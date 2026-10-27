@@ -326,7 +326,7 @@ export default function MovimientosTab({
             aria-label={revisandoMails ? "Revisando mails…" : "Revisar mails"}
             title="Revisar mails"
           >
-            <i className={revisandoMails ? "ph ph-spinner" : "ph ph-envelope-simple"} aria-hidden="true" />
+            <i className={revisandoMails ? "ph ph-spinner mov-girando" : "ph ph-envelope-simple"} aria-hidden="true" />
           </button>
         )}
       </div>

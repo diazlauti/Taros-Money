@@ -964,6 +964,17 @@ border-color: var(--color-accent);
 color: var(--color-accent-text);
 }
 
+/* El sobrecito de «Revisar mails» gira mientras revisa. */
+@media (prefers-reduced-motion: no-preference) {
+.mov-girando {
+animation: mov-girar var(--dur-pulse) linear infinite;
+}
+}
+
+@keyframes mov-girar {
+to { transform: rotate(360deg); }
+}
+
 .mov-filtros-cantidad {
 display: inline-grid;
 place-items: center;
