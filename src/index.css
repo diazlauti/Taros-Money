@@ -1,4 +1,4 @@
-/* Taros Money — tema día/noche estilo cartoon (paleta original, no es de ninguna marca).
+/* Taros Money — tema día/noche sobrio (azul noche, morado y mostaza; paleta original, no es de ninguna marca).
    Todo el estilo sale de las variables de :root. Fuera de este bloque no
    debería aparecer ningún color, tamaño, espacio ni duración escrito a mano. */
 
@@ -7,9 +7,9 @@
    Morado como color principal (botones, selección), azul noche del logo
    para texto y bordes, y mostaza para resaltar (íconos, detalles). En claro
    el fondo es un gris azulado suave, para no cansar la vista. */
---color-bg: #e9ecf4;
---color-surface: #fbfaf6;
---color-surface-2: #f0eee6;
+--color-bg: #e7e3f3;
+--color-surface: #f9f8fd;
+--color-surface-2: #eeeaf8;
 --color-text: #1a1f45;
 --color-text-dim: #4a5072;
 --color-accent: var(--color-morado);
@@ -48,8 +48,10 @@
 --cat-7: #c97b9a;
 
 /* --- Tipografía --- */
---font-heading: "Fredoka", "Inter", system-ui, sans-serif;
---font-body: "Fredoka", "Inter", system-ui, sans-serif;
+/* Una sola letra para todo (títulos, textos y montos). */
+--font-app: "Geist", system-ui, sans-serif;
+--font-heading: var(--font-app);
+--font-body: var(--font-app);
 --text-xs: 12px;
 --text-sm: 14px;
 --text-md: 16px;
@@ -61,7 +63,7 @@
 --leading-text: 1.5;
 --weight-regular: 400;
 --weight-medium: 500;
---weight-bold: 600;
+--weight-bold: 700;
 
 /* --- Espaciado (escala 4/8/16/24/32) --- */
 --space-1: 4px;
@@ -110,9 +112,10 @@
 --landing-blur: 8px;
 
 /* --- Radios y sombras --- */
---radius-sm: 8px;
---radius-md: 16px;
---radius-lg: 24px;
+/* Esquinas más rectas que antes (16/24): menos "globito", más serio. */
+--radius-sm: 6px;
+--radius-md: 10px;
+--radius-lg: 14px;
 --radius-pill: 999px;
 /* Sombras suaves (antes eran duras, corridas al costado: estilo más serio). */
 --shadow-sm: 0 1px 3px rgba(15, 18, 45, 0.1);
@@ -130,7 +133,7 @@
 --hero-skeleton: rgba(255, 255, 255, 0.16);
 --hero-sombra: 0 12px 28px rgba(26, 31, 69, 0.28);
 --sombra-suave: var(--shadow-sm);
---font-num: "Inter", var(--font-body);
+--font-num: var(--font-app);
 --accion-icono: 52px;
 --hero-brillo-tam: 180px;
 --saldo-total: 40px;
@@ -517,7 +520,7 @@ justify-content: center;
 gap: var(--space-2);
 min-height: var(--tap);
 padding: var(--space-2) var(--space-3);
-border-radius: var(--radius-pill);
+border-radius: var(--radius-md);
 font-size: var(--text-sm);
 cursor: pointer;
 text-decoration: none;
@@ -762,7 +765,7 @@ display: inline-flex;
 gap: var(--space-1);
 padding: var(--space-1);
 border: var(--border-thin) solid var(--color-borde-fuerte);
-border-radius: var(--radius-pill);
+border-radius: var(--radius-md);
 background: var(--color-surface);
 overflow: hidden;
 width: fit-content;
@@ -777,7 +780,7 @@ padding: var(--space-2) var(--space-3);
 font-size: var(--text-sm);
 cursor: pointer;
 position: relative;
-border-radius: var(--radius-pill);
+border-radius: var(--radius-sm);
 background: transparent;
 transition: background var(--dur-base) var(--ease-out);
 }
@@ -845,7 +848,7 @@ align-items: center;
 gap: var(--space-1);
 min-height: var(--tap);
 padding: var(--space-2) var(--space-3);
-border-radius: var(--radius-pill);
+border-radius: var(--radius-md);
 border: var(--border-thin) solid var(--color-borde-fuerte);
 background: var(--color-surface);
 color: var(--color-text);
@@ -4032,14 +4035,14 @@ display: grid;
 grid-template-columns: repeat(4, minmax(0, 1fr));
 gap: var(--space-1);
 padding: var(--space-1);
-border-radius: var(--radius-pill);
+border-radius: var(--radius-md);
 background: var(--color-surface-2);
 }
 
 .periodo-opt {
 min-height: var(--tap);
 border: none;
-border-radius: var(--radius-pill);
+border-radius: var(--radius-sm);
 background: none;
 color: var(--color-text-dim);
 font: inherit;
