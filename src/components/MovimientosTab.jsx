@@ -139,15 +139,21 @@ export default function MovimientosTab({
   }
 
   async function confirmarTodos() {
-    const sinConfirmar = combinados.filter((t) => t.sinConfirmar).length;
-    const aclaracion = sinConfirmar > 0 ? ` ${sinConfirmar} sin confirmar se suman a tus gastos.` : "";
+    const sinConfirmar = combinados.filter((t) => t.sinConfirmar && !t.sinMonto).length;
+    const sinMonto = combinados.filter((t) => t.sinMonto).length;
+    const aclaracion =
+      (sinConfirmar > 0 ? ` ${sinConfirmar} sin confirmar se suman a tus gastos.` : "") +
+      (sinMonto > 0 ? ` ${sinMonto === 1 ? "El que no tiene monto queda" : `Los ${sinMonto} sin monto quedan`} para que ${sinMonto === 1 ? "lo" : "los"} completes.` : "");
     if (!(await confirmar({ titulo: `¿Confirmar los ${cantidadARevisar} movimientos tal como están?`, texto: aclaracion.trim(), si: "Confirmar todos" }))) return;
     setConfirmando(true);
     setErrorConfirmar("");
     try {
-      const { confirmados } = await confirmarTodosLosDeMails();
+      const { confirmados, sinMonto: faltan = 0 } = await confirmarTodosLosDeMails();
       playSuccess();
-      avisar(confirmados === 1 ? "1 movimiento confirmado" : `${confirmados} movimientos confirmados`);
+      avisar(
+        (confirmados === 1 ? "1 movimiento confirmado" : `${confirmados} movimientos confirmados`) +
+          (faltan > 0 ? `. ${faltan === 1 ? "Falta el monto de 1" : `Falta el monto de ${faltan}`}.` : "")
+      );
       setFiltro("todos");
       onCambio?.();
     } catch (err) {

@@ -7,7 +7,8 @@ export function movimientosFrecuentes(movimientos, max = 4) {
   const grupos = new Map();
   for (const m of movimientos || []) {
     const descripcion = String(m.descripcion || "").trim();
-    if (!descripcion) continue;
+    // Los de mails sin confirmar todavía no son gastos tuyos.
+    if (!descripcion || m.sinConfirmar) continue;
     const clave = `${descripcion.toLowerCase()}|${m.categoria || ""}`;
     const fecha = `${m.fecha || ""} ${m.hora || ""}`;
     const g = grupos.get(clave);
