@@ -27,3 +27,28 @@ export const EVENTO_TOUR = "taros:tour-accion";
 export function avisarAccionTour(accion) {
   window.dispatchEvent(new CustomEvent(EVENTO_TOUR, { detail: accion }));
 }
+
+// Qué resalta el foco del recorrido (components/TourFoco.jsx). Cada
+// objetivo es un selector CSS, con dos atajos:
+// - "nav:servicios": el botón del menú de esa sección. En el celu, si no
+//   está en la barra de abajo, se resalta «Más».
+// - "card:#titulo-monedas": la tarjeta que contiene ese elemento.
+// Si hay varios que coinciden, se usa el primero que se ve.
+
+function visible(el) {
+  return el && el.getClientRects().length > 0;
+}
+
+function primeroVisible(selector) {
+  return [...document.querySelectorAll(selector)].find(visible) || null;
+}
+
+export function buscarObjetivo(objetivo) {
+  if (objetivo.startsWith("nav:")) {
+    return primeroVisible(`[data-tour="nav-${objetivo.slice(4)}"]`) || primeroVisible('[data-tour="nav-mas"]');
+  }
+  if (objetivo.startsWith("card:")) {
+    return primeroVisible(objetivo.slice(5))?.closest("section, .card, form") || null;
+  }
+  return primeroVisible(objetivo);
+}
