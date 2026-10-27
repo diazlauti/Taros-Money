@@ -125,7 +125,7 @@
 --hero-skeleton: rgba(255, 255, 255, 0.16);
 --hero-sombra: 0 12px 28px rgba(26, 31, 69, 0.28);
 --sombra-suave: 0 1px 3px rgba(26, 31, 69, 0.08);
---font-num: var(--font-body);
+--font-num: "Inter", var(--font-body);
 --accion-icono: 52px;
 --hero-brillo-tam: 180px;
 --saldo-total: 40px;
