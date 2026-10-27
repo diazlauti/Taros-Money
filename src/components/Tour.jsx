@@ -168,6 +168,12 @@ const ESPERA_LECTURA_S = 3;
 // Cuántos puntitos de progreso se ven a la vez.
 const PUNTOS_VISIBLES = 5;
 
+// Lo que hay que tocar en cada práctica. Para borrar, primero se toca el
+// movimiento (el «Borrar» está en el diálogo que se abre).
+function selectorObjetivo(objetivo) {
+  return objetivo === "borrar" ? '[data-tour="primer-movimiento"]' : `[data-tour="${objetivo}"]`;
+}
+
 const PASO_INSTALAR = {
   icono: "ph ph-device-mobile",
   titulo: "Tenela a mano",
@@ -237,9 +243,7 @@ export default function Tour({ hayCuentas, sePuedeSaltear = false, onIrA, onInst
     const raiz = document.documentElement;
     raiz.dataset.tourObjetivo = paso.objetivo;
     const enfocar = setTimeout(() => {
-      const selector =
-        paso.objetivo === "borrar" ? '[data-tour="primer-movimiento"]' : `[data-tour="${paso.objetivo}"]`;
-      const el = document.querySelector(selector);
+      const el = document.querySelector(selectorObjetivo(paso.objetivo));
       if (el?.matches("form")) {
         // Un formulario entero: se sube arriba de todo para que el cartel no
         // tape el botón, y se arranca por el primer campo.
@@ -260,9 +264,43 @@ export default function Tour({ hayCuentas, sePuedeSaltear = false, onIrA, onInst
       if (siguiente?.tab) onIrA(siguiente.tab);
     }
     window.addEventListener(EVENTO_TOUR, onAccion);
+
+    // Mientras se espera, solo se puede tocar lo que pide el paso: lo oscuro
+    // ya frena los toques, pero dentro del hueco puede haber otros botones
+    // (ej. «¿Otra moneda?» en el formulario de la cuenta) y con el teclado
+    // se llega a cualquier lado. Eso te sacaba de la práctica.
+    function sePuedeTocar(el) {
+      if (!(el instanceof Element)) return false;
+      // El cartel del recorrido y lo que abre la práctica (ej. «Nuevo
+      // movimiento», «¿Seguro?»).
+      if (el.closest(".tour-coach, .dialog-backdrop:not(.dialog-backdrop--tour)")) return true;
+      const objetivo = el.closest(selectorObjetivo(paso.objetivo));
+      if (!objetivo) return false;
+      // En un formulario, solo sus campos y el botón de enviarlo.
+      if (!objetivo.matches("form")) return true;
+      const accion = el.closest("a, button, [role='button']");
+      return !accion || (accion.matches("button") && accion.type === "submit");
+    }
+    function frenarToque(e) {
+      if (sePuedeTocar(e.target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // Con Tab: si el foco se va afuera, vuelve a lo que hay que tocar.
+    function frenarFoco(e) {
+      if (sePuedeTocar(e.target)) return;
+      const objetivo = buscarObjetivo(selectorObjetivo(paso.objetivo));
+      const destino = objetivo?.matches("form") ? objetivo.querySelector("input, select, button[type='submit']") : objetivo;
+      if (destino && sePuedeTocar(destino)) destino.focus({ preventScroll: true });
+      else e.target.blur?.();
+    }
+    document.addEventListener("click", frenarToque, true);
+    document.addEventListener("focusin", frenarFoco, true);
     return () => {
       clearTimeout(enfocar);
       window.removeEventListener(EVENTO_TOUR, onAccion);
+      document.removeEventListener("click", frenarToque, true);
+      document.removeEventListener("focusin", frenarFoco, true);
       delete raiz.dataset.tourObjetivo;
     };
   }, [paso, pasos, indice, onIrA]);
