@@ -27,7 +27,7 @@ idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
-import { fmtMoney, mapaMonedas } from "./format";
+import { fmtFecha, fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
 import { iconoDeCategoria, registrarIconos } from "./iconos";
 import { notificar } from "./notificaciones";
@@ -366,7 +366,7 @@ return;
 }
 const detalle = encontrados
 .slice(0, 3)
-.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto, g.moneda || "ARS")}`)
+.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto, g.moneda || "ARS")}${g.fecha ? ` (${fmtFecha(g.fecha)})` : ""}`)
 .join(", ");
 const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
 const titulo = n === 1 ? "Encontré 1 movimiento en tus mails" : `Encontré ${n} movimientos en tus mails`;

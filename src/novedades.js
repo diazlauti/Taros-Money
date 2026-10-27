@@ -7,7 +7,7 @@ export const NOVEDADES = [
     fecha: "2026-10-27",
     icono: "ph ph-tray",
     titulo: "Mails: bandeja para revisar y Steam",
-    texto: "Lo que encuentro en tus mails te queda en una bandeja en el Resumen y no suma a tus gastos hasta que lo confirmes. Ahora leo mejor los recibos (incluso Steam, en dólares) y te aviso si de un remitente tuyo no llegó ningún mail.",
+    texto: "Lo que encuentro en tus mails te queda en una bandeja en el Resumen y no suma a tus gastos hasta que lo confirmes. Ahora leo los recibos de cualquier tienda (Steam, Google Play, el cine, el gimnasio...) con su fecha, el total y la moneda, y te aviso si de un remitente tuyo no llegó ningún mail.",
   },
   {
     id: "2026-10-26-actualizar-sola",
