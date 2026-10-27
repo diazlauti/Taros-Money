@@ -1,3 +1,4 @@
+import Dialog from "./Dialog";
 import { useRef, useState } from "react";
 import { activarAvisoServicios, crearServicio, desmarcarServicio, getAvisoServicios, MENSAJE_FALTA_PERMISO, volverAEntrar } from "../api";
 import { useAvisos } from "../avisos";
@@ -19,6 +20,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   const { avisar } = useAvisos();
   const confirmar = useConfirmar();
   const [form, setForm] = useState(VACIO);
+  const [abierto, setAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [editando, setEditando] = useState(null);
@@ -84,6 +86,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
       avisar("Servicio agregado");
       setForm(VACIO);
       v.reiniciar();
+      setAbierto(false);
       onCambio?.();
     } catch (err) {
       playError();
@@ -263,49 +266,91 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
     );
   }
 
-  return (
-    <div className="con-panel">
-      <div className="con-panel-principal">{contenido}</div>
-
-      <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nuevo-servicio">
+  // El formulario de «nuevo»: directo en la pantalla si todavía no hay
+  // ninguno (para arrancar); si ya hay, se abre con el botón en un diálogo.
+  const formulario = (enDialogo) => (
+    <form
+      className={enDialogo ? "form" : "card form ancho-form"}
+      onSubmit={agregar}
+      noValidate
+      aria-labelledby={enDialogo ? undefined : "titulo-nuevo-servicio"}
+    >
+      {!enDialogo && (
         <h2 className="card-kicker" id="titulo-nuevo-servicio">
           Nuevo servicio
         </h2>
-        {atajos.length > 0 && (
-          <div className="field">
-            <span className="field-etiqueta" id="titulo-atajos-servicio">
-              Atajos
-            </span>
-            <div className="chips" role="group" aria-labelledby="titulo-atajos-servicio">
-              {atajos.map((t) => (
-                <button
-                  type="button"
-                  className="chip"
-                  key={t.nombre}
-                  aria-pressed={form.nombre === t.nombre}
-                  onClick={() => usarAtajo(t.nombre)}
-                >
-                  <i className={t.icono} aria-hidden="true" />
-                  {t.nombre}
-                </button>
-              ))}
-            </div>
+      )}
+      {atajos.length > 0 && (
+        <div className="field">
+          <span className="field-etiqueta" id="titulo-atajos-servicio">
+            Atajos
+          </span>
+          <div className="chips" role="group" aria-labelledby="titulo-atajos-servicio">
+            {atajos.map((t) => (
+              <button
+                type="button"
+                className="chip"
+                key={t.nombre}
+                aria-pressed={form.nombre === t.nombre}
+                onClick={() => usarAtajo(t.nombre)}
+              >
+                <i className={t.icono} aria-hidden="true" />
+                {t.nombre}
+              </button>
+            ))}
           </div>
-        )}
-        <CamposServicio form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} nombreRef={nombreRef} diaRef={diaRef} />
-        {errorForm && (
-          <p className="mensaje-error" role="alert">
-            {errorForm}
-          </p>
-        )}
-        <button className="btn btn-primary" type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
-        </button>
-        <p className="aviso-inline">
-          <i className="ph ph-info" aria-hidden="true" />
-          Cada mes arrancan todos como pendientes. Lo que se debita solo (Netflix, Spotify) va en Suscripciones.
+        </div>
+      )}
+      <CamposServicio
+        form={form}
+        campo={campo}
+        v={v}
+        categorias={categorias}
+        cuentas={cuentas}
+        nombreRef={nombreRef}
+        diaRef={diaRef}
+      />
+      {errorForm && (
+        <p className="mensaje-error" role="alert">
+          {errorForm}
         </p>
-      </form>
+      )}
+      <button className="btn btn-primary" type="submit" disabled={enviando}>
+        {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
+      </button>
+      <p className="aviso-inline">
+        <i className="ph ph-info" aria-hidden="true" />
+        Cada mes arrancan todos como pendientes. Lo que se debita solo (Netflix, Spotify) va en Suscripciones.
+      </p>
+    </form>
+  );
+
+  const directo = !servicios.cargando && lista.length === 0;
+  const formSucio = JSON.stringify(form) !== JSON.stringify(VACIO);
+
+  return (
+    <div className="con-panel">
+      {!directo && (
+        <button
+          type="button"
+          className="btn btn-primary btn-alinear-inicio"
+          onClick={() => {
+            if (!formSucio) v.reiniciar();
+            setAbierto(true);
+          }}
+        >
+          <i className="ph ph-plus" aria-hidden="true" />
+          Nuevo servicio
+        </button>
+      )}
+      <div className="con-panel-principal">{contenido}</div>
+
+      {directo && formulario(false)}
+      {abierto && (
+        <Dialog titulo="Nuevo servicio" onClose={() => setAbierto(false)} sucio={formSucio}>
+          {formulario(true)}
+        </Dialog>
+      )}
 
       {editando && (
         <EditarServicioDialog

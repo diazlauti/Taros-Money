@@ -138,7 +138,6 @@
 --hero-sombra: 0 12px 28px rgba(26, 31, 69, 0.28);
 --sombra-suave: var(--shadow-sm);
 --font-num: var(--font-app);
---accion-icono: 52px;
 --hero-brillo-tam: 180px;
 --saldo-total: 40px;
 --categorias-barra: 10px;
@@ -3867,60 +3866,74 @@ color: var(--hero-text);
 color: var(--hero-salio);
 }
 
-/* Accesos rápidos: íconos redondeados con el texto abajo. */
+/* Accesos rápidos: opciones chicas en fila (ícono y texto al lado). */
 .acciones-rapidas {
-display: grid;
-grid-template-columns: repeat(4, minmax(0, 1fr));
+display: flex;
+flex-wrap: wrap;
 gap: var(--space-2);
-max-width: var(--content-max);
 }
 
 .accion-rapida {
-display: flex;
-flex-direction: column;
+display: inline-flex;
 align-items: center;
-gap: var(--space-1);
-padding: var(--space-1) 0;
-border: none;
-background: none;
+gap: var(--space-2);
+min-height: var(--tap);
+padding: 0 var(--space-3);
+border: var(--border-thin) solid var(--color-borde-fuerte);
+border-radius: var(--radius-md);
+background: var(--color-surface);
 color: var(--color-text);
 font: inherit;
 font-size: var(--text-sm);
+font-weight: var(--weight-medium);
 cursor: pointer;
+transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .accion-rapida-icono {
-display: grid;
-place-items: center;
-width: var(--accion-icono);
-height: var(--accion-icono);
-border-radius: var(--radius-md);
-border: var(--border-thin) solid var(--color-divider);
-background: var(--color-surface);
+display: inline-flex;
 color: var(--color-accent-text);
-font-size: var(--icon-lg);
-box-shadow: var(--sombra-suave);
-transition: transform var(--dur-fast) var(--ease-out);
+font-size: var(--icon-md);
 }
 
-.accion-rapida--principal .accion-rapida-icono {
+.accion-rapida:not(.accion-rapida--principal):hover {
+background: var(--color-surface-2);
+}
+
+.accion-rapida--principal {
 border-color: transparent;
 background: var(--color-accent);
 color: var(--color-on-accent);
 }
 
-.accion-rapida:active .accion-rapida-icono {
-transform: scale(0.94);
+.accion-rapida--principal .accion-rapida-icono {
+color: inherit;
+}
+
+.accion-rapida:active {
+transform: scale(0.97);
 }
 
 .accion-rapida:focus-visible {
-outline: none;
-}
-
-.accion-rapida:focus-visible .accion-rapida-icono {
 outline: var(--focus-ring) solid var(--color-focus);
 outline-offset: var(--border);
 }
+
+/* En el celu entran las cuatro en una fila: ícono arriba, texto chico abajo. */
+@media (max-width: 780px) {
+.acciones-rapidas {
+display: grid;
+grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.accion-rapida {
+flex-direction: column;
+justify-content: center;
+gap: var(--space-1);
+padding: var(--space-2) var(--space-1);
+font-size: var(--text-xs);
+}
+}
+
 
 /* Bloques: título afuera, tarjeta con borde fino. */
 .resumen-bloque {
@@ -4137,25 +4150,10 @@ padding: var(--space-5);
 .resumen {
 grid-template-columns: repeat(3, minmax(0, 1fr));
 grid-template-areas:
-"saldo saldo acciones"
+"saldo saldo pagar"
+"acciones acciones pagar"
 "categorias categorias ultimos"
-"pagar mails ultimos";
-}
-.resumen-area-acciones {
-align-self: stretch;
-grid-template-columns: repeat(2, minmax(0, 1fr));
-max-width: none;
-}
-.resumen-area-acciones .accion-rapida {
-justify-content: center;
-gap: var(--space-2);
-border: var(--border-thin) solid var(--color-borde);
-border-radius: var(--radius-lg);
-background: var(--color-surface);
-box-shadow: var(--shadow-sm);
-}
-.resumen-area-acciones .accion-rapida-icono {
-box-shadow: none;
+"mails mails ultimos";
 }
 }
 
@@ -4212,7 +4210,7 @@ top: 0;
 }
 
 @media (min-width: 1024px) {
-.con-panel {
+.con-panel:has(> form) {
 display: grid;
 grid-template-columns: minmax(0, 1fr) var(--panel-lateral);
 gap: var(--space-4);

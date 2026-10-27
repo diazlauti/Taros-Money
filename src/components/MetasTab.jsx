@@ -6,6 +6,7 @@ import { useValidacion } from "../hooks";
 import { playChime, playError, playSuccess } from "../sounds";
 import { errorMonto, errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
+import Dialog from "./Dialog";
 import EditarMetaDialog from "./EditarMetaDialog";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import MontoDialog from "./MontoDialog";
@@ -15,6 +16,7 @@ const VACIO = { nombre: "", objetivo: "" };
 export default function MetasTab({ metas, onCambio }) {
   const { avisar } = useAvisos();
   const [form, setForm] = useState(VACIO);
+  const [abierto, setAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [aportando, setAportando] = useState(null);
@@ -41,6 +43,7 @@ export default function MetasTab({ metas, onCambio }) {
       avisar("Meta creada");
       setForm(VACIO);
       v.reiniciar();
+      setAbierto(false);
       onCambio?.();
     } catch (err) {
       playError();
@@ -142,53 +145,87 @@ export default function MetasTab({ metas, onCambio }) {
     );
   }
 
-  return (
-    <div className="con-panel">
-      <div className="con-panel-principal">{contenido}</div>
-
-      <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nueva-meta">
+  // El formulario de «nuevo»: directo en la pantalla si todavía no hay
+  // ninguno (para arrancar); si ya hay, se abre con el botón en un diálogo.
+  const formulario = (enDialogo) => (
+    <form
+      className={enDialogo ? "form" : "card form ancho-form"}
+      onSubmit={agregar}
+      noValidate
+      aria-labelledby={enDialogo ? undefined : "titulo-nueva-meta"}
+    >
+      {!enDialogo && (
         <h2 className="card-kicker" id="titulo-nueva-meta">
           Nueva meta
         </h2>
-        <div className="fila-2">
-          <Campo etiqueta="Nombre" error={v.visible("nombre")}>
-            {(p) => (
-              <input
-                {...p}
-                ref={nombreRef}
-                className="input"
-                value={form.nombre}
-                onChange={(e) => campo("nombre", e.target.value)}
-                onBlur={() => v.tocar("nombre")}
-                placeholder="Ej: Vacaciones"
-              />
-            )}
-          </Campo>
-          <Campo etiqueta="Cuánto querés juntar" error={v.visible("objetivo")}>
-            {(p) => (
-              <input
-                {...p}
-                className="input"
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                value={form.objetivo}
-                onChange={(e) => campo("objetivo", e.target.value)}
-                onBlur={() => v.tocar("objetivo")}
-                placeholder="0"
-              />
-            )}
-          </Campo>
-        </div>
-        {errorForm && (
-          <p className="mensaje-error" role="alert">
-            {errorForm}
-          </p>
-        )}
-        <button className="btn btn-primary" type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Crear meta"}
+      )}
+      <div className="fila-2">
+        <Campo etiqueta="Nombre" error={v.visible("nombre")}>
+          {(p) => (
+            <input
+              {...p}
+              ref={nombreRef}
+              className="input"
+              value={form.nombre}
+              onChange={(e) => campo("nombre", e.target.value)}
+              onBlur={() => v.tocar("nombre")}
+              placeholder="Ej: Vacaciones"
+            />
+          )}
+        </Campo>
+        <Campo etiqueta="Cuánto querés juntar" error={v.visible("objetivo")}>
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={form.objetivo}
+              onChange={(e) => campo("objetivo", e.target.value)}
+              onBlur={() => v.tocar("objetivo")}
+              placeholder="0"
+            />
+          )}
+        </Campo>
+      </div>
+      {errorForm && (
+        <p className="mensaje-error" role="alert">
+          {errorForm}
+        </p>
+      )}
+      <button className="btn btn-primary" type="submit" disabled={enviando}>
+        {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Crear meta"}
+      </button>
+    </form>
+  );
+
+  const directo = !metas.cargando && lista.length === 0;
+  const formSucio = JSON.stringify(form) !== JSON.stringify(VACIO);
+
+  return (
+    <div className="con-panel">
+      {!directo && (
+        <button
+          type="button"
+          className="btn btn-primary btn-alinear-inicio"
+          onClick={() => {
+            if (!formSucio) v.reiniciar();
+            setAbierto(true);
+          }}
+        >
+          <i className="ph ph-plus" aria-hidden="true" />
+          Nueva meta
         </button>
-      </form>
+      )}
+      <div className="con-panel-principal">{contenido}</div>
+
+      {directo && formulario(false)}
+      {abierto && (
+        <Dialog titulo="Nueva meta" onClose={() => setAbierto(false)} sucio={formSucio}>
+          {formulario(true)}
+        </Dialog>
+      )}
 
       {editando && (
         <EditarMetaDialog

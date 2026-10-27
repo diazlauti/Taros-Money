@@ -8,6 +8,7 @@ import { useValidacion } from "../hooks";
 import { playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
+import Dialog from "./Dialog";
 import EditarCuentaDialog from "./EditarCuentaDialog";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import MontoDialog from "./MontoDialog";
@@ -17,6 +18,7 @@ const VACIO = { nombre: "", saldo: "", moneda: "ARS" };
 export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onCambioGeneral, onIrAMonedas }) {
   const { avisar } = useAvisos();
   const [form, setForm] = useState(VACIO);
+  const [abierto, setAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [ajustando, setAjustando] = useState(null);
@@ -44,6 +46,7 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
       avisarAccionTour("cuenta-creada");
       setForm(VACIO);
       v.reiniciar();
+      setAbierto(false);
       onCambio?.();
     } catch (err) {
       playError();
@@ -128,75 +131,104 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
     );
   }
 
-  return (
-    <div className="con-panel">
-      <div className="con-panel-principal">{contenido}</div>
-
-      <form
-        className="card form ancho-form"
-        onSubmit={agregar}
-        noValidate
-        aria-labelledby="titulo-nueva-cuenta"
-        data-tour="nueva-cuenta"
-      >
+  // El formulario de «nuevo»: directo en la pantalla si todavía no hay
+  // ninguno (para arrancar); si ya hay, se abre con el botón en un diálogo.
+  const formulario = (enDialogo) => (
+    <form
+      className={enDialogo ? "form" : "card form ancho-form"}
+      onSubmit={agregar}
+      noValidate
+      aria-labelledby={enDialogo ? undefined : "titulo-nueva-cuenta"}
+      data-tour="nueva-cuenta"
+    >
+      {!enDialogo && (
         <h2 className="card-kicker" id="titulo-nueva-cuenta">
           Agregar cuenta
         </h2>
-        <Campo etiqueta="Nombre" error={v.visible("nombre")}>
+      )}
+      <Campo etiqueta="Nombre" error={v.visible("nombre")}>
+        {(p) => (
+          <input
+            {...p}
+            ref={nombreRef}
+            className="input"
+            value={form.nombre}
+            onChange={(e) => campo("nombre", e.target.value)}
+            onBlur={() => v.tocar("nombre")}
+            placeholder="Ej: Banco"
+          />
+        )}
+      </Campo>
+      <div className="fila-2">
+        <Campo etiqueta="Saldo actual" ayuda="Si lo dejás vacío, arranca en 0" error={v.visible("saldo")}>
           {(p) => (
             <input
               {...p}
-              ref={nombreRef}
               className="input"
-              value={form.nombre}
-              onChange={(e) => campo("nombre", e.target.value)}
-              onBlur={() => v.tocar("nombre")}
-              placeholder="Ej: Banco"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={form.saldo}
+              onChange={(e) => campo("saldo", e.target.value)}
+              placeholder="0"
             />
           )}
         </Campo>
-        <div className="fila-2">
-          <Campo etiqueta="Saldo actual" ayuda="Si lo dejás vacío, arranca en 0" error={v.visible("saldo")}>
-            {(p) => (
-              <input
-                {...p}
-                className="input"
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                value={form.saldo}
-                onChange={(e) => campo("saldo", e.target.value)}
-                placeholder="0"
-              />
-            )}
-          </Campo>
-          <Campo etiqueta="Moneda">
-            {(p) => (
-              <select {...p} className="input" value={form.moneda} onChange={(e) => campo("moneda", e.target.value)}>
-                {["ARS", ...monedasActivas].map((m) => (
-                  <option key={m} value={m}>
-                    {etiquetaMoneda(m)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Campo>
-        </div>
-        {onIrAMonedas && (
-          <button type="button" className="btn btn-texto btn-alinear-inicio" onClick={onIrAMonedas}>
-            <i className="ph ph-currency-circle-dollar" aria-hidden="true" />
-            ¿Otra moneda? Sumala en Configuración
-          </button>
-        )}
-        {errorForm && (
-          <p className="mensaje-error" role="alert">
-            {errorForm}
-          </p>
-        )}
-        <button className="btn btn-primary" type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
+        <Campo etiqueta="Moneda">
+          {(p) => (
+            <select {...p} className="input" value={form.moneda} onChange={(e) => campo("moneda", e.target.value)}>
+              {["ARS", ...monedasActivas].map((m) => (
+                <option key={m} value={m}>
+                  {etiquetaMoneda(m)}
+                </option>
+              ))}
+            </select>
+          )}
+        </Campo>
+      </div>
+      {onIrAMonedas && (
+        <button type="button" className="btn btn-texto btn-alinear-inicio" onClick={onIrAMonedas}>
+          <i className="ph ph-currency-circle-dollar" aria-hidden="true" />
+          ¿Otra moneda? Sumala en Configuración
         </button>
-      </form>
+      )}
+      {errorForm && (
+        <p className="mensaje-error" role="alert">
+          {errorForm}
+        </p>
+      )}
+      <button className="btn btn-primary" type="submit" disabled={enviando}>
+        {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
+      </button>
+    </form>
+  );
+
+  const directo = !cuentas.cargando && lista.length === 0;
+  const formSucio = JSON.stringify(form) !== JSON.stringify(VACIO);
+
+  return (
+    <div className="con-panel">
+      {!directo && (
+        <button
+          type="button"
+          className="btn btn-primary btn-alinear-inicio"
+          onClick={() => {
+            if (!formSucio) v.reiniciar();
+            setAbierto(true);
+          }}
+        >
+          <i className="ph ph-plus" aria-hidden="true" />
+          Agregar cuenta
+        </button>
+      )}
+      <div className="con-panel-principal">{contenido}</div>
+
+      {directo && formulario(false)}
+      {abierto && (
+        <Dialog titulo="Agregar cuenta" onClose={() => setAbierto(false)} sucio={formSucio}>
+          {formulario(true)}
+        </Dialog>
+      )}
 
       {editando && (
         <EditarCuentaDialog
