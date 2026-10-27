@@ -47,3 +47,14 @@ export function limpiarNuevoDeUrl() {
     /* sin history (no debería pasar en un navegador) */
   }
 }
+
+// Al tocar un aviso del celu, la app se abre con ?ver=revisar (Movimientos
+// filtrado en lo que hay que revisar) o ?ver=servicios.
+export function leerVerDeUrl() {
+  try {
+    const ver = new URLSearchParams(window.location.search).get("ver");
+    return ver === "revisar" || ver === "servicios" ? ver : null;
+  } catch {
+    return null;
+  }
+}

@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-27-avisos-push",
+    fecha: "2026-10-27",
+    icono: "ph ph-device-mobile",
+    titulo: "Avisos con la app cerrada",
+    texto: "Prendelos en Configuración › «Avisos en este dispositivo»: te aviso en el celu cuando encuentro mails y si algo vence, aunque no tengas la app abierta.",
+  },
+  {
     id: "2026-10-27-bandeja-mails",
     fecha: "2026-10-27",
     icono: "ph ph-tray",

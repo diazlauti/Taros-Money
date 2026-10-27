@@ -3443,6 +3443,14 @@ pointer-events: none;
 animation: backdrop-in var(--dur-slow) var(--ease-out);
 }
 
+/* Avisos en este dispositivo: prendidos. */
+.aviso-inline--ok {
+color: var(--color-text);
+}
+
+.aviso-inline--ok i {
+color: var(--exito);
+}
 .tour-foco-sombra {
 display: block;
 }

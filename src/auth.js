@@ -24,6 +24,9 @@ const SCOPES = [
   "https://www.googleapis.com/auth/script.send_mail",
   "https://www.googleapis.com/auth/script.scriptapp",
   "https://www.googleapis.com/auth/userinfo.email",
+  // Avisos en el celu con la app cerrada: el Apps Script llama a la función
+  // de Netlify que los manda.
+  "https://www.googleapis.com/auth/script.external_request",
 ].join(" ");
 
 // Permisos extra, solo para quien activa "Gastos desde tus mails": leer el

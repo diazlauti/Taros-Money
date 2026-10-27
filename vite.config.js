@@ -40,7 +40,9 @@ export default defineConfig({
       // que venir frescos): sólo el shell de la app (HTML/JS/CSS/íconos),
       // así abre instantáneo y queda instalable, sin mostrar datos viejos.
       workbox: {
-        navigateFallbackDenylist: [/\/api\//],
+        navigateFallbackDenylist: [/\/api\//, /^\/\.netlify\//],
+        // Avisos push con la app cerrada (public/push-sw.js).
+        importScripts: ['push-sw.js'],
       },
       manifest: {
         name: 'Taros Money',
