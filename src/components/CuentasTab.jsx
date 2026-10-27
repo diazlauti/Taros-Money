@@ -129,8 +129,8 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
   }
 
   return (
-    <>
-      {contenido}
+    <div className="con-panel">
+      <div className="con-panel-principal">{contenido}</div>
 
       <form
         className="card form ancho-form"
@@ -218,6 +218,6 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
           onClose={() => setAjustando(null)}
         />
       )}
-    </>
+    </div>
   );
 }

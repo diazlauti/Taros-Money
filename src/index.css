@@ -84,10 +84,14 @@
 --focus-ring: 3px;
 --sidebar-w: 208px;
 --content-max: 480px;
+--compu-max: 1200px;
+--movimientos-max: 880px;
+--calc-max: 880px;
+--panel-lateral: 360px;
 --form-max: 360px;
 --dialog-max: 420px;
 --dialog-confirmar-max: 360px;
---card-min: 192px;
+--card-min: 220px;
 --field-min: 136px;
 --donut: 128px;
 --chart-h: 128px;
@@ -4109,26 +4113,115 @@ text-overflow: ellipsis;
 white-space: nowrap;
 }
 
-.resumen-arriba {
-display: flex;
-flex-direction: column;
-gap: var(--space-4);
-}
-
-/* En compu: la tarjeta a la izquierda y los accesos en 2×2 al lado. */
+/* En compu el Resumen es una grilla: arriba tu plata y los accesos; después
+   en qué se fue con los últimos movimientos al costado, y lo que hay que
+   pagar y los mails. En el celu sigue siendo una columna en este orden. */
 @media (min-width: 781px) {
-.resumen-arriba {
+.resumen {
 display: grid;
-grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-gap: var(--space-3);
-align-items: center;
-}
-.resumen-arriba .acciones-rapidas {
 grid-template-columns: repeat(2, minmax(0, 1fr));
-row-gap: var(--space-4);
+grid-template-areas:
+"saldo saldo"
+"acciones acciones"
+"pagar mails"
+"categorias ultimos";
+gap: var(--space-4) var(--space-4);
+align-items: start;
 }
 .saldo-card {
 padding: var(--space-5);
+}
+}
+
+@media (min-width: 1100px) {
+.resumen {
+grid-template-columns: repeat(3, minmax(0, 1fr));
+grid-template-areas:
+"saldo saldo acciones"
+"categorias categorias ultimos"
+"pagar mails ultimos";
+}
+.resumen-area-acciones {
+align-self: stretch;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+max-width: none;
+}
+.resumen-area-acciones .accion-rapida {
+justify-content: center;
+gap: var(--space-2);
+border: var(--border-thin) solid var(--color-borde);
+border-radius: var(--radius-lg);
+background: var(--color-surface);
+box-shadow: var(--shadow-sm);
+}
+.resumen-area-acciones .accion-rapida-icono {
+box-shadow: none;
+}
+}
+
+.resumen-area-saldo { grid-area: saldo; }
+.resumen-area-acciones { grid-area: acciones; }
+.resumen-area-pagar { grid-area: pagar; }
+.resumen-area-mails { grid-area: mails; }
+.resumen-area-categorias { grid-area: categorias; }
+.resumen-area-ultimos { grid-area: ultimos; }
+
+/* --- Compu: ancho máximo y paneles ---
+   El contenido no se estira de punta a punta: queda centrado con un ancho
+   cómodo de leer. En Cuentas, Metas, Servicios y Suscripciones el
+   formulario de «nuevo» va en una columna fija a la derecha. */
+.con-panel,
+.con-panel-principal {
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+min-width: 0;
+}
+
+.calc-columnas {
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+}
+
+@media (min-width: 781px) {
+.tab-pane {
+width: 100%;
+max-width: var(--compu-max);
+margin-inline: auto;
+}
+.mov-barra,
+.mov-card {
+width: 100%;
+max-width: var(--movimientos-max);
+margin-inline: auto;
+}
+.calc-card {
+max-width: var(--calc-max);
+}
+.calc-columnas {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: var(--space-5);
+align-items: start;
+}
+.calc-lado {
+position: sticky;
+top: 0;
+}
+}
+
+@media (min-width: 1024px) {
+.con-panel {
+display: grid;
+grid-template-columns: minmax(0, 1fr) var(--panel-lateral);
+gap: var(--space-4);
+align-items: start;
+}
+.con-panel > form {
+position: sticky;
+top: 0;
+max-width: none;
 }
 }
 
@@ -4140,6 +4233,7 @@ animation: resumen-entrar var(--dur-slow) var(--ease-out) both;
 .resumen > :nth-child(2) { animation-delay: var(--dur-fast); }
 .resumen > :nth-child(3) { animation-delay: calc(var(--dur-fast) * 2); }
 .resumen > :nth-child(4) { animation-delay: calc(var(--dur-fast) * 3); }
+.resumen > :nth-child(n + 5) { animation-delay: calc(var(--dur-fast) * 4); }
 }
 
 @keyframes resumen-entrar {

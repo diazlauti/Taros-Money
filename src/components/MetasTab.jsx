@@ -143,8 +143,8 @@ export default function MetasTab({ metas, onCambio }) {
   }
 
   return (
-    <>
-      {contenido}
+    <div className="con-panel">
+      <div className="con-panel-principal">{contenido}</div>
 
       <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nueva-meta">
         <h2 className="card-kicker" id="titulo-nueva-meta">
@@ -209,6 +209,6 @@ export default function MetasTab({ metas, onCambio }) {
           onClose={() => setAportando(null)}
         />
       )}
-    </>
+    </div>
   );
 }

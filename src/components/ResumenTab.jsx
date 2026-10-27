@@ -38,37 +38,28 @@ export default function ResumenTab({
 }) {
   return (
     <div className="resumen">
-      <div className="resumen-arriba">
-        <SaldoCard
-          saldo={saldo}
-          cuentas={cuentas}
-          gastos={gastos}
-          ingresos={ingresos}
-          dias={dias}
-          cotizaciones={cotizaciones}
-          monedaPorCuenta={monedaPorCuenta}
-          onIrA={onIrA}
-        />
-
-        <AccionesRapidas onNuevo={onNuevo} onIrA={onIrA} />
-      </div>
-
-      <div className="grid-2">
-        <ParaHacer servicios={servicios} cotizaciones={cotizaciones} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
-        {mails && <MailsCard {...mails} cuentas={cuentas.data} monedaPorCuenta={monedaPorCuenta} />}
-      </div>
-
-      <div className="grid-2">
-        <CategoriasCard resumen={resumen} dias={dias} onCambiarDias={onCambiarDias} onNuevo={onNuevo} />
-        <UltimosCard
-          gastos={gastos}
-          ingresos={ingresos}
-          dias={dias}
-          monedaPorCuenta={monedaPorCuenta}
-          onNuevo={onNuevo}
-          onIrA={onIrA}
-        />
-      </div>
+      <SaldoCard
+        saldo={saldo}
+        cuentas={cuentas}
+        gastos={gastos}
+        ingresos={ingresos}
+        dias={dias}
+        cotizaciones={cotizaciones}
+        monedaPorCuenta={monedaPorCuenta}
+        onIrA={onIrA}
+      />
+      <AccionesRapidas onNuevo={onNuevo} onIrA={onIrA} />
+      <ParaHacer servicios={servicios} cotizaciones={cotizaciones} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
+      {mails && <MailsCard {...mails} cuentas={cuentas.data} monedaPorCuenta={monedaPorCuenta} />}
+      <CategoriasCard resumen={resumen} dias={dias} onCambiarDias={onCambiarDias} onNuevo={onNuevo} />
+      <UltimosCard
+        gastos={gastos}
+        ingresos={ingresos}
+        dias={dias}
+        monedaPorCuenta={monedaPorCuenta}
+        onNuevo={onNuevo}
+        onIrA={onIrA}
+      />
     </div>
   );
 }
@@ -164,7 +155,7 @@ function SaldoCard({ saldo, cuentas, gastos, ingresos, dias, cotizaciones, moned
   }
 
   return (
-    <section className="saldo-card" aria-labelledby="titulo-saldo">
+    <section className="saldo-card resumen-area-saldo" aria-labelledby="titulo-saldo">
       <div className="saldo-cabeza">
         <h2 id="titulo-saldo">Tu plata hoy</h2>
         <button
@@ -214,7 +205,7 @@ function AccionesRapidas({ onNuevo, onIrA }) {
     { id: "cuentas", texto: "Cuentas", icono: "ph ph-wallet", onClick: () => onIrA("cuentas") },
   ];
   return (
-    <nav className="acciones-rapidas" aria-label="Accesos rápidos">
+    <nav className="acciones-rapidas resumen-area-acciones" aria-label="Accesos rápidos">
       {acciones.map((a) => (
         <button
           key={a.id}
@@ -315,7 +306,7 @@ function ParaHacer({ servicios, cotizaciones, monedaPorCuenta, onIrA }) {
   }
 
   return (
-    <section aria-labelledby="titulo-para-hacer" className="resumen-bloque">
+    <section aria-labelledby="titulo-para-hacer" className="resumen-bloque resumen-area-pagar">
       <Titulo
         id="titulo-para-hacer"
         accion={
@@ -399,7 +390,7 @@ function CategoriasCard({ resumen, dias, onCambiarDias, onNuevo }) {
   }
 
   return (
-    <section aria-labelledby="titulo-categorias" aria-busy={resumen.actualizando || undefined} className="resumen-bloque">
+    <section aria-labelledby="titulo-categorias" aria-busy={resumen.actualizando || undefined} className="resumen-bloque resumen-area-categorias">
       <Titulo id="titulo-categorias">En qué se fue</Titulo>
       <div className="card resumen-card">
         <PeriodoSelector dias={dias} onCambiar={onCambiarDias} />
@@ -465,7 +456,7 @@ function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, onNuevo, onIrA }
     <section
       aria-labelledby="titulo-ultimos"
       aria-busy={gastos.actualizando || ingresos.actualizando || undefined}
-      className="resumen-bloque"
+      className="resumen-bloque resumen-area-ultimos"
     >
       <Titulo
         id="titulo-ultimos"
@@ -545,7 +536,7 @@ function MailsCard({
   }
 
   return (
-    <section aria-labelledby="titulo-mails-resumen" className="resumen-bloque">
+    <section aria-labelledby="titulo-mails-resumen" className="resumen-bloque resumen-area-mails">
       <Titulo id="titulo-mails-resumen">Gastos de tus mails</Titulo>
       <div className="card resumen-card mails-card">{contenido}</div>
     </section>

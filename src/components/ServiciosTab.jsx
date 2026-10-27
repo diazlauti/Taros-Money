@@ -264,8 +264,8 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   }
 
   return (
-    <>
-      {contenido}
+    <div className="con-panel">
+      <div className="con-panel-principal">{contenido}</div>
 
       <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nuevo-servicio">
         <h2 className="card-kicker" id="titulo-nuevo-servicio">
@@ -326,7 +326,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
           onGuardado={(conGasto) => (conGasto ? onCambioConGasto : onCambio)?.()}
         />
       )}
-    </>
+    </div>
   );
 }
 

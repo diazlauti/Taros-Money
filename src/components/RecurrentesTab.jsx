@@ -133,8 +133,8 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
   }
 
   return (
-    <>
-      {contenido}
+    <div className="con-panel">
+      <div className="con-panel-principal">{contenido}</div>
 
       <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nueva-suscripcion">
         <h2 className="card-kicker" id="titulo-nueva-suscripcion">
@@ -160,6 +160,6 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
           onGuardado={onCambio}
         />
       )}
-    </>
+    </div>
   );
 }
