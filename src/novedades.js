@@ -10,6 +10,27 @@ export const NOVEDADES = [
     texto: "Elegí un mes y mirá cuánto te sobró, en qué se fue la plata (con flechas contra el mes anterior) y el gasto más grande. Tocá una barra del gráfico para ver ese mes.",
   },
   {
+    id: "2026-10-27-avisos-push",
+    fecha: "2026-10-27",
+    icono: "ph ph-device-mobile",
+    titulo: "Avisos con la app cerrada",
+    texto: "Prendelos en Configuración › «Avisos en este dispositivo»: te aviso en el celu cuando encuentro mails y si algo vence, aunque no tengas la app abierta.",
+  },
+  {
+    id: "2026-10-27-bandeja-mails",
+    fecha: "2026-10-27",
+    icono: "ph ph-tray",
+    titulo: "Mails: bandeja para revisar y Steam",
+    texto: "Lo que encuentro en tus mails te queda en una bandeja en el Resumen y no suma a tus gastos hasta que lo confirmes. Ahora leo los recibos de cualquier tienda (Steam, Google Play, el cine, el gimnasio...) con su fecha, el total y la moneda (si el mail no dice el precio, te lo dejo para que lo completes), y te aviso si de un remitente tuyo no llegó ningún mail.",
+  },
+  {
+    id: "2026-10-27-movimientos-por-dia",
+    fecha: "2026-10-27",
+    icono: "ph ph-list-bullets",
+    titulo: "Movimientos más fáciles de leer",
+    texto: "Ahora se agrupan por día, con la hora de cada uno y el saldo que te quedaba al final del día. En «Filtros» elegís tipo, categorías, 3 a 90 días y el orden (por fecha o por monto).",
+  },
+  {
     id: "2026-10-26-actualizar-sola",
     fecha: "2026-10-26",
     icono: "ph ph-arrow-circle-up",

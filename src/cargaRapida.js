@@ -7,7 +7,8 @@ export function movimientosFrecuentes(movimientos, max = 4) {
   const grupos = new Map();
   for (const m of movimientos || []) {
     const descripcion = String(m.descripcion || "").trim();
-    if (!descripcion) continue;
+    // Los de mails sin confirmar todavía no son gastos tuyos.
+    if (!descripcion || m.sinConfirmar) continue;
     const clave = `${descripcion.toLowerCase()}|${m.categoria || ""}`;
     const fecha = `${m.fecha || ""} ${m.hora || ""}`;
     const g = grupos.get(clave);
@@ -44,5 +45,16 @@ export function limpiarNuevoDeUrl() {
     window.history.replaceState(null, "", window.location.pathname);
   } catch {
     /* sin history (no debería pasar en un navegador) */
+  }
+}
+
+// Al tocar un aviso del celu, la app se abre con ?ver=revisar (Movimientos
+// filtrado en lo que hay que revisar) o ?ver=servicios.
+export function leerVerDeUrl() {
+  try {
+    const ver = new URLSearchParams(window.location.search).get("ver");
+    return ver === "revisar" || ver === "servicios" ? ver : null;
+  } catch {
+    return null;
   }
 }

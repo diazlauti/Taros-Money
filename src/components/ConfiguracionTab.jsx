@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
-import { buscarActualizacion, FECHA_VERSION } from "../actualizacion";
+import { buscarActualizacion, NUMERO_VERSION } from "../actualizacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import { iconoDeCategoria } from "../iconos";
@@ -11,6 +11,7 @@ import RevisionMails from "./RevisionMails";
 import Campo from "./Campo";
 import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
+import AvisosPushCard from "./AvisosPushCard";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
 const OPCIONES_TEMA = [
@@ -30,6 +31,11 @@ export default function ConfiguracionTab({
   revisionMails,
   revisandoMails,
   onRevisarMails,
+  pendientesMails,
+  cargandoPendientesMails,
+  monedaPorCuenta,
+  onCambioMovimientos,
+  onVerPendientesMails,
   diasMails,
   onCambiarDiasMails,
   categorias,
@@ -143,6 +149,13 @@ export default function ConfiguracionTab({
             onCambiarModo={onCambiarModoMails}
             onCambiarDias={onCambiarDiasMails}
             onRevisar={onRevisarMails}
+            pendientes={pendientesMails}
+            cargandoPendientes={cargandoPendientesMails}
+            categorias={categorias.data}
+            cuentas={cuentas}
+            monedaPorCuenta={monedaPorCuenta}
+            onVerTodos={onVerPendientesMails}
+            onCambio={onCambioMovimientos}
           />
         );
     }
@@ -220,6 +233,8 @@ export default function ConfiguracionTab({
           {mails}
         </section>
       )}
+
+      <AvisosPushCard onInstalar={onInstalar} />
 
       <MonedasCard monedas={monedas} cotizacionesHoy={cotizacionesHoy} cuentas={cuentas} onGuardadas={onMonedasGuardadas} />
 
@@ -338,24 +353,14 @@ export default function ConfiguracionTab({
   );
 }
 
-const TEXTO_BUSQUEDA = {
-  nueva: "Hay una versión nueva: tocá «Actualizar» arriba.",
-  "al-dia": "Ya tenés la última versión.",
-  "sin-conexion": "No pude fijarme: parece que no hay conexión. Probá de nuevo en un rato.",
-};
-
-function fechaVersion() {
-  if (!FECHA_VERSION) return "";
-  const fecha = new Date(FECHA_VERSION);
-  if (Number.isNaN(fecha.getTime())) return "";
-  return fecha.toLocaleString("es-AR", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
+// Solo se avisa si no se pudo fijar: si hay versión nueva ya aparece el
+// cartel de arriba, y si no hay, no hace falta decir nada.
+const SIN_CONEXION = "No pude fijarme: parece que no hay conexión.";
 
 // La app se actualiza sola, pero en el iPhone instalada no hay botón de
 // recargar: con esto se puede pedir que se fije ya.
 function BuscarActualizacion() {
   const [estado, setEstado] = useState("");
-  const fecha = fechaVersion();
 
   async function buscar() {
     setEstado("buscando");
@@ -376,8 +381,9 @@ function BuscarActualizacion() {
         <i className="ph ph-arrows-clockwise" aria-hidden="true" />
         {estado === "buscando" ? "Buscando…" : "Buscar actualización"}
       </button>
+      {NUMERO_VERSION && <p className="field-ayuda">Versión {NUMERO_VERSION}</p>}
       <p className="field-ayuda" aria-live="polite">
-        {TEXTO_BUSQUEDA[estado] || (fecha ? `Versión del ${fecha}.` : "")}
+        {estado === "sin-conexion" ? SIN_CONEXION : ""}
       </p>
     </div>
   );

@@ -23,7 +23,7 @@ return (
 <>
 <SaldoCard saldo={saldo} cuentas={cuentas} cotizaciones={cotizaciones} onIrA={onIrA} />
 
-{mails && <MailsCard {...mails} />}
+{mails && <MailsCard {...mails} cuentas={cuentas.data} monedaPorCuenta={monedaPorCuenta} />}
 <ServiciosCard servicios={servicios} cotizaciones={cotizaciones} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
 
 <PeriodoSelector dias={dias} onCambiar={onCambiarDias} />
@@ -328,7 +328,23 @@ return (
 
 // La detección de gastos en los mails, a mano en el Resumen: si está apagada
 // invita a activarla; si está prendida muestra qué falta revisar.
-function MailsCard({ config, cantidadARevisar, revision, revisando, dias, onCambiarDias, onCambiarModo, onRevisar, onVerARevisar, onActivar }) {
+function MailsCard({
+config,
+revision,
+revisando,
+dias,
+pendientes,
+cargandoPendientes,
+categorias,
+cuentas,
+monedaPorCuenta,
+onCambiarDias,
+onCambiarModo,
+onRevisar,
+onVerARevisar,
+onCambio,
+onActivar,
+}) {
 const modo = config.data?.modo || "apagado";
 let contenido;
 
@@ -344,7 +360,7 @@ contenido = <ErrorEstado mensaje={config.error} onReintentar={config.recargar} /
 contenido = (
 <>
 <p className="texto-intro">
-Dejá que Taros Money lea los mails de tus compras y pagos y los cargue solo. Vos solo confirmás.
+Dejá que Taros Money encuentre tus compras y pagos en tus mails. Vos solo confirmás.
 </p>
 <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={onActivar}>
 <i className="ph ph-sparkle" aria-hidden="true" />
@@ -355,16 +371,6 @@ Activar
 } else {
 contenido = (
 <>
-{cantidadARevisar > 0 && (
-<div className="fila-separada">
-<p className="mails-card-cuenta" aria-live="polite">
-<strong>{cantidadARevisar}</strong> para revisar
-</p>
-<button type="button" className="btn btn-secondary" onClick={onVerARevisar}>
-Ver
-</button>
-</div>
-)}
 <RevisionMails
 compacto
 revision={revision}
@@ -372,7 +378,13 @@ revisando={revisando}
 dias={dias}
 onCambiarDias={onCambiarDias}
 onRevisar={onRevisar}
-onVerEncontrados={onVerARevisar}
+pendientes={pendientes}
+cargandoPendientes={cargandoPendientes}
+categorias={categorias}
+cuentas={cuentas}
+monedaPorCuenta={monedaPorCuenta}
+onVerTodos={onVerARevisar}
+onCambio={onCambio}
 modo={modo}
 onCambiarModo={onCambiarModo}
 />

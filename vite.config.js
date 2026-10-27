@@ -2,11 +2,31 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Número de versión: 1.DÍA.MES.HORA.MINUTOS, con la hora de Argentina del
+// momento en que se publica (ej. 1.27.10.3.16 = 27/10 a las 3:16). Sale solo
+// en cada publicación; para pasar a 2 se cambia VERSION_PRINCIPAL.
+const VERSION_PRINCIPAL = 1
+function numeroDeVersion(fecha = new Date()) {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      day: 'numeric',
+      month: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(fecha)
+      .map((p) => [p.type, p.value]),
+  )
+  return `${VERSION_PRINCIPAL}.${partes.day}.${partes.month}.${Number(partes.hour)}.${partes.minute}`
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  // Fecha de la versión, para mostrarla en Configuración › Ayuda.
+  // Número de versión, para mostrarlo en Configuración › Ayuda.
   define: {
-    __FECHA_VERSION__: JSON.stringify(new Date().toISOString()),
+    __NUMERO_VERSION__: JSON.stringify(numeroDeVersion()),
   },
   plugins: [
     react(),
@@ -20,7 +40,9 @@ export default defineConfig({
       // que venir frescos): sólo el shell de la app (HTML/JS/CSS/íconos),
       // así abre instantáneo y queda instalable, sin mostrar datos viejos.
       workbox: {
-        navigateFallbackDenylist: [/\/api\//],
+        navigateFallbackDenylist: [/\/api\//, /^\/\.netlify\//],
+        // Avisos push con la app cerrada (public/push-sw.js).
+        importScripts: ['push-sw.js'],
       },
       manifest: {
         name: 'Taros Money',

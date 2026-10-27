@@ -703,17 +703,6 @@ border-color: var(--color-violeta);
 box-shadow: var(--shadow-md);
 }
 
-.mails-card-cuenta {
-margin: 0;
-font-size: var(--text-md);
-}
-
-.mails-card-cuenta strong {
-font-family: var(--font-heading);
-font-size: var(--text-xl);
-color: var(--color-accent-text);
-}
-
 /* Gasto que se cargó solo desde un mail y falta confirmar. */
 .tag-revisar {
 background: var(--color-resalte);
@@ -912,6 +901,183 @@ white-space: nowrap;
 .movimiento-monto {
 font-weight: var(--weight-bold);
 white-space: nowrap;
+}
+
+/* Movimientos agrupados por día (estilo resumen del banco): ícono redondo
+   con el color de la categoría, monto y hora a la derecha, y el saldo de
+   cada día en la cabecera. */
+
+.mov-buscar {
+position: relative;
+display: block;
+}
+
+.mov-buscar > i {
+position: absolute;
+inset-inline-start: var(--space-3);
+top: 50%;
+transform: translateY(-50%);
+font-size: var(--icon-md);
+color: var(--color-text-dim);
+pointer-events: none;
+}
+
+.mov-buscar .input {
+padding-inline-start: calc(var(--space-3) + var(--icon-md) + var(--space-2));
+border-radius: var(--radius-pill);
+}
+
+.mov-barra {
+display: flex;
+align-items: flex-end;
+gap: var(--space-2);
+}
+
+/* La búsqueda tiene su etiqueta para lectores de pantalla, pero no se ve. */
+.mov-barra .field > label {
+position: absolute;
+width: 1px;
+height: 1px;
+overflow: hidden;
+clip-path: inset(50%);
+white-space: nowrap;
+}
+
+.mov-btn-filtros {
+position: relative;
+flex: none;
+}
+
+.mov-btn-filtros--activo {
+border-color: var(--color-accent);
+color: var(--color-accent-text);
+}
+
+/* El sobrecito de «Revisar mails» gira mientras revisa. */
+@media (prefers-reduced-motion: no-preference) {
+.mov-girando {
+animation: mov-girar var(--dur-pulse) linear infinite;
+}
+}
+
+@keyframes mov-girar {
+to { transform: rotate(360deg); }
+}
+
+.mov-filtros-cantidad {
+display: inline-grid;
+place-items: center;
+min-width: var(--insignia);
+height: var(--insignia);
+padding: 0 var(--space-1);
+border-radius: var(--radius-pill);
+background: var(--color-accent);
+color: var(--color-on-accent);
+font-size: var(--text-xs);
+font-weight: var(--weight-bold);
+}
+
+.mov-filtros {
+display: flex;
+flex-direction: column;
+gap: var(--space-4);
+}
+
+.mov-grupo legend {
+margin-bottom: var(--space-2);
+}
+
+.chip-categoria i {
+color: var(--color-text);
+background: color-mix(in srgb, var(--mov-color) 35%, transparent);
+border-radius: var(--radius-pill);
+padding: var(--space-1);
+font-size: var(--icon-sm);
+}
+
+.chip-categoria[aria-pressed="true"] i {
+color: var(--color-on-accent);
+background: transparent;
+}
+
+.mov-filtros-acciones {
+display: flex;
+flex-wrap: wrap;
+justify-content: flex-end;
+gap: var(--space-2);
+}
+
+.mov-dias {
+display: flex;
+flex-direction: column;
+gap: var(--space-4);
+}
+
+.mov-dia-cabecera {
+display: flex;
+flex-wrap: wrap;
+align-items: baseline;
+justify-content: space-between;
+gap: var(--space-1) var(--space-2);
+padding-bottom: var(--space-2);
+border-bottom: var(--border) solid var(--color-divider);
+}
+
+.mov-dia-titulo {
+margin: 0;
+font-family: var(--font-heading);
+font-size: var(--text-md);
+font-weight: var(--weight-bold);
+color: var(--color-text);
+}
+
+.mov-dia-saldo {
+margin: 0;
+font-size: var(--text-sm);
+}
+
+button.movimiento.mov-fila {
+grid-template-columns: var(--icono-circulo) minmax(0, 1fr) auto;
+gap: var(--space-3);
+padding: var(--space-3) var(--space-1);
+}
+
+.mov-icono {
+display: inline-grid;
+place-items: center;
+width: var(--icono-circulo);
+height: var(--icono-circulo);
+border-radius: var(--radius-pill);
+border: var(--border) solid var(--ink);
+background: color-mix(in srgb, var(--mov-color) 30%, var(--color-surface));
+color: var(--color-text);
+font-size: var(--icon-md);
+}
+
+.mov-fila .movimiento-desc {
+font-size: var(--text-md);
+font-weight: var(--weight-medium);
+}
+
+.mov-detalle {
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+.mov-fila .tag {
+margin-top: var(--space-1);
+}
+
+.mov-derecha {
+display: flex;
+flex-direction: column;
+align-items: flex-end;
+gap: var(--space-1);
+}
+
+.mov-fila .movimiento-monto {
+font-size: var(--text-md);
 }
 
 /* --- Barra de progreso --- */
@@ -3027,57 +3193,6 @@ border-radius: inherit;
 background: var(--color-accent);
 }
 
-.revision-resultado {
-display: flex;
-align-items: flex-start;
-gap: var(--space-3);
-padding: var(--space-3);
-border-radius: var(--radius-md);
-border: var(--border-thin) solid var(--color-divider);
-}
-
-.revision-resultado p {
-margin: 0;
-}
-
-.revision-resultado-icono {
-font-size: var(--icon-lg);
-flex: none;
-color: var(--color-text-dim);
-}
-
-.revision-resultado--nuevo {
-border-color: var(--color-accent-text);
-}
-
-.revision-resultado--nuevo .revision-resultado-icono {
-color: var(--color-accent-text);
-}
-
-.revision-resultado--ok .revision-resultado-icono {
-color: var(--exito);
-}
-
-.revision-resultado--error {
-border-color: var(--error);
-}
-
-.revision-resultado--error .revision-resultado-icono {
-color: var(--error);
-}
-
-.revision-titulo {
-font-size: var(--text-lg);
-font-weight: var(--weight-bold);
-}
-
-.revision-encontrados li {
-display: flex;
-justify-content: space-between;
-gap: var(--space-2);
-font-size: var(--text-sm);
-}
-
 /* Mails que no se pudieron leer: se avisa sin alarmar (no es un error de la
    revisión, el resto se cargó bien). */
 .revision-avisos li {
@@ -3170,9 +3285,201 @@ background: var(--color-resalte);
 color: var(--color-on-resalte);
 }
 
+/* La tarjeta de mails como bandeja: cabeza con ícono grande, la lista de
+   lo pendiente y las acciones abajo. */
+.bandeja {
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+padding: var(--space-3);
+border-radius: var(--radius-md);
+border: var(--border) solid var(--color-divider);
+background: var(--color-surface-2);
+}
+
+.bandeja p {
+margin: 0;
+}
+
+.bandeja-cabeza {
+display: flex;
+align-items: center;
+gap: var(--space-3);
+}
+
+.bandeja-icono {
+position: relative;
+display: grid;
+place-items: center;
+flex: none;
+width: var(--space-6);
+height: var(--space-6);
+border-radius: var(--radius-md);
+border: var(--border) solid var(--ink);
+background: var(--color-surface);
+color: var(--color-accent-text);
+font-size: var(--icon-lg);
+box-shadow: var(--shadow-sm);
+}
+
+.bandeja-cabeza--pendientes .bandeja-icono {
+background: var(--color-accent);
+color: var(--color-on-accent);
+}
+
+.bandeja-cabeza--al-dia .bandeja-icono {
+color: var(--exito);
+}
+
+.bandeja-cabeza--error .bandeja-icono {
+color: var(--error);
+}
+
+.bandeja-cabeza--error .bandeja-textos .texto-chico {
+color: var(--error);
+}
+
+.bandeja-insignia {
+position: absolute;
+top: calc(var(--space-2) * -1);
+right: calc(var(--space-2) * -1);
+min-width: var(--icon-lg);
+height: var(--icon-lg);
+padding: 0 var(--space-1);
+display: grid;
+place-items: center;
+border-radius: var(--radius-pill);
+border: var(--border) solid var(--ink);
+background: var(--color-resalte);
+color: var(--color-on-resalte);
+font-family: var(--font-heading);
+font-size: var(--text-xs);
+font-weight: var(--weight-bold);
+}
+
+.bandeja-textos {
+display: flex;
+flex-direction: column;
+gap: var(--space-1);
+min-width: 0;
+}
+
+.bandeja-titulo {
+font-family: var(--font-heading);
+font-size: var(--text-lg);
+font-weight: var(--weight-bold);
+line-height: var(--leading-tight);
+}
+
+.bandeja-lista {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+}
+
+.pendiente {
+display: grid;
+grid-template-columns: var(--tap) 1fr auto var(--icon-sm);
+align-items: center;
+gap: var(--space-2);
+width: 100%;
+min-height: var(--tap);
+padding: var(--space-2);
+border: var(--border) solid var(--ink);
+border-radius: var(--radius-sm);
+background: var(--color-surface);
+color: var(--color-text);
+font: inherit;
+font-size: var(--text-sm);
+text-align: left;
+cursor: pointer;
+transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.pendiente:hover {
+transform: translate(-2px, -2px);
+box-shadow: var(--shadow-sm);
+}
+
+.pendiente:active {
+transform: none;
+box-shadow: none;
+}
+
+.pendiente-avatar {
+display: grid;
+place-items: center;
+width: var(--tap);
+height: var(--tap);
+border-radius: var(--radius-pill);
+background: var(--color-resalte);
+color: var(--color-on-resalte);
+font-family: var(--font-heading);
+font-size: var(--text-lg);
+font-weight: var(--weight-bold);
+}
+
+.pendiente-avatar.es-ingreso {
+background: var(--color-ingreso);
+color: var(--color-on-accent);
+}
+
+.pendiente-texto {
+display: flex;
+flex-direction: column;
+min-width: 0;
+}
+
+.pendiente-nombre {
+font-weight: var(--weight-bold);
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+.pendiente-sin-confirmar {
+color: var(--color-accent-text);
+font-weight: var(--weight-medium);
+}
+
+/* Compra de un mail que no decía el precio: lo completa la persona. */
+.pendiente-sin-monto {
+flex-shrink: 0;
+padding: 2px var(--space-2);
+border-radius: var(--radius-pill);
+background: var(--color-resalte);
+color: var(--color-on-resalte);
+font-size: var(--text-xs);
+font-weight: var(--weight-bold);
+white-space: nowrap;
+}
+
+.pendiente-flecha {
+color: var(--color-text-dim);
+font-size: var(--icon-sm);
+}
+
+.bandeja-ultima .btn-link {
+min-height: auto;
+font-size: inherit;
+}
+
+.bandeja-acciones {
+align-items: center;
+}
+
 @media (prefers-reduced-motion: no-preference) {
 .revision-barra-relleno { transition: width var(--dur-slow) var(--ease-out); }
 .revision-paso { display: inline-block; animation: aparecer var(--dur-slow) var(--ease-out); }
+.bandeja-cabeza--revisando .bandeja-icono i { animation: landing-flotar var(--dur-pulse) var(--ease-out) infinite; }
+.bandeja-insignia { animation: aparecer var(--dur-base) var(--ease-bounce); }
+.bandeja-lista > li { animation: aparecer var(--dur-base) var(--ease-out) both; }
+.bandeja-lista > li:nth-child(2) { animation-delay: var(--dur-fast); }
+.bandeja-lista > li:nth-child(3) { animation-delay: var(--dur-base); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+.pendiente:hover { transform: none; }
 }
 
 .texto-error {
@@ -3456,6 +3763,14 @@ pointer-events: none;
 animation: backdrop-in var(--dur-slow) var(--ease-out);
 }
 
+/* Avisos en este dispositivo: prendidos. */
+.aviso-inline--ok {
+color: var(--color-text);
+}
+
+.aviso-inline--ok i {
+color: var(--exito);
+}
 .tour-foco-sombra {
 display: block;
 }
