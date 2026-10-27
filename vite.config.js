@@ -24,9 +24,8 @@ function numeroDeVersion(fecha = new Date()) {
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Versión y fecha, para mostrarlas en Configuración › Ayuda.
+  // Número de versión, para mostrarlo en Configuración › Ayuda.
   define: {
-    __FECHA_VERSION__: JSON.stringify(new Date().toISOString()),
     __NUMERO_VERSION__: JSON.stringify(numeroDeVersion()),
   },
   plugins: [
