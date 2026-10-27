@@ -16,6 +16,8 @@ const ESPERA_INSTALACION_MS = 20 * 1000;
 
 // Fecha en que se publicó esta versión (la pone vite.config.js al compilar).
 export const FECHA_VERSION = typeof __FECHA_VERSION__ === "string" ? __FECHA_VERSION__ : "";
+// Número de versión, ej. "1.27.10.3.16" (27/10 a las 3:16).
+export const NUMERO_VERSION = typeof __NUMERO_VERSION__ === "string" ? __NUMERO_VERSION__ : "";
 
 let hayNueva = false;
 let registro = null;

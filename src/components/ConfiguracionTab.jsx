@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
-import { buscarActualizacion, FECHA_VERSION } from "../actualizacion";
+import { buscarActualizacion, FECHA_VERSION, NUMERO_VERSION } from "../actualizacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import { iconoDeCategoria } from "../iconos";
@@ -348,7 +348,14 @@ function fechaVersion() {
   if (!FECHA_VERSION) return "";
   const fecha = new Date(FECHA_VERSION);
   if (Number.isNaN(fecha.getTime())) return "";
-  return fecha.toLocaleString("es-AR", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return fecha.toLocaleString("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // La app se actualiza sola, pero en el iPhone instalada no hay botón de
@@ -376,8 +383,14 @@ function BuscarActualizacion() {
         <i className="ph ph-arrows-clockwise" aria-hidden="true" />
         {estado === "buscando" ? "Buscando…" : "Buscar actualización"}
       </button>
+      {NUMERO_VERSION && (
+        <p className="field-ayuda">
+          Versión <strong>{NUMERO_VERSION}</strong>
+          {fecha ? ` (del ${fecha})` : ""}
+        </p>
+      )}
       <p className="field-ayuda" aria-live="polite">
-        {TEXTO_BUSQUEDA[estado] || (fecha ? `Versión del ${fecha}.` : "")}
+        {TEXTO_BUSQUEDA[estado] || ""}
       </p>
     </div>
   );
