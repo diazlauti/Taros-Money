@@ -139,15 +139,21 @@ export default function MovimientosTab({
   }
 
   async function confirmarTodos() {
-    const sinConfirmar = combinados.filter((t) => t.sinConfirmar).length;
-    const aclaracion = sinConfirmar > 0 ? ` ${sinConfirmar} sin confirmar se suman a tus gastos.` : "";
+    const sinConfirmar = combinados.filter((t) => t.sinConfirmar && !t.sinMonto).length;
+    const sinMonto = combinados.filter((t) => t.sinMonto).length;
+    const aclaracion =
+      (sinConfirmar > 0 ? ` ${sinConfirmar} sin confirmar se suman a tus gastos.` : "") +
+      (sinMonto > 0 ? ` ${sinMonto === 1 ? "El que no tiene monto queda" : `Los ${sinMonto} sin monto quedan`} para que ${sinMonto === 1 ? "lo" : "los"} completes.` : "");
     if (!(await confirmar({ titulo: `¿Confirmar los ${cantidadARevisar} movimientos tal como están?`, texto: aclaracion.trim(), si: "Confirmar todos" }))) return;
     setConfirmando(true);
     setErrorConfirmar("");
     try {
-      const { confirmados } = await confirmarTodosLosDeMails();
+      const { confirmados, sinMonto: faltan = 0 } = await confirmarTodosLosDeMails();
       playSuccess();
-      avisar(confirmados === 1 ? "1 movimiento confirmado" : `${confirmados} movimientos confirmados`);
+      avisar(
+        (confirmados === 1 ? "1 movimiento confirmado" : `${confirmados} movimientos confirmados`) +
+          (faltan > 0 ? `. ${faltan === 1 ? "Falta el monto de 1" : `Falta el monto de ${faltan}`}.` : "")
+      );
       setFiltro("todos");
       onCambio?.();
     } catch (err) {
@@ -163,7 +169,9 @@ export default function MovimientosTab({
   const periodoMasLargo = RANGOS[RANGOS.length - 1];
 
   function fila(t, esPrimera, conFecha) {
-    const monto = fmtMoney(t.monto, monedaPorCuenta[t.cuenta] || "ARS");
+    // Gastos de mails sin confirmar: en la moneda del mail (Steam cobra en
+    // dólares); sin monto si el mail no decía el precio.
+    const monto = t.sinMonto ? "sin monto" : fmtMoney(t.monto, t.moneda || monedaPorCuenta[t.cuenta] || "ARS");
     const esIngreso = t.tipo === "ingreso";
     const hora = horaCorta(t.hora);
     const categoria = t.categoria || SIN_CATEGORIA;
@@ -193,10 +201,14 @@ export default function MovimientosTab({
           )}
         </span>
         <span className="mov-derecha">
-          <span className={"movimiento-monto" + (esIngreso ? " es-ingreso" : "")}>
-            {esIngreso ? "+" : "-"}
-            {monto}
-          </span>
+          {t.sinMonto ? (
+            <span className="pendiente-sin-monto">Sin monto</span>
+          ) : (
+            <span className={"movimiento-monto" + (esIngreso ? " es-ingreso" : "")}>
+              {esIngreso ? "+" : "-"}
+              {monto}
+            </span>
+          )}
           {cuando && <span className="texto-tenue texto-chico">{cuando}</span>}
         </span>
       </button>

@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-27-bandeja-mails",
+    fecha: "2026-10-27",
+    icono: "ph ph-tray",
+    titulo: "Mails: bandeja para revisar y Steam",
+    texto: "Lo que encuentro en tus mails te queda en una bandeja en el Resumen y no suma a tus gastos hasta que lo confirmes. Ahora leo los recibos de cualquier tienda (Steam, Google Play, el cine, el gimnasio...) con su fecha, el total y la moneda (si el mail no dice el precio, te lo dejo para que lo completes), y te aviso si de un remitente tuyo no llegó ningún mail.",
+  },
+  {
     id: "2026-10-27-movimientos-por-dia",
     fecha: "2026-10-27",
     icono: "ph ph-list-bullets",

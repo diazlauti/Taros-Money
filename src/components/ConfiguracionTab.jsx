@@ -30,6 +30,11 @@ export default function ConfiguracionTab({
   revisionMails,
   revisandoMails,
   onRevisarMails,
+  pendientesMails,
+  cargandoPendientesMails,
+  monedaPorCuenta,
+  onCambioMovimientos,
+  onVerPendientesMails,
   diasMails,
   onCambiarDiasMails,
   categorias,
@@ -143,6 +148,13 @@ export default function ConfiguracionTab({
             onCambiarModo={onCambiarModoMails}
             onCambiarDias={onCambiarDiasMails}
             onRevisar={onRevisarMails}
+            pendientes={pendientesMails}
+            cargandoPendientes={cargandoPendientesMails}
+            categorias={categorias.data}
+            cuentas={cuentas}
+            monedaPorCuenta={monedaPorCuenta}
+            onVerTodos={onVerPendientesMails}
+            onCambio={onCambioMovimientos}
           />
         );
     }

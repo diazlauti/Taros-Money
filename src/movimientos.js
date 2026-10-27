@@ -56,7 +56,7 @@ function conSigno(t) {
 
 // Para ordenar por monto entre monedas distintas: lo pasa a pesos si hay cotización.
 function montoComparable(t, monedaPorCuenta, cotizaciones) {
-  const moneda = monedaPorCuenta[t.cuenta] || "ARS";
+  const moneda = t.moneda || monedaPorCuenta[t.cuenta] || "ARS";
   const n = Math.abs(Number(t.monto) || 0);
   return aPesos(n, moneda, cotizaciones) ?? n;
 }
@@ -87,7 +87,8 @@ export function saldosPorDia(movimientos, cuentas, monedaPorCuenta = {}, cotizac
   const netoPorDia = {};
   for (const t of movimientos) {
     const fecha = (t.fecha || "").slice(0, 10);
-    if (!fecha) continue;
+    // Los de mails sin confirmar todavía no tocaron ninguna cuenta.
+    if (!fecha || t.sinConfirmar) continue;
     const enPesos = aPesos(conSigno(t), monedaPorCuenta[t.cuenta] || "ARS", cotizaciones) ?? 0;
     netoPorDia[fecha] = (netoPorDia[fecha] || 0) + enPesos;
   }

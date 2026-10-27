@@ -27,7 +27,7 @@ idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
-import { fmtMoney, mapaMonedas } from "./format";
+import { fmtFecha, fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
 import { iconoDeCategoria, registrarIconos } from "./iconos";
 import { notificar } from "./notificaciones";
@@ -291,7 +291,22 @@ const [filtroMovimientos, setFiltroMovimientos] = useState("todos");
 const modoMails = configMails.data?.modo || "apagado";
 const planillaId = idDePlanilla(urlPlanilla.data);
 
-const cantidadARevisar = [...(gastos.data || []), ...(ingresos.data || [])].filter((g) => g.aRevisar).length;
+// Lo que falta revisar de los mails, lo más nuevo primero. La tarjeta de
+// mails lo muestra tal cual: así, al confirmar o descartar, se actualiza sola.
+const pendientesMails = useMemo(
+() =>
+[
+...(gastos.data || []).filter((g) => g.aRevisar).map((g) => ({ ...g, tipo: "gasto" })),
+...(ingresos.data || []).filter((g) => g.aRevisar).map((g) => ({ ...g, tipo: "ingreso" })),
+].sort((a, b) => `${b.fecha || ""} ${b.hora || ""}`.localeCompare(`${a.fecha || ""} ${a.hora || ""}`)),
+[gastos.data, ingresos.data],
+);
+const cantidadARevisar = pendientesMails.length;
+const cargandoPendientes = gastos.cargando || gastos.actualizando || ingresos.cargando || ingresos.actualizando;
+function verPendientesEnMovimientos() {
+setFiltroMovimientos("revisar");
+setActiveTab("movimientos");
+}
 const revisionMails = ultimaRevisionMails(revisionLocal, configMails.data);
 
 // interactivo=true solo desde un click: si hace falta, abre la ventana de
@@ -311,6 +326,7 @@ revisados: resultado?.revisados,
 dias: resultado?.dias,
 noLeidos: resultado?.noLeidos,
 fallaron: resultado?.fallaron,
+remitentes: resultado?.remitentes,
 });
 // Lo que encontró esta revisión ya se avisa acá: que no vuelva a salir
 // como "mientras no estabas".
@@ -350,11 +366,11 @@ return;
 }
 const detalle = encontrados
 .slice(0, 3)
-.map((g) => `${g.descripcion || "Sin descripción"} ${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto)}`)
+.map((g) => `${g.descripcion || "Sin descripción"} ${g.monto == null ? "(sin monto)" : `${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto, g.moneda || "ARS")}`}${g.fecha ? ` (${fmtFecha(g.fecha)})` : ""}`)
 .join(", ");
 const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
 const titulo = n === 1 ? "Encontré 1 movimiento en tus mails" : `Encontré ${n} movimientos en tus mails`;
-avisar(`${titulo}: ${detalle}${resto}. Revisalos en Movimientos.`);
+avisar(`${titulo}: ${detalle}${resto}. Te los dejé para revisar en el Resumen.`);
 notificar(titulo, `${detalle}${resto}. Tocá para revisarlos.`);
 },
 [avisar]
@@ -573,17 +589,17 @@ mails={
 mailsDisponible()
 ? {
 config: configMails,
-cantidadARevisar,
 revision: revisionMails,
 revisando: revisandoMails,
 onRevisar: revisarMailsConBoton,
 dias: diasMails,
 onCambiarDias: cambiarDiasMails,
 onCambiarModo: cambiarModoMails,
-onVerARevisar: () => {
-setFiltroMovimientos("revisar");
-setActiveTab("movimientos");
-},
+pendientes: pendientesMails,
+cargandoPendientes,
+categorias: categorias.data,
+onCambio: recargarMovimientos,
+onVerARevisar: verPendientesEnMovimientos,
 onActivar: () => setActiveTab("configuracion"),
 }
 : null
@@ -681,6 +697,11 @@ onCambiarModoMails={cambiarModoMails}
 revisionMails={revisionMails}
 revisandoMails={revisandoMails}
 onRevisarMails={revisarMailsConBoton}
+pendientesMails={pendientesMails}
+cargandoPendientesMails={cargandoPendientes}
+monedaPorCuenta={monedaPorCuenta}
+onCambioMovimientos={recargarMovimientos}
+onVerPendientesMails={verPendientesEnMovimientos}
 diasMails={diasMails}
 onCambiarDiasMails={cambiarDiasMails}
 categorias={categorias}
