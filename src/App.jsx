@@ -138,6 +138,13 @@ const [sonido, setSonido] = useState(sonidoHabilitado);
 // Si se abrió tocando un aviso del celu (?ver=…), arranca en esa sección.
 const [verInicial] = useState(leerVerDeUrl);
 const [activeTab, setActiveTab] = useState(() => (verInicial === "revisar" ? "movimientos" : verInicial || "resumen"));
+// Qué grupo de Configuración abrir al llegar desde otra sección.
+const [grupoConfig, setGrupoConfig] = useState(null);
+const olvidarGrupoConfig = useCallback(() => setGrupoConfig(null), []);
+function irAConfiguracion(grupo) {
+setGrupoConfig(grupo);
+setActiveTab("configuracion");
+}
 const [dias, setDias] = useState(30);
 // Si se entró por un atajo del ícono o un link (?nuevo=gasto&monto=…), se
 // abre directo el formulario completo y el recorrido queda para otra vez.
@@ -602,7 +609,7 @@ cargandoPendientes,
 categorias: categorias.data,
 onCambio: recargarMovimientos,
 onVerARevisar: verPendientesEnMovimientos,
-onActivar: () => setActiveTab("configuracion"),
+onActivar: () => irAConfiguracion("gastos"),
 }
 : null
 }
@@ -634,7 +641,7 @@ cuentas={cuentas}
 monedasActivas={Object.keys(configMonedas || {})}
 onCambio={cuentas.recargar}
 onCambioGeneral={recargarTodo}
-onIrAMonedas={() => setActiveTab("configuracion")}
+onIrAMonedas={() => irAConfiguracion("monedas")}
 />
 )}
 
@@ -721,6 +728,8 @@ setTourDesdeConfig(true);
 setTourAbierto(true);
 }}
 onInstalar={() => setGuiaInstalarAbierta(true)}
+abrirGrupo={grupoConfig}
+onGrupoAbierto={olvidarGrupoConfig}
 />
 )}
 </div>

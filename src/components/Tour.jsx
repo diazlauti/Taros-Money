@@ -144,8 +144,8 @@ const PASOS = [
     tab: "configuracion",
     icono: "ph ph-gear",
     titulo: "Configuración",
-    resaltar: ["nav:configuracion", "card:#titulo-planilla"],
-    texto: "Tu planilla, categorías, tema y sonidos. Desde acá volvés a ver este recorrido.",
+    resaltar: ["nav:configuracion", "cerrado:.config-grupos"],
+    texto: "Todo ordenado en grupos: tocá uno para abrirlo. En «Ayuda» volvés a ver este recorrido.",
   },
 ];
 
