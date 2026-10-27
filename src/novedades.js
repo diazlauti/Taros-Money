@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-27-resumen-nuevo",
+    fecha: "2026-10-27",
+    icono: "ph ph-squares-four",
+    titulo: "Resumen renovado",
+    texto: "Arriba ves tu plata y lo que entró y salió (con el ojito la tapás). Abajo, accesos rápidos, lo que falta pagar, en qué se fue y tus últimos movimientos.",
+  },
+  {
     id: "2026-10-27-avisos-push",
     fecha: "2026-10-27",
     icono: "ph ph-device-mobile",

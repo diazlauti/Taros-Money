@@ -113,6 +113,24 @@
 --shadow-sm: 2px 2px 0 var(--ink);
 --shadow-md: 4px 4px 0 var(--ink);
 
+/* --- Resumen: tarjeta principal (azul noche, como el logo) --- */
+--hero-bg: linear-gradient(140deg, #262d6b, #1a1f45);
+--hero-text: #ffffff;
+--hero-dim: rgba(255, 255, 255, 0.8);
+--hero-panel: rgba(255, 255, 255, 0.09);
+--hero-borde: transparent;
+--hero-entro: #8ee3b0;
+--hero-salio: #ffb4a8;
+--hero-brillo: rgba(245, 197, 66, 0.32);
+--hero-skeleton: rgba(255, 255, 255, 0.16);
+--hero-sombra: 0 12px 28px rgba(26, 31, 69, 0.28);
+--sombra-suave: 0 1px 3px rgba(26, 31, 69, 0.08);
+--font-num: var(--font-body);
+--accion-icono: 52px;
+--hero-brillo-tam: 180px;
+--saldo-total: 40px;
+--categorias-barra: 10px;
+
 /* --- Movimiento --- */
 --dur-fast: 120ms;
 --dur-base: 200ms;
@@ -160,6 +178,10 @@ color-scheme: light;
 --color-on-error: #1a1f45;
 --exito: #8ee66b;
 --color-gasto: #9aa0c8;
+--hero-bg: linear-gradient(140deg, #3b3392, #262c5c);
+--hero-borde: rgba(244, 241, 255, 0.14);
+--hero-sombra: none;
+--sombra-suave: none;
 color-scheme: dark;
 }
 }
@@ -185,6 +207,10 @@ color-scheme: dark;
 --color-on-error: #1a1f45;
 --exito: #8ee66b;
 --color-gasto: #9aa0c8;
+--hero-bg: linear-gradient(140deg, #3b3392, #262c5c);
+--hero-borde: rgba(244, 241, 255, 0.14);
+--hero-sombra: none;
+--sombra-suave: none;
 color-scheme: dark;
 }
 
@@ -3627,4 +3653,472 @@ display: none;
 flex: 1;
 justify-content: center;
 gap: var(--space-2);
+}
+
+
+/* --- Resumen ---
+   Más sobrio que el resto: una tarjeta principal azul noche y bloques con
+   el título afuera y borde fino, para que el ojo sepa dónde ir primero. */
+.resumen {
+display: flex;
+flex-direction: column;
+gap: var(--space-4);
+}
+
+.num {
+font-family: var(--font-num);
+font-variant-numeric: tabular-nums;
+}
+
+.saldo-card {
+position: relative;
+overflow: hidden;
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+padding: var(--space-4);
+border-radius: var(--radius-lg);
+border: var(--border-thin) solid var(--hero-borde);
+background: var(--hero-bg);
+box-shadow: var(--hero-sombra);
+/* Adentro, los componentes comunes (skeleton, error, botones) usan estos colores. */
+--color-text: var(--hero-text);
+--color-text-dim: var(--hero-dim);
+--color-skeleton: var(--hero-skeleton);
+--ink: var(--hero-text);
+--color-focus: var(--hero-text);
+color: var(--hero-text);
+}
+
+/* Brillo mostaza en la esquina, como el logo. */
+.saldo-card::after {
+content: "";
+position: absolute;
+top: calc(var(--hero-brillo-tam) / -3);
+right: calc(var(--hero-brillo-tam) / -3);
+width: var(--hero-brillo-tam);
+height: var(--hero-brillo-tam);
+border-radius: var(--radius-pill);
+background: radial-gradient(circle, var(--hero-brillo), transparent 70%);
+pointer-events: none;
+}
+
+.saldo-card > * {
+position: relative;
+z-index: 1;
+}
+
+.saldo-cabeza {
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+
+.saldo-cabeza h2 {
+margin: 0;
+font-size: var(--text-sm);
+font-weight: var(--weight-medium);
+color: var(--hero-dim);
+}
+
+.saldo-ojo {
+display: inline-grid;
+place-items: center;
+width: var(--tap);
+height: var(--tap);
+margin: calc(var(--space-2) * -1);
+border: none;
+border-radius: var(--radius-pill);
+background: none;
+color: var(--hero-dim);
+font-size: var(--icon-md);
+cursor: pointer;
+}
+
+.saldo-ojo:hover {
+background: var(--hero-panel);
+}
+
+.saldo-total {
+margin: 0;
+font-size: var(--saldo-total);
+font-weight: var(--weight-bold);
+line-height: var(--leading-tight);
+letter-spacing: -0.01em;
+}
+
+.saldo-mini {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: var(--space-2);
+margin: 0;
+}
+
+.saldo-mini > div {
+padding: var(--space-2) var(--space-3);
+border-radius: var(--radius-md);
+background: var(--hero-panel);
+}
+
+.saldo-mini dt {
+font-size: var(--text-xs);
+color: var(--hero-dim);
+}
+
+.saldo-mini dd {
+margin: var(--space-1) 0 0;
+font-size: var(--text-md);
+font-weight: var(--weight-bold);
+}
+
+.saldo-entro { color: var(--hero-entro); }
+.saldo-salio { color: var(--hero-salio); }
+
+/* Cuentas en una fila que se desliza de costado si no entran. */
+.saldo-cuentas {
+display: flex;
+gap: var(--space-2);
+margin: 0;
+padding: 0;
+list-style: none;
+overflow-x: auto;
+scrollbar-width: none;
+}
+
+.saldo-cuentas li {
+display: flex;
+flex-direction: column;
+flex: none;
+padding: var(--space-1) var(--space-3);
+border-radius: var(--radius-pill);
+border: var(--border-thin) solid var(--hero-panel);
+font-size: var(--text-xs);
+color: var(--hero-dim);
+}
+
+.saldo-cuentas li .num {
+font-size: var(--text-sm);
+color: var(--hero-text);
+font-weight: var(--weight-medium);
+}
+
+.saldo-aviso {
+display: flex;
+gap: var(--space-2);
+margin: 0;
+font-size: var(--text-xs);
+color: var(--hero-dim);
+}
+
+.pila-resumen {
+display: flex;
+flex-direction: column;
+gap: var(--space-3);
+}
+
+.saldo-card .pila-resumen p {
+margin: 0;
+font-size: var(--text-md);
+}
+
+.saldo-card .btn-primary {
+border-color: transparent;
+}
+
+.saldo-card .btn-secondary {
+background: var(--hero-panel);
+border-color: var(--hero-dim);
+color: var(--hero-text);
+}
+
+.saldo-card .estado--error > i {
+color: var(--hero-salio);
+}
+
+/* Accesos rápidos: íconos redondeados con el texto abajo. */
+.acciones-rapidas {
+display: grid;
+grid-template-columns: repeat(4, minmax(0, 1fr));
+gap: var(--space-2);
+max-width: var(--content-max);
+}
+
+.accion-rapida {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: var(--space-1);
+padding: var(--space-1) 0;
+border: none;
+background: none;
+color: var(--color-text);
+font: inherit;
+font-size: var(--text-sm);
+cursor: pointer;
+}
+
+.accion-rapida-icono {
+display: grid;
+place-items: center;
+width: var(--accion-icono);
+height: var(--accion-icono);
+border-radius: var(--radius-md);
+border: var(--border-thin) solid var(--color-divider);
+background: var(--color-surface);
+color: var(--color-accent-text);
+font-size: var(--icon-lg);
+box-shadow: var(--sombra-suave);
+transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.accion-rapida--principal .accion-rapida-icono {
+border-color: transparent;
+background: var(--color-accent);
+color: var(--color-on-accent);
+}
+
+.accion-rapida:active .accion-rapida-icono {
+transform: scale(0.94);
+}
+
+.accion-rapida:focus-visible {
+outline: none;
+}
+
+.accion-rapida:focus-visible .accion-rapida-icono {
+outline: var(--focus-ring) solid var(--color-focus);
+outline-offset: var(--border);
+}
+
+/* Bloques: título afuera, tarjeta con borde fino. */
+.resumen-bloque {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+min-width: 0;
+}
+
+.resumen-titulo {
+min-height: var(--tap);
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: var(--space-2);
+padding: 0 var(--space-1);
+}
+
+.resumen-titulo h2 {
+margin: 0;
+font-family: var(--font-heading);
+font-size: var(--text-lg);
+font-weight: var(--weight-bold);
+}
+
+.resumen-link {
+text-decoration: none;
+}
+
+.resumen-link:hover {
+text-decoration: underline;
+}
+
+.resumen-card {
+border: var(--border-thin) solid var(--color-divider);
+border-radius: var(--radius-lg);
+box-shadow: var(--sombra-suave);
+gap: var(--space-3);
+}
+
+.resumen .mails-card {
+border-color: var(--color-divider);
+box-shadow: var(--sombra-suave);
+}
+
+.resumen .bandeja {
+border: none;
+}
+
+.resumen .bandeja-icono {
+box-shadow: none;
+border-width: var(--border-thin);
+}
+
+.resumen-lista > li + li {
+border-top: var(--border-thin) solid var(--color-divider);
+}
+
+.resumen-fila {
+display: grid;
+grid-template-columns: var(--icono-circulo) minmax(0, 1fr) auto;
+align-items: center;
+gap: var(--space-3);
+width: 100%;
+min-height: var(--tap);
+padding: var(--space-2) 0;
+border: none;
+background: none;
+color: var(--color-text);
+font: inherit;
+text-align: left;
+}
+
+button.resumen-fila {
+cursor: pointer;
+}
+
+.resumen-fila .mov-icono {
+border-width: var(--border-thin);
+}
+
+.resumen-fila .movimiento-desc {
+font-size: var(--text-md);
+}
+
+.resumen-fila .movimiento-monto {
+font-size: var(--text-md);
+}
+
+.resumen-pie {
+margin: 0;
+}
+
+.para-hacer-listo {
+display: flex;
+align-items: center;
+gap: var(--space-3);
+margin: 0;
+font-weight: var(--weight-medium);
+}
+
+.resumen-icono {
+display: grid;
+place-items: center;
+flex: none;
+width: var(--icono-circulo);
+height: var(--icono-circulo);
+border-radius: var(--radius-pill);
+font-size: var(--icon-md);
+}
+
+.resumen-icono--ok {
+background: color-mix(in srgb, var(--exito) 18%, var(--color-surface));
+color: var(--exito);
+}
+
+/* Período: control segmentado suave arriba de «En qué se fue». */
+.periodo {
+display: grid;
+grid-template-columns: repeat(4, minmax(0, 1fr));
+gap: var(--space-1);
+padding: var(--space-1);
+border-radius: var(--radius-pill);
+background: var(--color-surface-2);
+}
+
+.periodo-opt {
+min-height: var(--tap);
+border: none;
+border-radius: var(--radius-pill);
+background: none;
+color: var(--color-text-dim);
+font: inherit;
+font-size: var(--text-sm);
+cursor: pointer;
+transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+}
+
+.periodo-opt[aria-pressed="true"] {
+background: var(--color-surface);
+color: var(--color-text);
+font-weight: var(--weight-bold);
+box-shadow: var(--sombra-suave);
+}
+
+.categorias-total {
+display: flex;
+align-items: baseline;
+justify-content: space-between;
+gap: var(--space-2);
+font-size: var(--text-sm);
+}
+
+.categorias-monto {
+font-size: var(--text-xl);
+font-weight: var(--weight-bold);
+}
+
+.categorias-barra {
+display: flex;
+gap: var(--border);
+height: var(--categorias-barra);
+border-radius: var(--radius-pill);
+overflow: hidden;
+}
+
+.categorias-barra span {
+flex: var(--ancho) 1 0;
+background: var(--color-barra);
+}
+
+.categorias-barra .categorias-barra-otras {
+background: var(--color-divider);
+}
+
+.categorias-lista li {
+display: grid;
+grid-template-columns: auto minmax(0, 1fr) auto auto;
+align-items: center;
+gap: var(--space-2);
+min-height: var(--space-5);
+}
+
+.categorias-lista .punto {
+width: var(--punto);
+height: var(--punto);
+border: none;
+border-radius: var(--radius-pill);
+}
+
+.categorias-nombre {
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+.resumen-arriba {
+display: flex;
+flex-direction: column;
+gap: var(--space-4);
+}
+
+/* En compu: la tarjeta a la izquierda y los accesos en 2×2 al lado. */
+@media (min-width: 781px) {
+.resumen-arriba {
+display: grid;
+grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+gap: var(--space-3);
+align-items: center;
+}
+.resumen-arriba .acciones-rapidas {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+row-gap: var(--space-4);
+}
+.saldo-card {
+padding: var(--space-5);
+}
+}
+
+/* Entrada suave de los bloques, uno detrás del otro. */
+@media (prefers-reduced-motion: no-preference) {
+.resumen > * {
+animation: resumen-entrar var(--dur-slow) var(--ease-out) both;
+}
+.resumen > :nth-child(2) { animation-delay: var(--dur-fast); }
+.resumen > :nth-child(3) { animation-delay: calc(var(--dur-fast) * 2); }
+.resumen > :nth-child(4) { animation-delay: calc(var(--dur-fast) * 3); }
+}
+
+@keyframes resumen-entrar {
+from { opacity: 0; transform: translateY(var(--space-2)); }
+to { opacity: 1; transform: none; }
 }

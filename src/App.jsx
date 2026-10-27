@@ -531,8 +531,10 @@ else navigator.clearAppBadge?.()?.catch?.(() => {});
 }
 }, [totalAvisos]);
 
-const abrirNuevo = () => {
-setInicialNuevo(null);
+// Desde los accesos rápidos del Resumen llega "gasto" o "ingreso"; desde
+// un botón común llega el evento del click (se ignora).
+const abrirNuevo = (tipo) => {
+setInicialNuevo(tipo === "gasto" || tipo === "ingreso" ? { tipo } : null);
 setDialogOpen(true);
 };
 // Navegar desde el menú abre Movimientos sin filtro.
@@ -579,6 +581,7 @@ title="Notificaciones"
 saldo={saldo}
 resumen={resumen}
 gastos={gastos}
+ingresos={ingresos}
 cuentas={cuentas}
 servicios={servicios}
 cotizaciones={cotizaciones}
