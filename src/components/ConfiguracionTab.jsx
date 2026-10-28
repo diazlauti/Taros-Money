@@ -235,7 +235,6 @@ export default function ConfiguracionTab({
           id="gastos"
           icono="ph ph-receipt"
           titulo="Gastos"
-          resumen={mails ? "Categorías, gastos desde tus mails y tu planilla" : "Categorías y tu planilla"}
           aviso={cantidadPendientes > 0 ? `${cantidadPendientes} para revisar` : ""}
         >
           <section className="card" aria-labelledby="titulo-categorias-config">
@@ -312,7 +311,7 @@ export default function ConfiguracionTab({
           id="monedas"
           icono="ph ph-currency-dollar"
           titulo="Monedas"
-          resumen="Dólares, euros y otras, con su cotización"
+         
           solo
         >
           <MonedasCard
@@ -328,7 +327,7 @@ export default function ConfiguracionTab({
             id="avisos"
             icono="ph ph-bell"
             titulo="Avisos"
-            resumen="Que te avise aunque la app esté cerrada"
+           
             solo
           >
             <AvisosPushCard onInstalar={onInstalar} />
@@ -339,7 +338,7 @@ export default function ConfiguracionTab({
           id="visual"
           icono="ph ph-palette"
           titulo="Visual y sonido"
-          resumen="Tema claro u oscuro y sonidos"
+         
           solo
         >
           <section className="card" aria-labelledby="titulo-apariencia">
@@ -390,7 +389,7 @@ export default function ConfiguracionTab({
           id="ayuda"
           icono="ph ph-lifebuoy"
           titulo="Ayuda"
-          resumen="Recorrido, contarme un error o idea y versión"
+         
           solo
         >
           <section className="card" aria-labelledby="titulo-ayuda">
@@ -464,7 +463,7 @@ export default function ConfiguracionTab({
 // Todos comparten name="config": al abrir uno se cierra el que estaba
 // abierto, así nunca hay todo desplegado a la vez. Si es una sola sección,
 // su título queda solo para lectores de pantalla (el grupo ya lo dice).
-function GrupoConfig({ id, icono, titulo, resumen, aviso, solo = false, children }) {
+function GrupoConfig({ id, icono, titulo, aviso, solo = false, children }) {
   return (
     <details className={`card config-grupo${solo ? " config-grupo--solo" : ""}`} id={`config-${id}`} name="config">
       <summary className="config-grupo-cabeza" onClick={() => playClick()}>
@@ -473,7 +472,6 @@ function GrupoConfig({ id, icono, titulo, resumen, aviso, solo = false, children
         </span>
         <span className="config-grupo-textos">
           <span className="config-grupo-titulo">{titulo}</span>
-          <span className="config-grupo-resumen">{resumen}</span>
           {aviso && <span className="config-grupo-aviso">{aviso}</span>}
         </span>
         <i className="ph ph-caret-down config-grupo-flecha" aria-hidden="true" />
