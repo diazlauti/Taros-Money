@@ -5,6 +5,7 @@ import { useConfirmar } from "../confirmar";
 import { apagarBloqueo, bloqueoActivo, bloqueoDisponible, desbloquear, MINUTOS_AFUERA, prenderBloqueo } from "../bloqueo";
 import { playClick, playError, playSuccess } from "../sounds";
 import { Cargando, Skeleton } from "./Estado";
+import Explicacion from "./Explicacion";
 
 // Configuración › Seguridad: prender o apagar el bloqueo con huella o Face ID
 // en este dispositivo.
@@ -65,47 +66,47 @@ export default function BloqueoCard() {
   if (disponible === null) {
     contenido = (
       <Cargando texto="Viendo si este dispositivo tiene huella o Face ID…">
-        <Skeleton ancho="80%" />
-        <Skeleton variante="boton" ancho="60%" />
+        <Skeleton variante="boton" ancho="100%" />
       </Cargando>
     );
-  } else if (activo) {
+  } else if (!disponible && !activo) {
     contenido = (
-      <>
-        <p className="aviso-inline aviso-inline--ok">
-          <i className="ph ph-check-circle" aria-hidden="true" />
-          Prendido en este dispositivo. Te pido la huella al abrir la app y al volver después de {MINUTOS_AFUERA} minuto afuera.
-        </p>
-        <div className="fila">
-          <button type="button" className="btn btn-secondary" disabled={!!trabajando} onClick={probar}>
-            <i className="ph ph-fingerprint" aria-hidden="true" />
-            {trabajando === "probar" ? "Esperando tu huella…" : "Probar"}
-          </button>
-          <button type="button" className="btn btn-texto" disabled={!!trabajando} onClick={apagar}>
-            Apagar
-          </button>
-        </div>
-      </>
-    );
-  } else if (!disponible) {
-    contenido = (
-      <p className="texto-intro">
-        Este dispositivo o navegador no tiene huella ni Face ID disponible para la app. Si tu celu sí tiene, fijate que esté
-        configurado en los ajustes y probá desde la app instalada.
+      <p className="aviso-inline">
+        <i className="ph ph-info" aria-hidden="true" />
+        Este dispositivo no tiene huella ni Face ID disponible.
       </p>
     );
   } else {
     contenido = (
-      <>
-        <p className="texto-intro">
-          Para que nadie que agarre tu celu desbloqueado vea tus números. Te pido la huella o Face ID al abrir la app. Si
-          algún día no te anda, podés entrar con Google.
-        </p>
-        <button type="button" className="btn btn-primary btn-alinear-inicio" disabled={!!trabajando} onClick={prender}>
-          <i className="ph ph-fingerprint" aria-hidden="true" />
-          {trabajando === "prender" ? "Esperando tu huella…" : "Bloquear con huella o Face ID"}
-        </button>
-      </>
+      <ul className="opciones">
+        <li className="opcion-con-info">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={activo}
+            className="opcion"
+            disabled={!!trabajando}
+            onClick={activo ? apagar : prender}
+          >
+            <i className="ph ph-fingerprint opcion-icono" aria-hidden="true" />
+            <span className="opcion-texto">{trabajando === "prender" ? "Esperando tu huella…" : "Pedir huella o Face ID"}</span>
+            <span className="interruptor" aria-hidden="true" />
+          </button>
+          <Explicacion
+            texto={`Te la pido al abrir la app y al volver después de ${MINUTOS_AFUERA} minutos afuera, así nadie que agarre tu celu ve tus números. Si algún día no te anda, entrás con Google.`}
+            etiqueta="Cómo funciona el bloqueo"
+          />
+        </li>
+        {activo && (
+          <li>
+            <button type="button" className="opcion" disabled={!!trabajando} onClick={probar}>
+              <i className="ph ph-check-circle opcion-icono" aria-hidden="true" />
+              <span className="opcion-texto">{trabajando === "probar" ? "Esperando tu huella…" : "Probar"}</span>
+              <i className="ph ph-caret-right opcion-flecha" aria-hidden="true" />
+            </button>
+          </li>
+        )}
+      </ul>
     );
   }
 
@@ -114,9 +115,7 @@ export default function BloqueoCard() {
       <h2 className="card-kicker" id="titulo-bloqueo-config">
         Bloqueo con huella o Face ID
       </h2>
-      <div className="pila-chica" aria-live="polite">
-        {contenido}
-      </div>
+      <div aria-live="polite">{contenido}</div>
     </section>
   );
 }

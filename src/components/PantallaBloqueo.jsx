@@ -50,9 +50,8 @@ export default function PantallaBloqueo({ onDesbloqueada, onEntrarConGoogle }) {
         <header className="login-hero">
           <img className="login-logo" src="/icon-192.png" alt="" width="192" height="192" />
           <h1 className="login-titulo" id="titulo-bloqueo">
-            Taros Money está bloqueada
+            Taros Money
           </h1>
-          <p className="login-lema">Usá tu huella o Face ID para ver tus números.</p>
         </header>
 
         <div className="card login-card">
@@ -68,12 +67,9 @@ export default function PantallaBloqueo({ onDesbloqueada, onEntrarConGoogle }) {
             {verificando ? "Esperando tu huella…" : error ? "Reintentar" : "Desbloquear"}
           </button>
           <div aria-live="polite">{error && <MensajeError avisable={false}>{error}</MensajeError>}</div>
-          <p className="login-espera">
-            ¿No te anda la huella?
-            <button type="button" className="btn btn-texto" onClick={onEntrarConGoogle}>
-              Entrar con Google
-            </button>
-          </p>
+          <button type="button" className="btn btn-texto" onClick={onEntrarConGoogle}>
+            Entrar con Google
+          </button>
         </div>
       </div>
     </main>

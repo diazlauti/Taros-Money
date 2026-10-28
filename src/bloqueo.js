@@ -13,7 +13,7 @@
 const CLAVE = "taros-bloqueo";
 
 // Cuánto tiempo afuera de la app hace falta para que pida la huella al volver.
-export const MINUTOS_AFUERA = 1;
+export const MINUTOS_AFUERA = 5;
 
 function leer() {
   try {
@@ -76,12 +76,12 @@ function mensaje(err, accion) {
   if (nombre === "NotAllowedError" || nombre === "AbortError") {
     return accion === "prender"
       ? "Se canceló o se venció el tiempo. Probá de nuevo."
-      : "No se pudo verificar. Probá de nuevo o entrá con Google.";
+      : "No se pudo verificar. Probá de nuevo.";
   }
   if (nombre === "InvalidStateError") return "Este dispositivo ya tiene una llave de Taros Money. Probá de nuevo.";
   if (nombre === "NotSupportedError") return "Este dispositivo no tiene huella ni Face ID disponible para la app.";
   if (nombre === "SecurityError") return "El navegador no deja usar la huella en esta página.";
-  return accion === "prender" ? "No se pudo prender el bloqueo. Probá de nuevo." : "No se pudo verificar. Probá de nuevo o entrá con Google.";
+  return accion === "prender" ? "No se pudo prender el bloqueo. Probá de nuevo." : "No se pudo verificar. Probá de nuevo.";
 }
 
 // Crea la llave (le pide la huella o la cara a la persona) y deja el
@@ -137,6 +137,6 @@ export async function desbloquear() {
     throw new Error(mensaje(err, "desbloquear"));
   }
   if (!credencial || !seVerifico(credencial)) {
-    throw new Error("No se pudo verificar. Probá de nuevo o entrá con Google.");
+    throw new Error("No se pudo verificar. Probá de nuevo.");
   }
 }
