@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
-import { buscarActualizacion, NUMERO_VERSION } from "../actualizacion";
+import { actualizarAhora, buscarActualizacion, NUMERO_VERSION } from "../actualizacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import { iconoDeCategoria } from "../iconos";
@@ -12,6 +12,7 @@ import Campo from "./Campo";
 import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import AvisosPushCard from "./AvisosPushCard";
+import { pushConfigurado } from "../push";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
 const OPCIONES_TEMA = [
@@ -50,6 +51,8 @@ export default function ConfiguracionTab({
   onCerrarSesion,
   onVerTour,
   onInstalar,
+  abrirGrupo,
+  onGrupoAbierto,
 }) {
   const { avisar } = useAvisos();
   const confirmar = useConfirmar();
@@ -60,6 +63,15 @@ export default function ConfiguracionTab({
   const [errorCategoria, setErrorCategoria] = useState("");
   const [categoriaIcono, setCategoriaIcono] = useState(null);
   const lista = categorias.data || [];
+
+  // Si se llegó desde otra sección (ej: «Activar» en la tarjeta de mails del
+  // Resumen), se abre directo el grupo que corresponde.
+  useEffect(() => {
+    if (!abrirGrupo) return;
+    const grupo = document.getElementById(`config-${abrirGrupo}`);
+    if (grupo) grupo.open = true;
+    onGrupoAbierto?.();
+  }, [abrirGrupo, onGrupoAbierto]);
   const errorNombre = errorNombreNuevo(nuevaCategoria, lista, "categoría");
   const errorVisible = tocado || nuevaCategoria ? errorNombre : "";
 
@@ -206,160 +218,202 @@ export default function ConfiguracionTab({
     );
   }
 
-  return (
-    <div className="pila ancho-contenido config-columnas">
-      <section className="card" aria-labelledby="titulo-planilla">
-        <h2 className="card-kicker" id="titulo-planilla">
-          Tu planilla
-        </h2>
-        <p className="texto-intro">
-          Todos tus datos (gastos, ingresos, cuentas, metas, suscripciones) viven en tu propia planilla de Google
-          Sheets. Podés abrirla para revisar algo o corregirlo a mano.
-        </p>
-        {planilla}
-      </section>
+  const cantidadPendientes = configMails && configMails.data?.modo !== "apagado" ? (pendientesMails || []).length : 0;
 
-      {mails && (
-        <section className="card" aria-labelledby="titulo-mails">
-          <h2 className="card-kicker" id="titulo-mails">
-            Gastos desde tus mails
+  return (
+    <div className="pila config-grupos">
+      <GrupoConfig
+        id="gastos"
+        icono="ph ph-receipt"
+        titulo="Gastos"
+        resumen={mails ? "Categorías, gastos desde tus mails y tu planilla" : "Categorías y tu planilla"}
+        aviso={cantidadPendientes > 0 ? `${cantidadPendientes} para revisar` : ""}
+      >
+        <section className="card" aria-labelledby="titulo-categorias-config">
+          <h2 className="card-kicker" id="titulo-categorias-config">
+            Categorías
           </h2>
-          {configMails.data?.modo === "apagado" && (
-            <p className="texto-intro">
-              Cargo solos los gastos de los mails de tus compras y pagos; vos solo confirmás. Solo leo, nunca borro ni
-              mando nada.
+          <p className="texto-intro">
+            Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá una para cambiarle el nombre o el ícono.
+          </p>
+          {chips}
+          {iconosSoloEsteDispositivo && lista.length > 0 && (
+            <p className="texto-chico texto-tenue">
+              <i className="ph ph-info" aria-hidden="true" /> Por ahora los íconos que elegís se guardan solo en este
+              dispositivo.
             </p>
           )}
-          {mails}
+          {categoriaIcono && (
+            <EditarCategoriaDialog
+              categoria={categoriaIcono}
+              otras={lista.filter((c) => c !== categoriaIcono)}
+              onGuardar={onEditarCategoria}
+              onClose={() => setCategoriaIcono(null)}
+            />
+          )}
+
+          <form className="form-buscar" onSubmit={agregar} noValidate>
+            <Campo etiqueta="Nueva categoría" error={errorVisible}>
+              {(p) => (
+                <input
+                  {...p}
+                  className="input"
+                  type="text"
+                  placeholder="Ej: Mascotas"
+                  value={nuevaCategoria}
+                  onChange={(e) => setNuevaCategoria(e.target.value)}
+                  onBlur={() => nuevaCategoria && setTocado(true)}
+                />
+              )}
+            </Campo>
+            <button className="btn btn-secondary" type="submit" disabled={guardandoCategoria}>
+              {guardandoCategoria ? "Agregando…" : "Agregar"}
+            </button>
+          </form>
+          {errorCategoria && (
+            <p className="mensaje-error" role="alert">
+              {errorCategoria}
+            </p>
+          )}
         </section>
+
+        {mails && (
+          <section className="card" aria-labelledby="titulo-mails">
+            <h2 className="card-kicker" id="titulo-mails">
+              Gastos desde tus mails
+            </h2>
+            {configMails.data?.modo === "apagado" && (
+              <p className="texto-intro">
+                Cargo solos los gastos de los mails de tus compras y pagos; vos solo confirmás. Solo leo, nunca borro ni
+                mando nada.
+              </p>
+            )}
+            {mails}
+          </section>
+        )}
+
+        <section className="card" aria-labelledby="titulo-planilla">
+          <h2 className="card-kicker" id="titulo-planilla">
+            Tu planilla
+          </h2>
+          <p className="texto-intro">
+            Todos tus datos (gastos, ingresos, cuentas, metas, suscripciones) viven en tu propia planilla de Google
+            Sheets. Podés abrirla para revisar algo o corregirlo a mano.
+          </p>
+          {planilla}
+        </section>
+      </GrupoConfig>
+
+      <GrupoConfig id="monedas" icono="ph ph-currency-dollar" titulo="Monedas" resumen="Dólares, euros y otras, con su cotización" solo>
+        <MonedasCard monedas={monedas} cotizacionesHoy={cotizacionesHoy} cuentas={cuentas} onGuardadas={onMonedasGuardadas} />
+      </GrupoConfig>
+
+      {pushConfigurado() && (
+        <GrupoConfig id="avisos" icono="ph ph-bell" titulo="Avisos" resumen="Que te avise aunque la app esté cerrada" solo>
+          <AvisosPushCard onInstalar={onInstalar} />
+        </GrupoConfig>
       )}
 
-      <AvisosPushCard onInstalar={onInstalar} />
-
-      <MonedasCard monedas={monedas} cotizacionesHoy={cotizacionesHoy} cuentas={cuentas} onGuardadas={onMonedasGuardadas} />
-
-      <section className="card" aria-labelledby="titulo-categorias-config">
-        <h2 className="card-kicker" id="titulo-categorias-config">
-          Categorías
-        </h2>
-        <p className="texto-intro">
-          Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá una para cambiarle el nombre o el ícono.
-        </p>
-        {chips}
-        {iconosSoloEsteDispositivo && lista.length > 0 && (
-          <p className="texto-chico texto-tenue">
-            <i className="ph ph-info" aria-hidden="true" /> Por ahora los íconos que elegís se guardan solo en este
-            dispositivo.
-          </p>
-        )}
-        {categoriaIcono && (
-          <EditarCategoriaDialog
-            categoria={categoriaIcono}
-            otras={lista.filter((c) => c !== categoriaIcono)}
-            onGuardar={onEditarCategoria}
-            onClose={() => setCategoriaIcono(null)}
-          />
-        )}
-
-        <form className="form-buscar" onSubmit={agregar} noValidate>
-          <Campo etiqueta="Nueva categoría" error={errorVisible}>
-            {(p) => (
-              <input
-                {...p}
-                className="input"
-                type="text"
-                placeholder="Ej: Mascotas"
-                value={nuevaCategoria}
-                onChange={(e) => setNuevaCategoria(e.target.value)}
-                onBlur={() => nuevaCategoria && setTocado(true)}
-              />
-            )}
-          </Campo>
-          <button className="btn btn-secondary" type="submit" disabled={guardandoCategoria}>
-            {guardandoCategoria ? "Agregando…" : "Agregar"}
+      <GrupoConfig id="visual" icono="ph ph-palette" titulo="Visual y sonido" resumen="Tema claro u oscuro y sonidos" solo>
+        <section className="card" aria-labelledby="titulo-apariencia">
+          <h2 className="card-kicker" id="titulo-apariencia">
+            Apariencia y sonido
+          </h2>
+          <fieldset className="field">
+            <legend>Tema</legend>
+            <div className="seg">
+              {OPCIONES_TEMA.map(([valor, texto]) => (
+                <label className="seg-opt" key={valor}>
+                  <input type="radio" name="tema" checked={tema === valor} onChange={() => onCambiarTema(valor)} />
+                  {texto}
+                </label>
+              ))}
+            </div>
+            <p className="field-ayuda">Automático usa el mismo modo que tu celular o compu.</p>
+          </fieldset>
+          <button
+            type="button"
+            className="btn btn-secondary btn-alinear-inicio"
+            aria-pressed={sonido}
+            onClick={onToggleSonido}
+          >
+            <i className={sonido ? "ph ph-speaker-high" : "ph ph-speaker-slash"} aria-hidden="true" />
+            {sonido ? "Sonidos activados" : "Sonidos apagados"}
           </button>
-        </form>
-        {errorCategoria && (
-          <p className="mensaje-error" role="alert">
-            {errorCategoria}
-          </p>
-        )}
-      </section>
+        </section>
 
-      <section className="card" aria-labelledby="titulo-apariencia">
-        <h2 className="card-kicker" id="titulo-apariencia">
-          Apariencia y sonido
-        </h2>
-        <fieldset className="field">
-          <legend>Tema</legend>
-          <div className="seg">
-            {OPCIONES_TEMA.map(([valor, texto]) => (
-              <label className="seg-opt" key={valor}>
-                <input type="radio" name="tema" checked={tema === valor} onChange={() => onCambiarTema(valor)} />
-                {texto}
-              </label>
-            ))}
-          </div>
-          <p className="field-ayuda">Automático usa el mismo modo que tu celular o compu.</p>
-        </fieldset>
-        <button
-          type="button"
-          className="btn btn-secondary btn-alinear-inicio"
-          aria-pressed={sonido}
-          onClick={onToggleSonido}
-        >
-          <i className={sonido ? "ph ph-speaker-high" : "ph ph-speaker-slash"} aria-hidden="true" />
-          {sonido ? "Sonidos activados" : "Sonidos apagados"}
-        </button>
-      </section>
+      </GrupoConfig>
 
-      <section className="card" aria-labelledby="titulo-ayuda">
-        <h2 className="card-kicker" id="titulo-ayuda">
-          Ayuda
-        </h2>
-        <div className="pila-chica">
-          <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onVerTour}>
-            <i className="ph ph-signpost" aria-hidden="true" />
-            Ver el recorrido de nuevo
-          </button>
-          {estaInstalada() ? (
-            <p className="mensaje-estado">
-              <i className="ph ph-check-circle" aria-hidden="true" /> Ya la tenés en tu pantalla de inicio.
-            </p>
-          ) : (
-            <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onInstalar}>
-              <i className="ph ph-device-mobile" aria-hidden="true" />
-              Agregar a la pantalla de inicio
+      <GrupoConfig id="ayuda" icono="ph ph-lifebuoy" titulo="Ayuda" resumen="Recorrido, instalar la app y versión" solo>
+        <section className="card" aria-labelledby="titulo-ayuda">
+          <h2 className="card-kicker" id="titulo-ayuda">
+            Ayuda
+          </h2>
+          <div className="pila-chica">
+            <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onVerTour}>
+              <i className="ph ph-signpost" aria-hidden="true" />
+              Ver el recorrido de nuevo
             </button>
-          )}
-          <p className="field-ayuda">
-            Atajo: con la app instalada, mantené apretado su ícono para cargar un gasto o un ingreso directo (en
-            Android y en la compu).
-          </p>
-          <BuscarActualizacion />
-        </div>
-      </section>
+            {estaInstalada() ? (
+              <p className="mensaje-estado">
+                <i className="ph ph-check-circle" aria-hidden="true" /> Ya la tenés en tu pantalla de inicio.
+              </p>
+            ) : (
+              <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onInstalar}>
+                <i className="ph ph-device-mobile" aria-hidden="true" />
+                Agregar a la pantalla de inicio
+              </button>
+            )}
+            <p className="field-ayuda">
+              Atajo: con la app instalada, mantené apretado su ícono para cargar un gasto o un ingreso directo (en
+              Android y en la compu).
+            </p>
+            <BuscarActualizacion />
+          </div>
+        </section>
 
-      <section className="card" aria-labelledby="titulo-cuenta">
-        <h2 className="card-kicker" id="titulo-cuenta">
-          Tu sesión
-        </h2>
-        <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onCerrarSesion}>
-          <i className="ph ph-sign-out" aria-hidden="true" />
-          Cerrar sesión
-        </button>
-      </section>
+      </GrupoConfig>
+
+      <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onCerrarSesion}>
+        <i className="ph ph-sign-out" aria-hidden="true" />
+        Cerrar sesión
+      </button>
     </div>
   );
 }
 
-// Solo se avisa si no se pudo fijar: si hay versión nueva ya aparece el
-// cartel de arriba, y si no hay, no hace falta decir nada.
+// Cada grupo es un desplegable (details/summary: ya es un botón con
+// «expandido/contraído» para lectores de pantalla y anda con teclado).
+// Todos comparten name="config": al abrir uno se cierra el que estaba
+// abierto, así nunca hay todo desplegado a la vez. Si es una sola sección,
+// su título queda solo para lectores de pantalla (el grupo ya lo dice).
+function GrupoConfig({ id, icono, titulo, resumen, aviso, solo = false, children }) {
+  return (
+    <details className={`card config-grupo${solo ? " config-grupo--solo" : ""}`} id={`config-${id}`} name="config">
+      <summary className="config-grupo-cabeza" onClick={() => playClick()}>
+        <span className="config-grupo-icono" aria-hidden="true">
+          <i className={icono} />
+        </span>
+        <span className="config-grupo-textos">
+          <span className="config-grupo-titulo">{titulo}</span>
+          <span className="config-grupo-resumen">{resumen}</span>
+          {aviso && <span className="config-grupo-aviso">{aviso}</span>}
+        </span>
+        <i className="ph ph-caret-down config-grupo-flecha" aria-hidden="true" />
+      </summary>
+      <div className="config-grupo-cuerpo">{children}</div>
+    </details>
+  );
+}
+
+// El resultado sale en un aviso corto de abajo, que se va solo (lauti
+// quiere poco texto fijo en Ayuda, pero sí enterarse de qué pasó).
 const SIN_CONEXION = "No pude fijarme: parece que no hay conexión.";
 
 // La app se actualiza sola, pero en el iPhone instalada no hay botón de
 // recargar: con esto se puede pedir que se fije ya.
 function BuscarActualizacion() {
+  const { avisar } = useAvisos();
   const [estado, setEstado] = useState("");
 
   async function buscar() {
@@ -367,7 +421,15 @@ function BuscarActualizacion() {
     playClick();
     const resultado = await buscarActualizacion();
     setEstado(resultado);
-    if (resultado === "sin-conexion") playError();
+    if (resultado === "sin-conexion") {
+      playError();
+      avisar(SIN_CONEXION, "error");
+    } else if (resultado === "nueva") {
+      playSuccess();
+      avisar("Hay una versión nueva", "exito", { accion: "Actualizar", onAccion: actualizarAhora });
+    } else {
+      avisar("Ya tenés la última versión", "exito");
+    }
   }
 
   return (
@@ -382,9 +444,6 @@ function BuscarActualizacion() {
         {estado === "buscando" ? "Buscando…" : "Buscar actualización"}
       </button>
       {NUMERO_VERSION && <p className="field-ayuda">Versión {NUMERO_VERSION}</p>}
-      <p className="field-ayuda" aria-live="polite">
-        {estado === "sin-conexion" ? SIN_CONEXION : ""}
-      </p>
     </div>
   );
 }
