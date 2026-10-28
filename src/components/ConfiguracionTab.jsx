@@ -12,6 +12,7 @@ import Campo from "./Campo";
 import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import AvisosPushCard from "./AvisosPushCard";
+import SugerenciaDialog from "./SugerenciaDialog";
 import { pushConfigurado } from "../push";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
@@ -58,6 +59,7 @@ export default function ConfiguracionTab({
   const confirmar = useConfirmar();
   const [nuevaCategoria, setNuevaCategoria] = useState("");
   const [tocado, setTocado] = useState(false);
+  const [sugerenciaAbierta, setSugerenciaAbierta] = useState(false);
   const [guardandoCategoria, setGuardandoCategoria] = useState(false);
   const [borrandoCategoria, setBorrandoCategoria] = useState(null);
   const [errorCategoria, setErrorCategoria] = useState("");
@@ -344,7 +346,7 @@ export default function ConfiguracionTab({
 
       </GrupoConfig>
 
-      <GrupoConfig id="ayuda" icono="ph ph-lifebuoy" titulo="Ayuda" resumen="Recorrido, instalar la app y versión" solo>
+      <GrupoConfig id="ayuda" icono="ph ph-lifebuoy" titulo="Ayuda" resumen="Recorrido, contarme un error o idea y versión" solo>
         <section className="card" aria-labelledby="titulo-ayuda">
           <h2 className="card-kicker" id="titulo-ayuda">
             Ayuda
@@ -353,6 +355,17 @@ export default function ConfiguracionTab({
             <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onVerTour}>
               <i className="ph ph-signpost" aria-hidden="true" />
               Ver el recorrido de nuevo
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-alinear-inicio"
+              onClick={() => {
+                playClick();
+                setSugerenciaAbierta(true);
+              }}
+            >
+              <i className="ph ph-chat-circle-text" aria-hidden="true" />
+              Mandar una sugerencia o error
             </button>
             {estaInstalada() ? (
               <p className="mensaje-estado">
@@ -373,6 +386,8 @@ export default function ConfiguracionTab({
         </section>
 
       </GrupoConfig>
+
+      {sugerenciaAbierta && <SugerenciaDialog onClose={() => setSugerenciaAbierta(false)} />}
 
       <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onCerrarSesion}>
         <i className="ph ph-sign-out" aria-hidden="true" />
