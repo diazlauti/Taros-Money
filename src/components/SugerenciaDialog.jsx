@@ -1,7 +1,7 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useValidacion } from "../hooks";
 import { playError, playSuccess } from "../sounds";
-import { sesionRecordada } from "../auth";
+import { achicarCaptura, cuentaVerificada } from "../sugerencias";
 import { NUMERO_VERSION } from "../actualizacion";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
@@ -9,17 +9,14 @@ import Dialog from "./Dialog";
 // Sugerencias y errores que manda la gente desde Configuración › Ayuda. Igual
 // que la lista de espera: va por Netlify Forms (la copia estática
 // "sugerencias" de index.html es la que Netlify registra al publicar) y
-// Netlify le manda el mail a quien administra la app.
+// Netlify le manda el mail a quien administra la app. La cuenta no la escribe
+// la persona: sale de su sesión de Google, verificada (ver sugerencias.js).
 const FORM_NAME = "sugerencias";
 
 const TIPOS = [
   ["error", "Algo anda mal", "ph ph-bug"],
   ["idea", "Tengo una idea", "ph ph-lightbulb"],
 ];
-
-function codificar(datos) {
-  return new URLSearchParams(datos).toString();
-}
 
 // Datos que ayudan a reproducir un error, sin pedirle nada a la persona.
 function datosDelDispositivo() {
@@ -31,12 +28,6 @@ function datosDelDispositivo() {
   }
 }
 
-function errorMailOpcional(texto) {
-  const valor = String(texto ?? "").trim();
-  if (!valor) return "";
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor) ? "" : "Revisá el mail, por ejemplo nombre@gmail.com.";
-}
-
 // Con `errorVisto` (desde «Avisar del error») el error ya va adjunto y
 // contar qué estabas haciendo es opcional.
 export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla = "" }) {
@@ -45,16 +36,37 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
   const [form, setForm] = useState(() => ({
     tipo: "error",
     mensaje: "",
-    email: sesionRecordada()?.email || "",
     trampa: "",
   }));
+  const [captura, setCaptura] = useState(null);
+  const [errorCaptura, setErrorCaptura] = useState("");
+
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState("");
   const v = useValidacion(form, (f) => ({
     mensaje: f.mensaje.trim() || desdeError ? "" : f.tipo === "error" ? "Contame qué pasó." : "Contame tu idea.",
-    email: errorMailOpcional(f.email),
   }));
+
+  // captura = { archivo, url } (url para la miniatura; se libera al cambiarla).
+  useEffect(() => () => captura && URL.revokeObjectURL(captura.url), [captura]);
+
+  async function elegirCaptura(e) {
+    const archivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!archivo) return;
+    setErrorCaptura("");
+    if (!archivo.type.startsWith("image/")) {
+      setErrorCaptura("Elegí una imagen (una captura de pantalla).");
+      return;
+    }
+    const lista = await achicarCaptura(archivo);
+    if (!lista) {
+      setErrorCaptura("La imagen es muy pesada. Probá con una captura de pantalla.");
+      return;
+    }
+    setCaptura({ archivo: lista, url: URL.createObjectURL(lista) });
+  }
 
   function cambiar(campo) {
     return (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
@@ -66,21 +78,24 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
     setEnviando(true);
     setError("");
     try {
-      const res = await fetch("/", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: codificar({
-          "form-name": FORM_NAME,
-          tipo: form.tipo === "error" ? "Error" : "Sugerencia",
-          mensaje: form.mensaje.trim(),
-          error: errorVisto || "",
-          pantalla,
-          email: form.email.trim(),
-          version: NUMERO_VERSION || "",
-          dispositivo: datosDelDispositivo(),
-          "bot-field": form.trampa,
-        }),
-      });
+      const { cuenta, comprobar } = await cuentaVerificada();
+      // multipart (sin Content-Type a mano) para que pueda viajar la captura.
+      const datos = new FormData();
+      const campos = {
+        "form-name": FORM_NAME,
+        tipo: desdeError || form.tipo === "error" ? "Error" : "Sugerencia",
+        mensaje: form.mensaje.trim(),
+        error: errorVisto || "",
+        pantalla,
+        cuenta,
+        comprobar,
+        version: NUMERO_VERSION || "",
+        dispositivo: datosDelDispositivo(),
+        "bot-field": form.trampa,
+      };
+      for (const [clave, valor] of Object.entries(campos)) datos.append(clave, valor);
+      if (captura) datos.append("captura", captura.archivo, "captura.jpg");
+      const res = await fetch("/", { method: "POST", body: datos });
       if (!res.ok) throw new Error();
       playSuccess();
       setEnviado(true);
@@ -99,7 +114,7 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
           {form.tipo === "error"
             ? "Lo reviso y lo arreglo en una próxima versión."
             : "La leo con tiempo y, si suma, la agrego."}
-          {form.email.trim() ? ` Si necesito algo más te escribo a ${form.email.trim()}.` : ""}
+          {" Si necesito algo más te escribo al mail de tu cuenta."}
         </p>
         <div className="dialog-actions">
           <button type="button" className="btn btn-primary" onClick={onClose} data-autofocus>
@@ -110,7 +125,7 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
     );
   }
 
-  const sucio = form.mensaje !== "" && !enviando;
+  const sucio = (form.mensaje !== "" || !!captura) && !enviando;
 
   return (
     <Dialog titulo={desdeError ? "Avisar del error" : "Mandar una sugerencia o error"} onClose={onClose} sucio={sucio}>
@@ -148,11 +163,6 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
                 ? "¿Qué pasó?"
                 : "¿Cuál es tu idea?"
           }
-          ayuda={
-            !desdeError && form.tipo === "error"
-              ? "Dónde estabas y qué tocaste. La versión y el dispositivo van solos."
-              : ""
-          }
           error={v.visible("mensaje")}
         >
           {(p) => (
@@ -161,27 +171,44 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
               data-autofocus
               className="input"
               rows={4}
+              placeholder={
+                desdeError || form.tipo === "error"
+                  ? "Intenté revisar mis mails y…"
+                  : "Contame qué te gustaría que tenga la app."
+              }
               maxLength={2000}
               value={form.mensaje}
               onChange={cambiar("mensaje")}
             />
           )}
         </Campo>
-        <Campo etiqueta="Tu mail (opcional)" ayuda="Por si necesito preguntarte algo." error={v.visible("email")}>
-          {(p) => (
-            <input
-              {...p}
-              className="input"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="nombre@gmail.com"
-              value={form.email}
-              onChange={cambiar("email")}
-              onBlur={() => v.tocar("email")}
-            />
+        <div className="field">
+          {captura ? (
+            <div className="captura-elegida">
+              <img src={captura.url} alt="Captura adjunta" className="captura-miniatura" />
+              <button
+                type="button"
+                className="btn btn-texto btn-peligro btn-texto-icono"
+                onClick={() => setCaptura(null)}
+              >
+                <i className="ph ph-trash" aria-hidden="true" />
+                <span>Sacar captura</span>
+              </button>
+            </div>
+          ) : (
+            <label className="btn btn-secondary btn-alinear-inicio btn-archivo">
+              <i className="ph ph-image" aria-hidden="true" />
+              Adjuntar captura
+              <input type="file" accept="image/*" className="visualmente-oculto" onChange={elegirCaptura} />
+            </label>
           )}
-        </Campo>
+          {errorCaptura && (
+            <p className="field-error" role="alert">
+              {errorCaptura}
+            </p>
+          )}
+          {!captura && <p className="field-ayuda">(Opcional)</p>}
+        </div>
         {/* Campo trampa para bots: invisible y fuera del orden de tabulación. */}
         <input
           type="text"
