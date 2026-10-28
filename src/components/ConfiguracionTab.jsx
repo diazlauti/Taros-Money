@@ -9,6 +9,7 @@ import { iconoDeCategoria } from "../iconos";
 import ModoMails from "./ModoMails";
 import RevisionMails from "./RevisionMails";
 import Campo from "./Campo";
+import Explicacion from "./Explicacion";
 import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import AvisosPushCard from "./AvisosPushCard";
@@ -131,12 +132,16 @@ export default function ConfiguracionTab({
     );
   } else {
     planilla = (
-      <a className="link" href={urlPlanilla.data} target="_blank" rel="noreferrer">
-        <i className="ph ph-table" aria-hidden="true" />
-        Abrir mi planilla
-        <span className="visualmente-oculto">(se abre en otra pestaña)</span>
-        <i className="ph ph-arrow-square-out" aria-hidden="true" />
-      </a>
+      <ul className="opciones">
+        <li>
+          <a className="opcion" href={urlPlanilla.data} target="_blank" rel="noreferrer">
+            <i className="ph ph-table opcion-icono" aria-hidden="true" />
+            <span className="opcion-texto">Abrir mi planilla</span>
+            <span className="visualmente-oculto">(se abre en otra pestaña)</span>
+            <i className="ph ph-arrow-square-out opcion-flecha" aria-hidden="true" />
+          </a>
+        </li>
+      </ul>
     );
   }
 
@@ -225,173 +230,230 @@ export default function ConfiguracionTab({
 
   return (
     <div className="pila config-grupos">
-      <GrupoConfig
-        id="gastos"
-        icono="ph ph-receipt"
-        titulo="Gastos"
-        resumen={mails ? "Categorías, gastos desde tus mails y tu planilla" : "Categorías y tu planilla"}
-        aviso={cantidadPendientes > 0 ? `${cantidadPendientes} para revisar` : ""}
-      >
-        <section className="card" aria-labelledby="titulo-categorias-config">
-          <h2 className="card-kicker" id="titulo-categorias-config">
-            Categorías
-          </h2>
-          <p className="texto-intro">
-            Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá una para cambiarle el nombre o el ícono.
-          </p>
-          {chips}
-          {iconosSoloEsteDispositivo && lista.length > 0 && (
-            <p className="texto-chico texto-tenue">
-              <i className="ph ph-info" aria-hidden="true" /> Por ahora los íconos que elegís se guardan solo en este
-              dispositivo.
-            </p>
-          )}
-          {categoriaIcono && (
-            <EditarCategoriaDialog
-              categoria={categoriaIcono}
-              otras={lista.filter((c) => c !== categoriaIcono)}
-              onGuardar={onEditarCategoria}
-              onClose={() => setCategoriaIcono(null)}
-            />
-          )}
-
-          <form className="form-buscar" onSubmit={agregar} noValidate>
-            <Campo etiqueta="Nueva categoría" error={errorVisible}>
-              {(p) => (
-                <input
-                  {...p}
-                  className="input"
-                  type="text"
-                  placeholder="Ej: Mascotas"
-                  value={nuevaCategoria}
-                  onChange={(e) => setNuevaCategoria(e.target.value)}
-                  onBlur={() => nuevaCategoria && setTocado(true)}
-                />
-              )}
-            </Campo>
-            <button className="btn btn-secondary" type="submit" disabled={guardandoCategoria}>
-              {guardandoCategoria ? "Agregando…" : "Agregar"}
-            </button>
-          </form>
-          {errorCategoria && (
-            <MensajeError>{errorCategoria}</MensajeError>
-          )}
-        </section>
-
-        {mails && (
-          <section className="card" aria-labelledby="titulo-mails">
-            <h2 className="card-kicker" id="titulo-mails">
-              Gastos desde tus mails
+      <div className="ajustes-lista">
+        <GrupoConfig
+          id="gastos"
+          icono="ph ph-receipt"
+          titulo="Gastos"
+          aviso={cantidadPendientes > 0 ? `${cantidadPendientes} para revisar` : ""}
+        >
+          <section className="card" aria-labelledby="titulo-categorias-config">
+            <h2 className="card-kicker titulo-con-info" id="titulo-categorias-config">
+              Categorías
+              <Explicacion
+                texto="Aparecen para elegir al cargar un gasto, ingreso o suscripción. Tocá una para cambiarle el nombre o el ícono."
+                etiqueta="Más info sobre las categorías"
+              />
             </h2>
-            {configMails.data?.modo === "apagado" && (
-              <p className="texto-intro">
-                Cargo solos los gastos de los mails de tus compras y pagos; vos solo confirmás. Solo leo, nunca borro ni
-                mando nada.
+            {chips}
+            {iconosSoloEsteDispositivo && lista.length > 0 && (
+              <p className="aviso-inline">
+                <i className="ph ph-info" aria-hidden="true" />
+                Por ahora los íconos que elegís se guardan solo en este dispositivo.
               </p>
             )}
-            {mails}
+            {categoriaIcono && (
+              <EditarCategoriaDialog
+                categoria={categoriaIcono}
+                otras={lista.filter((c) => c !== categoriaIcono)}
+                onGuardar={onEditarCategoria}
+                onClose={() => setCategoriaIcono(null)}
+              />
+            )}
+
+            <form className="form-buscar" onSubmit={agregar} noValidate>
+              <Campo etiqueta="Nueva categoría" error={errorVisible}>
+                {(p) => (
+                  <input
+                    {...p}
+                    className="input"
+                    type="text"
+                    placeholder="Ej: Mascotas"
+                    value={nuevaCategoria}
+                    onChange={(e) => setNuevaCategoria(e.target.value)}
+                    onBlur={() => nuevaCategoria && setTocado(true)}
+                  />
+                )}
+              </Campo>
+              <button className="btn btn-secondary" type="submit" disabled={guardandoCategoria}>
+                {guardandoCategoria ? "Agregando…" : "Agregar"}
+              </button>
+            </form>
+            {errorCategoria && <MensajeError>{errorCategoria}</MensajeError>}
           </section>
+
+          {mails && (
+            <section className="card" aria-labelledby="titulo-mails">
+              <h2 className="card-kicker titulo-con-info" id="titulo-mails">
+                Gastos desde tus mails
+                <Explicacion
+                  texto="Cargo solos los gastos de los mails de tus compras y pagos; vos solo confirmás. Solo leo, nunca borro ni mando nada."
+                  etiqueta="Más info sobre los gastos desde tus mails"
+                />
+              </h2>
+              {mails}
+            </section>
+          )}
+
+          <section className="card" aria-labelledby="titulo-planilla">
+            <h2 className="card-kicker titulo-con-info" id="titulo-planilla">
+              Tu planilla
+              <Explicacion
+                texto="Todos tus datos (gastos, ingresos, cuentas, metas, suscripciones) viven en tu propia planilla de Google Sheets. Podés abrirla para revisar algo o corregirlo a mano."
+                etiqueta="Más info sobre tu planilla"
+              />
+            </h2>
+            {planilla}
+          </section>
+        </GrupoConfig>
+
+        <GrupoConfig
+          id="monedas"
+          icono="ph ph-currency-dollar"
+          titulo="Monedas"
+         
+          solo
+        >
+          <MonedasCard
+            monedas={monedas}
+            cotizacionesHoy={cotizacionesHoy}
+            cuentas={cuentas}
+            onGuardadas={onMonedasGuardadas}
+          />
+        </GrupoConfig>
+
+        {pushConfigurado() && (
+          <GrupoConfig
+            id="avisos"
+            icono="ph ph-bell"
+            titulo="Avisos"
+           
+            solo
+          >
+            <AvisosPushCard onInstalar={onInstalar} />
+          </GrupoConfig>
         )}
 
-        <section className="card" aria-labelledby="titulo-planilla">
-          <h2 className="card-kicker" id="titulo-planilla">
-            Tu planilla
-          </h2>
-          <p className="texto-intro">
-            Todos tus datos (gastos, ingresos, cuentas, metas, suscripciones) viven en tu propia planilla de Google
-            Sheets. Podés abrirla para revisar algo o corregirlo a mano.
-          </p>
-          {planilla}
-        </section>
-      </GrupoConfig>
-
-      <GrupoConfig id="monedas" icono="ph ph-currency-dollar" titulo="Monedas" resumen="Dólares, euros y otras, con su cotización" solo>
-        <MonedasCard monedas={monedas} cotizacionesHoy={cotizacionesHoy} cuentas={cuentas} onGuardadas={onMonedasGuardadas} />
-      </GrupoConfig>
-
-      {pushConfigurado() && (
-        <GrupoConfig id="avisos" icono="ph ph-bell" titulo="Avisos" resumen="Que te avise aunque la app esté cerrada" solo>
-          <AvisosPushCard onInstalar={onInstalar} />
+        <GrupoConfig
+          id="visual"
+          icono="ph ph-palette"
+          titulo="Visual y sonido"
+         
+          solo
+        >
+          <section className="card" aria-labelledby="titulo-apariencia">
+            <h2 className="card-kicker" id="titulo-apariencia">
+              Apariencia y sonido
+            </h2>
+            <ul className="opciones">
+              <li className="opcion opcion--columna">
+                <fieldset className="field opcion-campo">
+                  <legend className="titulo-con-info">
+                    <i className="ph ph-circle-half opcion-icono" aria-hidden="true" />
+                    Tema
+                    <Explicacion
+                      texto="«Automático» usa el mismo modo que tu celular o compu."
+                      etiqueta="Más info sobre el tema"
+                    />
+                  </legend>
+                  <div className="seg seg-ancho">
+                    {OPCIONES_TEMA.map(([valor, texto]) => (
+                      <label className="seg-opt" key={valor}>
+                        <input
+                          type="radio"
+                          name="tema"
+                          checked={tema === valor}
+                          onChange={() => onCambiarTema(valor)}
+                        />
+                        {texto}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              </li>
+              <li>
+                <button type="button" role="switch" aria-checked={sonido} className="opcion" onClick={onToggleSonido}>
+                  <i
+                    className={`${sonido ? "ph ph-speaker-high" : "ph ph-speaker-slash"} opcion-icono`}
+                    aria-hidden="true"
+                  />
+                  <span className="opcion-texto">Sonidos</span>
+                  <span className="interruptor" aria-hidden="true" />
+                </button>
+              </li>
+            </ul>
+          </section>
         </GrupoConfig>
-      )}
 
-      <GrupoConfig id="visual" icono="ph ph-palette" titulo="Visual y sonido" resumen="Tema claro u oscuro y sonidos" solo>
-        <section className="card" aria-labelledby="titulo-apariencia">
-          <h2 className="card-kicker" id="titulo-apariencia">
-            Apariencia y sonido
-          </h2>
-          <fieldset className="field">
-            <legend>Tema</legend>
-            <div className="seg">
-              {OPCIONES_TEMA.map(([valor, texto]) => (
-                <label className="seg-opt" key={valor}>
-                  <input type="radio" name="tema" checked={tema === valor} onChange={() => onCambiarTema(valor)} />
-                  {texto}
-                </label>
-              ))}
-            </div>
-            <p className="field-ayuda">Automático usa el mismo modo que tu celular o compu.</p>
-          </fieldset>
-          <button
-            type="button"
-            className="btn btn-secondary btn-alinear-inicio"
-            aria-pressed={sonido}
-            onClick={onToggleSonido}
-          >
-            <i className={sonido ? "ph ph-speaker-high" : "ph ph-speaker-slash"} aria-hidden="true" />
-            {sonido ? "Sonidos activados" : "Sonidos apagados"}
-          </button>
-        </section>
-
-      </GrupoConfig>
-
-      <GrupoConfig id="ayuda" icono="ph ph-lifebuoy" titulo="Ayuda" resumen="Recorrido, contarme un error o idea y versión" solo>
-        <section className="card" aria-labelledby="titulo-ayuda">
-          <h2 className="card-kicker" id="titulo-ayuda">
-            Ayuda
-          </h2>
-          <div className="pila-chica">
-            <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onVerTour}>
-              <i className="ph ph-signpost" aria-hidden="true" />
-              Ver el recorrido de nuevo
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-alinear-inicio"
-              onClick={() => {
-                playClick();
-                setSugerenciaAbierta(true);
-              }}
-            >
-              <i className="ph ph-chat-circle-text" aria-hidden="true" />
-              Mandar una sugerencia o error
-            </button>
-            {estaInstalada() ? (
-              <p className="mensaje-estado">
-                <i className="ph ph-check-circle" aria-hidden="true" /> Ya la tenés en tu pantalla de inicio.
-              </p>
-            ) : (
-              <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onInstalar}>
-                <i className="ph ph-device-mobile" aria-hidden="true" />
-                Agregar a la pantalla de inicio
-              </button>
-            )}
-            <p className="field-ayuda">
-              Atajo: con la app instalada, mantené apretado su ícono para cargar un gasto o un ingreso directo (en
-              Android y en la compu).
-            </p>
-            <BuscarActualizacion />
-          </div>
-        </section>
-
-      </GrupoConfig>
+        <GrupoConfig
+          id="ayuda"
+          icono="ph ph-lifebuoy"
+          titulo="Ayuda"
+         
+          solo
+        >
+          <section className="card" aria-labelledby="titulo-ayuda">
+            <h2 className="card-kicker" id="titulo-ayuda">
+              Ayuda
+            </h2>
+            <ul className="opciones">
+              <li>
+                <button type="button" className="opcion" onClick={onVerTour}>
+                  <i className="ph ph-signpost opcion-icono" aria-hidden="true" />
+                  <span className="opcion-texto">Ver el recorrido de nuevo</span>
+                  <i className="ph ph-caret-right opcion-flecha" aria-hidden="true" />
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="opcion"
+                  onClick={() => {
+                    playClick();
+                    setSugerenciaAbierta(true);
+                  }}
+                >
+                  <i className="ph ph-chat-circle-text opcion-icono" aria-hidden="true" />
+                  <span className="opcion-texto">Mandar una sugerencia o error</span>
+                  <i className="ph ph-caret-right opcion-flecha" aria-hidden="true" />
+                </button>
+              </li>
+              <li className="opcion-con-info">
+                {estaInstalada() ? (
+                  <p className="opcion">
+                    <i className="ph ph-check-circle opcion-icono" aria-hidden="true" />
+                    <span className="opcion-texto">Ya la tenés en tu pantalla de inicio</span>
+                  </p>
+                ) : (
+                  <button type="button" className="opcion" onClick={onInstalar}>
+                    <i className="ph ph-device-mobile opcion-icono" aria-hidden="true" />
+                    <span className="opcion-texto">Agregar a la pantalla de inicio</span>
+                    <i className="ph ph-caret-right opcion-flecha" aria-hidden="true" />
+                  </button>
+                )}
+                <Explicacion
+                  texto="Atajo: con la app instalada, mantené apretado su ícono para cargar un gasto o un ingreso directo (en Android y en la compu)."
+                  etiqueta="Atajo del ícono"
+                />
+              </li>
+              <li>
+                <BuscarActualizacion />
+              </li>
+            </ul>
+          </section>
+        </GrupoConfig>
+      </div>
 
       {sugerenciaAbierta && <SugerenciaDialog onClose={() => setSugerenciaAbierta(false)} />}
 
-      <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={onCerrarSesion}>
-        <i className="ph ph-sign-out" aria-hidden="true" />
-        Cerrar sesión
-      </button>
+      <ul className="opciones">
+        <li>
+          <button type="button" className="opcion opcion--peligro" onClick={onCerrarSesion}>
+            <i className="ph ph-sign-out opcion-icono" aria-hidden="true" />
+            <span className="opcion-texto">Cerrar sesión</span>
+          </button>
+        </li>
+      </ul>
     </div>
   );
 }
@@ -401,7 +463,7 @@ export default function ConfiguracionTab({
 // Todos comparten name="config": al abrir uno se cierra el que estaba
 // abierto, así nunca hay todo desplegado a la vez. Si es una sola sección,
 // su título queda solo para lectores de pantalla (el grupo ya lo dice).
-function GrupoConfig({ id, icono, titulo, resumen, aviso, solo = false, children }) {
+function GrupoConfig({ id, icono, titulo, aviso, solo = false, children }) {
   return (
     <details className={`card config-grupo${solo ? " config-grupo--solo" : ""}`} id={`config-${id}`} name="config">
       <summary className="config-grupo-cabeza" onClick={() => playClick()}>
@@ -410,7 +472,6 @@ function GrupoConfig({ id, icono, titulo, resumen, aviso, solo = false, children
         </span>
         <span className="config-grupo-textos">
           <span className="config-grupo-titulo">{titulo}</span>
-          <span className="config-grupo-resumen">{resumen}</span>
           {aviso && <span className="config-grupo-aviso">{aviso}</span>}
         </span>
         <i className="ph ph-caret-down config-grupo-flecha" aria-hidden="true" />
@@ -447,17 +508,10 @@ function BuscarActualizacion() {
   }
 
   return (
-    <div className="pila-chica">
-      <button
-        type="button"
-        className="btn btn-secondary btn-alinear-inicio"
-        disabled={estado === "buscando"}
-        onClick={buscar}
-      >
-        <i className="ph ph-arrows-clockwise" aria-hidden="true" />
-        {estado === "buscando" ? "Buscando…" : "Buscar actualización"}
-      </button>
-      {NUMERO_VERSION && <p className="field-ayuda">Versión {NUMERO_VERSION}</p>}
-    </div>
+    <button type="button" className="opcion" disabled={estado === "buscando"} onClick={buscar}>
+      <i className="ph ph-arrows-clockwise opcion-icono" aria-hidden="true" />
+      <span className="opcion-texto">{estado === "buscando" ? "Buscando…" : "Buscar actualización"}</span>
+      {NUMERO_VERSION && <span className="opcion-dato">Versión {NUMERO_VERSION}</span>}
+    </button>
   );
 }

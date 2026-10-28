@@ -14,6 +14,7 @@ import {
 } from "../monedas";
 import { playError, playSuccess } from "../sounds";
 import Campo from "./Campo";
+import Explicacion from "./Explicacion";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 import MensajeError from "./MensajeError";
 
@@ -226,14 +227,17 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
                     <span className="negrita">
                       {m.plural} ({m.simbolo})
                     </span>
-                    {bloqueada && (
-                      <span className="check-ayuda texto-tenue" id={`en-uso-${codigo}`}>
-                        La usa{enUso.length > 1 ? "n" : ""} {enUso.join(", ")}. Para sacarla, primero cambiá o borrá
-                        esa{enUso.length > 1 ? "s" : ""} cuenta{enUso.length > 1 ? "s" : ""}.
-                      </span>
-                    )}
                   </span>
                 </label>
+                {bloqueada && (
+                  <span className="en-uso texto-tenue" id={`en-uso-${codigo}`}>
+                    En uso: {enUso.join(", ")}
+                    <Explicacion
+                      texto={`Para sacarla, primero cambiá o borrá esa${enUso.length > 1 ? "s" : ""} cuenta${enUso.length > 1 ? "s" : ""}.`}
+                      etiqueta="Por qué no se puede sacar"
+                    />
+                  </span>
+                )}
 
                 {item.activa && (
                   <div className="moneda-detalle pila-chica">
@@ -282,7 +286,7 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
                     ) : (
                       <Campo
                         etiqueta={`Cuántos pesos vale 1 ${m.nombre.toLowerCase()}`}
-                        ayuda="Se usa siempre este valor hasta que lo cambies."
+                        explicacion="Se usa siempre este valor hasta que lo cambies."
                         error={error}
                       >
                         {(p) => (
@@ -307,12 +311,10 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
         </ul>
 
         <div className="pila-chica" aria-labelledby="titulo-monedas-propias" role="group">
-          <h3 className="subtitulo" id="titulo-monedas-propias">
+          <h3 className="subtitulo titulo-con-info" id="titulo-monedas-propias">
             Tus monedas
+            <Explicacion texto="¿Usás otra moneda, como el peso uruguayo, el guaraní o una cripto? Agregala con tu propia cotización." etiqueta="Más info sobre tus monedas" />
           </h3>
-          <p className="texto-chico texto-tenue">
-            ¿Usás otra moneda (peso uruguayo, guaraní, una cripto)? Agregala con tu propia cotización.
-          </p>
           {propias.length > 0 && (
             <ul className="lista monedas-lista">
               {propias.map((p) => {
@@ -336,9 +338,12 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
                       </button>
                     </div>
                     {enUso.length > 0 && (
-                      <span className="texto-chico texto-tenue" id={`en-uso-${p.codigo}`}>
-                        La usa{enUso.length > 1 ? "n" : ""} {enUso.join(", ")}: para sacarla, primero cambiá o borrá
-                        esa{enUso.length > 1 ? "s" : ""} cuenta{enUso.length > 1 ? "s" : ""}.
+                      <span className="en-uso texto-tenue" id={`en-uso-${p.codigo}`}>
+                        En uso: {enUso.join(", ")}
+                        <Explicacion
+                          texto={`Para sacarla, primero cambiá o borrá esa${enUso.length > 1 ? "s" : ""} cuenta${enUso.length > 1 ? "s" : ""}.`}
+                          etiqueta="Por qué no se puede sacar"
+                        />
                       </span>
                     )}
                     <Campo etiqueta={`Cuántos pesos vale 1 ${p.codigo}`} error={error}>
@@ -362,7 +367,7 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
 
           {agregando ? (
             <div className="moneda-detalle pila-chica">
-              <Campo etiqueta="Código" ayuda="3 o 4 letras. Ej: UYU" error={intentoNueva ? erroresDeNueva?.codigo : ""}>
+              <Campo etiqueta="Código" explicacion="3 o 4 letras, como UYU o BTC." error={intentoNueva ? erroresDeNueva?.codigo : ""}>
                 {(p) => (
                   <input
                     {...p}
@@ -392,7 +397,7 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
                   />
                 )}
               </Campo>
-              <Campo etiqueta="Símbolo (opcional)" ayuda="Cómo se ve delante del monto. Ej: $U">
+              <Campo etiqueta="Símbolo (opcional)" explicacion="Cómo se ve delante del monto. Ej: $U">
                 {(p) => (
                   <input
                     {...p}
@@ -408,7 +413,7 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
               </Campo>
               <Campo
                 etiqueta="Cuántos pesos vale 1"
-                ayuda="Tu cotización. La podés cambiar cuando quieras."
+                explicacion="Tu cotización. La podés cambiar cuando quieras."
                 error={intentoNueva ? erroresDeNueva?.valor : ""}
               >
                 {(p) => (
@@ -465,9 +470,9 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
       <h2 className="card-kicker" id="titulo-monedas">
         Monedas
       </h2>
-      <p className="texto-intro">
-        Elegí qué monedas usás además del peso. Después vas a poder crear cuentas en esas monedas, y los totales las
-        pasan a pesos.
+      <p className="subtitulo titulo-con-info">
+        Qué monedas usás además del peso
+        <Explicacion texto="Con las que elijas vas a poder crear cuentas en esa moneda. Los totales las pasan a pesos con su cotización." etiqueta="Más info sobre las monedas" />
       </p>
       {contenido}
     </section>

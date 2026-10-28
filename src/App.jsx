@@ -39,6 +39,7 @@ import { useAvisos } from "./avisos";
 import { sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav, Insignia } from "./components/Layout";
 import NotificacionesDialog from "./components/NotificacionesDialog";
+import Explicacion from "./components/Explicacion";
 import { armarPendientes, leerVistas, marcarVistas } from "./bandeja";
 import { NOVEDADES } from "./novedades";
 import AvisosProvider from "./components/Avisos";
@@ -539,8 +540,10 @@ else navigator.clearAppBadge?.()?.catch?.(() => {});
 }
 }, [totalAvisos]);
 
-const abrirNuevo = () => {
-setInicialNuevo(null);
+// Desde los accesos rápidos del Resumen llega "gasto" o "ingreso"; desde
+// un botón común llega el evento del click (se ignora).
+const abrirNuevo = (tipo) => {
+setInicialNuevo(tipo === "gasto" || tipo === "ingreso" ? { tipo } : null);
 setDialogOpen(true);
 };
 // Navegar desde el menú abre Movimientos sin filtro.
@@ -587,6 +590,7 @@ title="Notificaciones"
 saldo={saldo}
 resumen={resumen}
 gastos={gastos}
+ingresos={ingresos}
 cuentas={cuentas}
 servicios={servicios}
 cotizaciones={cotizaciones}
@@ -803,6 +807,7 @@ function ElegirServiciosOSubs({ actual, onCambiar }) {
 return (
 <fieldset className="field ancho-contenido">
 <legend className="visualmente-oculto">Qué ver</legend>
+<div className="seg-con-info">
 <div className="seg seg-ancho">
 {[
 ["servicios", "Servicios", "ph ph-receipt"],
@@ -815,11 +820,15 @@ return (
 </label>
 ))}
 </div>
-<p className="texto-chico texto-tenue">
-{actual === "servicios"
-? "Las facturas que pagás vos (luz, agua, alquiler): vencen, te avisamos y las marcás como pagadas."
-: "Lo que se cobra solo todos los meses (Netflix, Spotify, el gimnasio): ves cuánto suma y cuándo se cobra."}
-</p>
+<Explicacion
+texto={
+actual === "servicios"
+? "Las facturas que pagás vos (luz, agua, alquiler): vencen, te avisamos y las marcás como pagadas. Cada mes arrancan todos como pendientes. Lo que se debita solo va en Suscripciones."
+: "Lo que se cobra solo todos los meses (Netflix, Spotify, el gimnasio): ves cuánto suma y cuándo se cobra."
+}
+etiqueta={actual === "servicios" ? "Qué son los servicios" : "Qué son las suscripciones"}
+/>
+</div>
 </fieldset>
 );
 }

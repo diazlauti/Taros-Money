@@ -1,3 +1,4 @@
+import Dialog from "./Dialog";
 import { useRef, useState } from "react";
 import { crearSuscripcion } from "../api";
 import { useAvisos } from "../avisos";
@@ -7,14 +8,15 @@ import { playError, playSuccess } from "../sounds";
 import { validarSuscripcion } from "../validaciones";
 import CamposSuscripcion from "./CamposSuscripcion";
 import EditarSuscripcionDialog from "./EditarSuscripcionDialog";
-import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import MensajeError from "./MensajeError";
+import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 
 const VACIO = { nombre: "", diaCobro: "", categoria: "", monto: "", cuenta: "" };
 
 export default function RecurrentesTab({ suscripciones, categorias, cuentas, cotizaciones, monedaPorCuenta, onCambio }) {
   const { avisar } = useAvisos();
   const [form, setForm] = useState(VACIO);
+  const [abierto, setAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [editando, setEditando] = useState(null);
@@ -42,6 +44,7 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
       avisar("Suscripción agregada");
       setForm(VACIO);
       v.reiniciar();
+      setAbierto(false);
       onCambio?.();
     } catch (err) {
       playError();
@@ -133,22 +136,63 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
     );
   }
 
-  return (
-    <>
-      {contenido}
-
-      <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nueva-suscripcion">
+  // El formulario de «nuevo»: directo en la pantalla si todavía no hay
+  // ninguno (para arrancar); si ya hay, se abre con el botón en un diálogo.
+  const formulario = (enDialogo) => (
+    <form
+      className={enDialogo ? "form" : "card form ancho-form"}
+      onSubmit={agregar}
+      noValidate
+      aria-labelledby={enDialogo ? undefined : "titulo-nueva-suscripcion"}
+    >
+      {!enDialogo && (
         <h2 className="card-kicker" id="titulo-nueva-suscripcion">
           Nueva suscripción
         </h2>
-        <CamposSuscripcion form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} nombreRef={nombreRef} />
-        {errorForm && (
-          <MensajeError>{errorForm}</MensajeError>
-        )}
-        <button className="btn btn-primary" type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
+      )}
+      <CamposSuscripcion
+        form={form}
+        campo={campo}
+        v={v}
+        categorias={categorias}
+        cuentas={cuentas}
+        nombreRef={nombreRef}
+      />
+      {errorForm && (
+        <MensajeError>{errorForm}</MensajeError>
+      )}
+      <button className="btn btn-primary" type="submit" disabled={enviando}>
+        {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
+      </button>
+    </form>
+  );
+
+  const directo = !suscripciones.cargando && lista.length === 0;
+  const formSucio = JSON.stringify(form) !== JSON.stringify(VACIO);
+
+  return (
+    <div className="con-panel">
+      {!directo && (
+        <button
+          type="button"
+          className="btn btn-primary btn-alinear-inicio"
+          onClick={() => {
+            if (!formSucio) v.reiniciar();
+            setAbierto(true);
+          }}
+        >
+          <i className="ph ph-plus" aria-hidden="true" />
+          Nueva suscripción
         </button>
-      </form>
+      )}
+      <div className="con-panel-principal">{contenido}</div>
+
+      {directo && formulario(false)}
+      {abierto && (
+        <Dialog titulo="Nueva suscripción" onClose={() => setAbierto(false)} sucio={formSucio}>
+          {formulario(true)}
+        </Dialog>
+      )}
 
       {editando && (
         <EditarSuscripcionDialog
@@ -159,6 +203,6 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
           onGuardado={onCambio}
         />
       )}
-    </>
+    </div>
   );
 }

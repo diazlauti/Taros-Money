@@ -14,6 +14,16 @@ export const ORDENES = [
   ["menor", "Menor monto primero"],
 ];
 
+const COLORES_CATEGORIA = 8;
+
+// Color fijo por nombre de categoría (siempre el mismo, filtres lo que
+// filtres). Lo usan Movimientos y el Resumen.
+export function colorDeCategoria(nombre) {
+  let h = 0;
+  for (const letra of nombre || "") h = (h * 31 + letra.charCodeAt(0)) >>> 0;
+  return `var(--cat-${h % COLORES_CATEGORIA})`;
+}
+
 const pad2 = (n) => String(n).padStart(2, "0");
 const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];

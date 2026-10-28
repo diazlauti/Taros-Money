@@ -10,6 +10,7 @@ import {
   RANGO_LOCAL,
   agruparPorDia,
   categoriasPresentes,
+  colorDeCategoria,
   desdeHaceDias,
   horaCorta,
   nombreDia,
@@ -24,14 +25,6 @@ import { Cargando, ErrorEstado, SkeletonFilas, Vacio } from "./Estado";
 import MensajeError from "./MensajeError";
 
 const SIN_CATEGORIA = "Sin categoría";
-const COLORES_CATEGORIA = 8;
-
-// Color fijo por nombre de categoría (siempre el mismo, filtres lo que filtres).
-function colorDeCategoria(nombre) {
-  let h = 0;
-  for (const letra of nombre || "") h = (h * 31 + letra.charCodeAt(0)) >>> 0;
-  return `var(--cat-${h % COLORES_CATEGORIA})`;
-}
 
 export default function MovimientosTab({
   gastos,
