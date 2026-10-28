@@ -43,6 +43,20 @@ export async function suscripcionActual() {
   }
 }
 
+// El navegador no pudo conectarse a su servicio de avisos ("Registration
+// failed - push service error"). Brave lo trae apagado de fábrica.
+async function mensajeErrorSuscripcion(err) {
+  const brave = await navigator.brave?.isBrave?.().catch(() => false);
+  if (brave) {
+    return "Brave trae apagados los avisos. Abrí brave://settings/privacy, prendé «Usar los servicios de Google para la mensajería push», reiniciá Brave y probá de nuevo.";
+  }
+  if (err?.name === "AbortError" || /push service/i.test(err?.message || "")) {
+    return "Tu navegador no pudo conectarse a su servicio de avisos. Probá de nuevo en un rato, o desde Chrome, Edge o Firefox.";
+  }
+  if (err?.name === "NotAllowedError") return "Para recibir avisos tenés que tocar «Permitir».";
+  return "No pude activar los avisos en este navegador. Probá de nuevo.";
+}
+
 // Tiene que llamarse desde un click (el permiso lo pide el navegador).
 export async function activarPush() {
   if (!pushSoportado()) throw new Error("Este navegador no permite avisos con la app cerrada.");
@@ -57,7 +71,13 @@ export async function activarPush() {
   }
   const reg = await registro();
   let sub = await reg.pushManager.getSubscription();
-  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(CLAVE_PUBLICA) });
+  if (!sub) {
+    try {
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(CLAVE_PUBLICA) });
+    } catch (err) {
+      throw new Error(await mensajeErrorSuscripcion(err));
+    }
+  }
   try {
     return await activarPushBackend(sub.toJSON());
   } catch (err) {
