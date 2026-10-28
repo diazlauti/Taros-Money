@@ -25,7 +25,7 @@ revisarMails,
 mailsDisponible,
 idDePlanilla,
 } from "./api";
-import { haySesion, cerrarSesion, intentarSesionSilenciosa } from "./auth";
+import { haySesion, cerrarSesion, intentarSesionSilenciosa, sesionRecordada } from "./auth";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
 import { fmtFecha, fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
@@ -62,8 +62,8 @@ import CalculadoraTab from "./components/CalculadoraTab";
 
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
-// Si ya había dado permiso antes (otra visita, PWA reabierta), intenta
-// renovar el token solo, sin mostrar nada — evita pedir el login de nuevo
+// Si ya había entrado antes (otra visita, PWA reabierta), renueva el token
+// solo con la sesión larga, sin mostrar nada — evita pedir el login de nuevo
 // cada vez que el token de una hora vence. Sólo corre si todavía no hay
 // una sesión guardada válida.
 const [verificando, setVerificando] = useState(!haySesion());
@@ -110,7 +110,7 @@ return (
 if (!autenticado) {
 return (
 <ConfirmarProvider>
-<Login onSuccess={() => setAutenticado(true)} />
+<Login onSuccess={() => setAutenticado(true)} recordada={sesionRecordada()} />
 </ConfirmarProvider>
 );
 }

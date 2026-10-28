@@ -80,21 +80,25 @@ const PASOS = [
   },
 ];
 
-export default function Login({ onSuccess }) {
+// `recordada` ({ email }) es la cuenta con la que se entró la última vez: si
+// está, en vez de la landing se muestra "Seguir como …" con un solo toque.
+export default function Login({ onSuccess, recordada = null }) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   // Desde qué botón se intentó entrar, para mostrar el error al lado de ese.
   const [origen, setOrigen] = useState("hero");
   const [guiaAbierta, setGuiaAbierta] = useState(false);
   const [esperaAbierta, setEsperaAbierta] = useState(false);
+  const [otraCuenta, setOtraCuenta] = useState(false);
   const instalada = estaInstalada();
+  const seguir = recordada && !otraCuenta;
 
   async function entrar(desde) {
     setOrigen(desde);
     setEnviando(true);
     setError("");
     try {
-      await iniciarSesionConGoogle();
+      await iniciarSesionConGoogle(seguir && recordada.email ? { email: recordada.email } : {});
       playSuccess();
       onSuccess?.();
     } catch (err) {
@@ -133,6 +137,45 @@ export default function Login({ onSuccess }) {
       <p className="mensaje-error landing-error" role="alert">
         {error}
       </p>
+    );
+  }
+
+  // Ya había entrado antes y la sesión no se pudo renovar sola: un toque y
+  // listo (con la cuenta de antes, sin elegirla de nuevo).
+  if (seguir) {
+    return (
+      <main className="pantalla-login">
+        <div className="login-contenido">
+          <header className="login-hero">
+            <img className="login-logo" src="/icon-192.png" alt="" width="192" height="192" />
+            <h1 className="login-titulo">¡Hola de nuevo!</h1>
+            <p className="login-lema">Tocá para seguir donde lo dejaste.</p>
+          </header>
+
+          <div className="card login-card">
+            <button type="button" className="btn btn-primary landing-cta" onClick={() => entrar("hero")} disabled={enviando}>
+              <i className="ph ph-google-logo" aria-hidden="true" />
+              {enviando ? "Entrando…" : error ? "Reintentar" : "Seguir con Google"}
+            </button>
+            {recordada.email && <p className="login-cuenta">{recordada.email}</p>}
+            {errorEntrar("hero")}
+            <p className="login-espera">
+              ¿Es otra persona?
+              <button
+                type="button"
+                className="btn btn-texto"
+                onClick={() => {
+                  setError("");
+                  setOtraCuenta(true);
+                }}
+                disabled={enviando}
+              >
+                Usar otra cuenta
+              </button>
+            </p>
+          </div>
+        </div>
+      </main>
     );
   }
 
