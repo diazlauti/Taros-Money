@@ -300,7 +300,12 @@ function MasDatos({ mes, anterior, gastos, monedaPorCuenta, cotizaciones }) {
           </div>
         )}
       </dl>
-      {datos?.hayOtraMoneda && <p className="texto-chico texto-tenue">Algunos gastos en otra moneda no se sumaron porque falta su cotización.</p>}
+      {datos?.hayOtraMoneda && (
+        <p className="aviso-inline">
+          <i className="ph ph-info" aria-hidden="true" />
+          Algunos gastos en otra moneda no se sumaron porque falta su cotización.
+        </p>
+      )}
     </details>
   );
 }

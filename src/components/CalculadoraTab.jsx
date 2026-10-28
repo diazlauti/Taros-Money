@@ -3,6 +3,7 @@ import { calcularImpuestos, guardarAjustesCalculadora, leerAjustesCalculadora, M
 import { fmtMoney, parseMonto } from "../format";
 import { fmtCotizacion, infoMoneda, valorAutomatico } from "../monedas";
 import Campo from "./Campo";
+import Explicacion from "./Explicacion";
 
 // "1565" → "1565"; 1549.2 → "1549,2" (como se escribe acá).
 function aTexto(n) {
@@ -89,187 +90,197 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
   }
 
   return (
-    <section className="card ancho-form" aria-labelledby="titulo-calculadora">
-      <div className="pila">
-        <h2 className="card-kicker" id="titulo-calculadora">
-          Calculadora de impuestos
-        </h2>
-        <p className="texto-intro">
-          ¿Cuánto te sale en pesos algo que pagás en dólares, con todos los impuestos? Elegí qué se cobra y cuánto.
-        </p>
+    <section className="card calc-card" aria-labelledby="titulo-calculadora">
+      {/* En compu: los datos a la izquierda y el resultado a la derecha. */}
+      <div className="calc-columnas">
+        <div className="pila">
+          <h2 className="card-kicker titulo-con-info" id="titulo-calculadora">
+            Calculadora de impuestos
+            <Explicacion
+              texto="¿Cuánto te sale en pesos algo que pagás en dólares, con todos los impuestos? Elegí qué se cobra y cuánto."
+              etiqueta="Para qué sirve la calculadora"
+            />
+          </h2>
 
-        <div className="fila-campos">
-          <Campo etiqueta="Precio" error={intentado ? errorMonto : ""}>
-            {(p) => (
-              <input
-                {...p}
-                className="input"
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                placeholder="Ej: 9,99"
-                value={montoTexto}
-                onChange={(e) => setMontoTexto(e.target.value)}
-              />
-            )}
-          </Campo>
-          <Campo etiqueta="Moneda">
-            {(p) => (
-              <select
-                {...p}
-                className="input"
-                value={moneda}
-                onChange={(e) => {
-                  setCotizacionPropia(null);
-                  setAjustes((a) => ({ ...a, moneda: e.target.value }));
-                }}
-              >
-                {opciones.map(([c, texto]) => (
-                  <option key={c} value={c}>
-                    {texto}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Campo>
-        </div>
+          <div className="fila-campos">
+            <Campo etiqueta="Precio" error={intentado ? errorMonto : ""}>
+              {(p) => (
+                <input
+                  {...p}
+                  className="input"
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder="Ej: 9,99"
+                  value={montoTexto}
+                  onChange={(e) => setMontoTexto(e.target.value)}
+                />
+              )}
+            </Campo>
+            <Campo etiqueta="Moneda">
+              {(p) => (
+                <select
+                  {...p}
+                  className="input"
+                  value={moneda}
+                  onChange={(e) => {
+                    setCotizacionPropia(null);
+                    setAjustes((a) => ({ ...a, moneda: e.target.value }));
+                  }}
+                >
+                  {opciones.map(([c, texto]) => (
+                    <option key={c} value={c}>
+                      {texto}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Campo>
+          </div>
 
-        {moneda !== "ARS" && (
-          <Campo
-            etiqueta={`Cuántos pesos vale 1 ${moneda}`}
-            ayuda={
-              cotizacionesHoy?.cargando && moneda === "USD"
-                ? "Trayendo la cotización de hoy…"
-                : sugerida.texto
-                  ? `${sugerida.texto}: ${fmtCotizacion(sugerida.valor)}. Podés poner otra.`
-                  : "Poné la cotización que te cobran."
-            }
-            error={intentado || cotizacionTexto ? errorCotizacion : ""}
-          >
-            {(p) => (
-              <input
-                {...p}
-                className="input"
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                placeholder="Ej: 1500"
-                value={cotizacionTexto}
-                onChange={(e) => setCotizacionPropia(e.target.value)}
-              />
-            )}
-          </Campo>
-        )}
-
-        <fieldset className="field">
-          <legend>Impuestos</legend>
-          <ul className="lista calc-impuestos">
-            {ajustes.impuestos.map((imp) => (
-              <li key={imp.id} className="calc-impuesto">
-                <label className="check">
-                  <input type="checkbox" checked={imp.activo} onChange={(e) => cambiarImpuesto(imp.id, { activo: e.target.checked })} />
-                  <span>
-                    <span className="negrita">{imp.nombre}</span>
-                    {imp.ayuda && <span className="check-ayuda texto-tenue">{imp.ayuda}</span>}
-                  </span>
-                </label>
-                <div className="calc-porcentaje">
-                  <input
-                    className="input"
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    aria-label={`Porcentaje de ${imp.nombre}`}
-                    value={String(imp.porcentaje).replace(".", ",")}
-                    onChange={(e) => {
-                      const v = parseMonto(e.target.value);
-                      cambiarImpuesto(imp.id, { porcentaje: e.target.value === "" ? 0 : v >= 0 && v <= 200 ? v : imp.porcentaje });
-                    }}
-                  />
-                  <span aria-hidden="true">%</span>
-                  {imp.propio && (
-                    <button type="button" className="btn btn-icono" onClick={() => sacarImpuesto(imp.id)} aria-label={`Sacar ${imp.nombre}`}>
-                      <i className="ph ph-trash" aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </fieldset>
-
-        {ajustes.impuestos.length < MAX_IMPUESTOS && (
-          <details className="calc-otro">
-            <summary>Sumar otro impuesto</summary>
-            <div className="fila-campos">
-              <Campo etiqueta="Nombre" error={errorNuevo}>
-                {(p) => (
-                  <input
-                    {...p}
-                    className="input"
-                    type="text"
-                    autoComplete="off"
-                    maxLength={40}
-                    placeholder="Ej: Sellos"
-                    value={nuevoNombre}
-                    onChange={(e) => setNuevoNombre(e.target.value)}
-                  />
-                )}
-              </Campo>
-              <Campo etiqueta="%">
-                {(p) => (
-                  <input
-                    {...p}
-                    className="input"
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    placeholder="Ej: 1,2"
-                    value={nuevoPorcentaje}
-                    onChange={(e) => setNuevoPorcentaje(e.target.value)}
-                  />
-                )}
-              </Campo>
-            </div>
-            <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={sumarImpuesto}>
-              <i className="ph ph-plus" aria-hidden="true" />
-              Sumar
-            </button>
-          </details>
-        )}
-
-        <div className="calc-resultado" aria-live="polite">
-          {resultado ? (
-            <>
-              <div className="fila-separada">
-                <span>Precio en pesos</span>
-                <span>{fmtMoney(resultado.base)}</span>
-              </div>
-              {resultado.detalle.map((d) => (
-                <div className="fila-separada texto-tenue" key={d.id}>
-                  <span>
-                    + {d.nombre} ({String(d.porcentaje).replace(".", ",")}%)
-                  </span>
-                  <span>{fmtMoney(d.monto)}</span>
-                </div>
-              ))}
-              <div className="fila-separada calc-total">
-                <span>Total</span>
-                <span>{fmtMoney(resultado.total)}</span>
-              </div>
-            </>
-          ) : (
-            <p className="mensaje-estado">Escribí el precio para ver cuánto te sale.</p>
+          {moneda !== "ARS" && (
+            <Campo
+              etiqueta={`Cuántos pesos vale 1 ${moneda}`}
+              explicacion={
+                cotizacionesHoy?.cargando && moneda === "USD"
+                  ? "Trayendo la cotización de hoy…"
+                  : sugerida.texto
+                    ? `${sugerida.texto}: ${fmtCotizacion(sugerida.valor)}. Podés poner otra.`
+                    : "Poné la cotización que te cobran."
+              }
+              error={intentado || cotizacionTexto ? errorCotizacion : ""}
+            >
+              {(p) => (
+                <input
+                  {...p}
+                  className="input"
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder="Ej: 1500"
+                  value={cotizacionTexto}
+                  onChange={(e) => setCotizacionPropia(e.target.value)}
+                />
+              )}
+            </Campo>
           )}
-        </div>
-        <p className="texto-chico texto-tenue">
-          Es una cuenta aproximada: los impuestos cambian seguido, revisalos en el resumen de tu tarjeta.
-        </p>
 
-        <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={cargar}>
-          <i className="ph ph-plus" aria-hidden="true" />
-          Cargar como gasto
-        </button>
+          <fieldset className="field">
+            <legend>Impuestos</legend>
+            <ul className="lista calc-impuestos">
+              {ajustes.impuestos.map((imp) => (
+                <li key={imp.id} className="calc-impuesto">
+                  <span className="calc-impuesto-nombre">
+                    <label className="check">
+                      <input type="checkbox" checked={imp.activo} onChange={(e) => cambiarImpuesto(imp.id, { activo: e.target.checked })} />
+                      <span className="negrita">{imp.nombre}</span>
+                    </label>
+                    {imp.ayuda && <Explicacion texto={imp.ayuda} etiqueta={`Qué es ${imp.nombre}`} />}
+                  </span>
+                  <div className="calc-porcentaje">
+                    <input
+                      className="input"
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      aria-label={`Porcentaje de ${imp.nombre}`}
+                      value={String(imp.porcentaje).replace(".", ",")}
+                      onChange={(e) => {
+                        const v = parseMonto(e.target.value);
+                        cambiarImpuesto(imp.id, { porcentaje: e.target.value === "" ? 0 : v >= 0 && v <= 200 ? v : imp.porcentaje });
+                      }}
+                    />
+                    <span aria-hidden="true">%</span>
+                    {imp.propio && (
+                      <button type="button" className="btn btn-icono" onClick={() => sacarImpuesto(imp.id)} aria-label={`Sacar ${imp.nombre}`}>
+                        <i className="ph ph-trash" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </fieldset>
+
+          {ajustes.impuestos.length < MAX_IMPUESTOS && (
+            <details className="calc-otro">
+              <summary>Sumar otro impuesto</summary>
+              <div className="fila-campos">
+                <Campo etiqueta="Nombre" error={errorNuevo}>
+                  {(p) => (
+                    <input
+                      {...p}
+                      className="input"
+                      type="text"
+                      autoComplete="off"
+                      maxLength={40}
+                      placeholder="Ej: Sellos"
+                      value={nuevoNombre}
+                      onChange={(e) => setNuevoNombre(e.target.value)}
+                    />
+                  )}
+                </Campo>
+                <Campo etiqueta="%">
+                  {(p) => (
+                    <input
+                      {...p}
+                      className="input"
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      placeholder="Ej: 1,2"
+                      value={nuevoPorcentaje}
+                      onChange={(e) => setNuevoPorcentaje(e.target.value)}
+                    />
+                  )}
+                </Campo>
+              </div>
+              <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={sumarImpuesto}>
+                <i className="ph ph-plus" aria-hidden="true" />
+                Sumar
+              </button>
+            </details>
+          )}
+
+        </div>
+
+        <div className="pila calc-lado">
+          <div className="calc-resultado" aria-live="polite">
+            {resultado ? (
+              <>
+                <div className="fila-separada">
+                  <span>Precio en pesos</span>
+                  <span>{fmtMoney(resultado.base)}</span>
+                </div>
+                {resultado.detalle.map((d) => (
+                  <div className="fila-separada texto-tenue" key={d.id}>
+                    <span>
+                      + {d.nombre} ({String(d.porcentaje).replace(".", ",")}%)
+                    </span>
+                    <span>{fmtMoney(d.monto)}</span>
+                  </div>
+                ))}
+                <div className="fila-separada calc-total">
+                  <span className="titulo-con-info">
+                    Total
+                    <Explicacion
+                      texto="Es una cuenta aproximada: los impuestos cambian seguido, revisalos en el resumen de tu tarjeta."
+                      etiqueta="Más info sobre el total"
+                    />
+                  </span>
+                  <span>{fmtMoney(resultado.total)}</span>
+                </div>
+              </>
+            ) : (
+              <p className="mensaje-estado">Escribí el precio para ver cuánto te sale.</p>
+            )}
+          </div>
+
+          <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={cargar}>
+            <i className="ph ph-plus" aria-hidden="true" />
+            Cargar como gasto
+          </button>
+        </div>
       </div>
     </section>
   );

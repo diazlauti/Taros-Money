@@ -10,6 +10,7 @@ import { avisarAccionTour } from "../tour";
 import Campo from "./Campo";
 import CategoriaChips from "./CategoriaChips";
 import Dialog from "./Dialog";
+import Explicacion from "./Explicacion";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 import PrimeraCuenta from "./PrimeraCuenta";
 import MensajeError from "./MensajeError";
@@ -196,7 +197,10 @@ export default function NuevoMovimientoDialog({
 
         {frecuentes.length > 0 && (
           <fieldset className="field">
-            <legend>{tipo === "gasto" ? "Tus gastos frecuentes" : "Tus ingresos frecuentes"}</legend>
+            <legend className="titulo-con-info">
+              {tipo === "gasto" ? "Tus gastos frecuentes" : "Tus ingresos frecuentes"}
+              <Explicacion texto="Tocá uno para completar el formulario y después «Guardar»." etiqueta="Cómo usar los frecuentes" />
+            </legend>
             <div className="chips">
               {frecuentes.map((fr) => (
                 <button
@@ -212,7 +216,6 @@ export default function NuevoMovimientoDialog({
                 </button>
               ))}
             </div>
-            <p className="field-ayuda">Tocá uno para completar el formulario y después «Guardar».</p>
           </fieldset>
         )}
 

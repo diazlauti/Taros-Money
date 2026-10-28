@@ -63,7 +63,7 @@ export default function EditarCuentaDialog({ cuenta, otrosNombres, onClose, onGu
   return (
     <Dialog titulo={`Editar ${cuenta.nombre}`} onClose={onClose} sucio={sucio && !enviando}>
       <form className="form" onSubmit={guardar} noValidate>
-        <Campo etiqueta="Nombre" ayuda="También se cambia en los movimientos que ya cargaste." error={v.visible("nombre")}>
+        <Campo etiqueta="Nombre" explicacion="Si le cambiás el nombre, también se cambia en los movimientos que ya cargaste." error={v.visible("nombre")}>
           {(p) => (
             <input
               {...p}

@@ -1,3 +1,4 @@
+import Dialog from "./Dialog";
 import { useRef, useState } from "react";
 import { activarAvisoServicios, crearServicio, desmarcarServicio, getAvisoServicios, MENSAJE_FALTA_PERMISO, volverAEntrar } from "../api";
 import { useAvisos } from "../avisos";
@@ -9,10 +10,11 @@ import { ICONO_ESTADO, iconoServicio, SERVICIOS_TIPICOS, serviciosConEstado, TEX
 import { playClick, playError, playSuccess } from "../sounds";
 import { validarServicio } from "../validaciones";
 import CamposServicio from "./CamposServicio";
+import Explicacion from "./Explicacion";
 import EditarServicioDialog from "./EditarServicioDialog";
+import MensajeError from "./MensajeError";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import PagarServicioDialog from "./PagarServicioDialog";
-import MensajeError from "./MensajeError";
 
 const VACIO = { nombre: "", diaVencimiento: "", categoria: "", monto: "", cuenta: "" };
 
@@ -20,6 +22,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   const { avisar } = useAvisos();
   const confirmar = useConfirmar();
   const [form, setForm] = useState(VACIO);
+  const [abierto, setAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [editando, setEditando] = useState(null);
@@ -85,6 +88,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
       avisar("Servicio agregado");
       setForm(VACIO);
       v.reiniciar();
+      setAbierto(false);
       onCambio?.();
     } catch (err) {
       playError();
@@ -205,9 +209,13 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
             return (
               <li className={`card servicio servicio--${s.estado}`} key={s.nombre}>
                 <div className="fila-separada">
-                  <span className="fila">
+                  <span className="fila servicio-nombre">
                     <i className={iconoServicio(s.nombre) || iconoPorCategoria(s.categoria)} aria-hidden="true" />
                     <h2 className="card-title">{s.nombre}</h2>
+                    <span className={`tag tag-estado tag-estado--${s.estado}`}>
+                      <i className={ICONO_ESTADO[s.estado]} aria-hidden="true" />
+                      {TEXTO_ESTADO[s.estado]}
+                    </span>
                   </span>
                   <button
                     type="button"
@@ -218,10 +226,6 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
                     <i className="ph ph-pencil-simple" aria-hidden="true" />
                   </button>
                 </div>
-                <span className={`tag tag-estado tag-estado--${s.estado}`}>
-                  <i className={ICONO_ESTADO[s.estado]} aria-hidden="true" />
-                  {TEXTO_ESTADO[s.estado]}
-                </span>
                 {s.estado === "pagado" ? (
                   <span className="texto-tenue texto-chico">
                     Pagaste {fmtMoney(s.montoPagado, moneda)} el {fmtFecha(s.fechaPago)}
@@ -235,27 +239,34 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
                     </span>
                   </span>
                 )}
-                {s.estado === "pagado" ? (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => desmarcar(s)}
-                    disabled={desmarcando === s.nombre}
+                <div className="servicio-acciones">
+                  {s.estado === "pagado" ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => desmarcar(s)}
+                      disabled={desmarcando === s.nombre}
+                    >
+                      <i className="ph ph-arrow-counter-clockwise" aria-hidden="true" />
+                      {desmarcando === s.nombre ? "Desmarcando…" : "Volver a pendiente"}
+                    </button>
+                  ) : (
+                    <button type="button" className="btn btn-primary" onClick={() => setPagando(s)}>
+                      <i className="ph ph-check" aria-hidden="true" />
+                      Marcar pagado
+                    </button>
+                  )}
+                  <a
+                    className="btn btn-secondary btn-icono-borde"
+                    href={linkCalendario(s)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Recordarme ${s.nombre} todos los meses en Google Calendar (se abre en otra pestaña)`}
+                    title="Recordármelo en Google Calendar"
                   >
-                    <i className="ph ph-arrow-counter-clockwise" aria-hidden="true" />
-                    {desmarcando === s.nombre ? "Desmarcando…" : "Volver a pendiente"}
-                  </button>
-                ) : (
-                  <button type="button" className="btn btn-primary" onClick={() => setPagando(s)}>
-                    <i className="ph ph-check" aria-hidden="true" />
-                    Marcar pagado
-                  </button>
-                )}
-                <a className="link texto-chico" href={linkCalendario(s)} target="_blank" rel="noopener noreferrer">
-                  <i className="ph ph-calendar-plus" aria-hidden="true" />
-                  Recordármelo todos los meses en Google Calendar
-                  <span className="visualmente-oculto">(se abre en otra pestaña)</span>
-                </a>
+                    <i className="ph ph-calendar-plus" aria-hidden="true" />
+                  </a>
+                </div>
               </li>
             );
           })}
@@ -264,47 +275,85 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
     );
   }
 
-  return (
-    <>
-      {contenido}
-
-      <form className="card form ancho-form" onSubmit={agregar} noValidate aria-labelledby="titulo-nuevo-servicio">
+  // El formulario de «nuevo»: directo en la pantalla si todavía no hay
+  // ninguno (para arrancar); si ya hay, se abre con el botón en un diálogo.
+  const formulario = (enDialogo) => (
+    <form
+      className={enDialogo ? "form" : "card form ancho-form"}
+      onSubmit={agregar}
+      noValidate
+      aria-labelledby={enDialogo ? undefined : "titulo-nuevo-servicio"}
+    >
+      {!enDialogo && (
         <h2 className="card-kicker" id="titulo-nuevo-servicio">
           Nuevo servicio
         </h2>
-        {atajos.length > 0 && (
-          <div className="field">
-            <span className="field-etiqueta" id="titulo-atajos-servicio">
-              Atajos
-            </span>
-            <div className="chips" role="group" aria-labelledby="titulo-atajos-servicio">
-              {atajos.map((t) => (
-                <button
-                  type="button"
-                  className="chip"
-                  key={t.nombre}
-                  aria-pressed={form.nombre === t.nombre}
-                  onClick={() => usarAtajo(t.nombre)}
-                >
-                  <i className={t.icono} aria-hidden="true" />
-                  {t.nombre}
-                </button>
-              ))}
-            </div>
+      )}
+      {atajos.length > 0 && (
+        <div className="field">
+          <span className="field-etiqueta" id="titulo-atajos-servicio">
+            Atajos
+          </span>
+          <div className="chips" role="group" aria-labelledby="titulo-atajos-servicio">
+            {atajos.map((t) => (
+              <button
+                type="button"
+                className="chip"
+                key={t.nombre}
+                aria-pressed={form.nombre === t.nombre}
+                onClick={() => usarAtajo(t.nombre)}
+              >
+                <i className={t.icono} aria-hidden="true" />
+                {t.nombre}
+              </button>
+            ))}
           </div>
-        )}
-        <CamposServicio form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} nombreRef={nombreRef} diaRef={diaRef} />
-        {errorForm && (
-          <MensajeError>{errorForm}</MensajeError>
-        )}
-        <button className="btn btn-primary" type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
+        </div>
+      )}
+      <CamposServicio
+        form={form}
+        campo={campo}
+        v={v}
+        categorias={categorias}
+        cuentas={cuentas}
+        nombreRef={nombreRef}
+        diaRef={diaRef}
+      />
+      {errorForm && (
+        <MensajeError>{errorForm}</MensajeError>
+      )}
+      <button className="btn btn-primary" type="submit" disabled={enviando}>
+        {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
+      </button>
+    </form>
+  );
+
+  const directo = !servicios.cargando && lista.length === 0;
+  const formSucio = JSON.stringify(form) !== JSON.stringify(VACIO);
+
+  return (
+    <div className="con-panel">
+      {!directo && (
+        <button
+          type="button"
+          className="btn btn-primary btn-alinear-inicio"
+          onClick={() => {
+            if (!formSucio) v.reiniciar();
+            setAbierto(true);
+          }}
+        >
+          <i className="ph ph-plus" aria-hidden="true" />
+          Nuevo servicio
         </button>
-        <p className="aviso-inline">
-          <i className="ph ph-info" aria-hidden="true" />
-          Cada mes arrancan todos como pendientes. Lo que se debita solo (Netflix, Spotify) va en Suscripciones.
-        </p>
-      </form>
+      )}
+      <div className="con-panel-principal">{contenido}</div>
+
+      {directo && formulario(false)}
+      {abierto && (
+        <Dialog titulo="Nuevo servicio" onClose={() => setAbierto(false)} sucio={formSucio}>
+          {formulario(true)}
+        </Dialog>
+      )}
 
       {editando && (
         <EditarServicioDialog
@@ -325,7 +374,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
           onGuardado={(conGasto) => (conGasto ? onCambioConGasto : onCambio)?.()}
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -359,16 +408,19 @@ function AvisoMail({ estado, guardando, onCambiar }) {
   }
   const activo = !!estado.data?.activo;
   return (
-    <label className="check">
-      <input type="checkbox" checked={activo} disabled={guardando} onChange={(e) => onCambiar(e.target.checked)} />
-      <span>
-        {guardando ? "Guardando…" : "Avisarme por mail si algo está por vencer"}
-        <span className="texto-tenue texto-chico check-ayuda">
-          {activo && estado.data?.mail
+    <span className="check-con-info">
+      <label className="check">
+        <input type="checkbox" checked={activo} disabled={guardando} onChange={(e) => onCambiar(e.target.checked)} />
+        <span>{guardando ? "Guardando…" : "Avisarme por mail si algo está por vencer"}</span>
+      </label>
+      <Explicacion
+        texto={
+          activo && estado.data?.mail
             ? `Te llega a ${estado.data.mail} a la mañana, solo si hay algo vencido o que vence en 3 días.`
-            : "Un mail a la mañana, solo cuando hay algo vencido o que vence en 3 días."}
-        </span>
-      </span>
-    </label>
+            : "Un mail a la mañana, solo cuando hay algo vencido o que vence en 3 días."
+        }
+        etiqueta="Cómo es el aviso por mail"
+      />
+    </span>
   );
 }

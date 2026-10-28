@@ -22,7 +22,7 @@ const PASOS = [
     icono: "ph ph-squares-four",
     titulo: "Resumen",
     resaltar: ["nav:resumen", '[data-tour="periodo"]'],
-    texto: "Tu saldo, lo que gastaste y en qué. Arriba elegís el período.",
+    texto: "Tu plata, lo que entró y salió, lo que falta pagar y en qué se fue. Acá elegís el período.",
   },
   {
     tab: "cuentas",

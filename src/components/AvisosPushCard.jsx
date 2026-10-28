@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getPush, probarPushBackend } from "../api";
 import { useAvisos } from "../avisos";
 import { activarPush, desactivarPush, esIOSSinInstalar, pushConfigurado, pushSoportado, suscripcionActual } from "../push";
+import Explicacion from "./Explicacion";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 
 async function leerEstadoPush() {
@@ -46,11 +47,17 @@ export default function AvisosPushCard({ onInstalar }) {
 
   let contenido;
   if (!pushSoportado()) {
-    contenido = <p className="texto-intro">Este navegador no permite avisos con la app cerrada. Probá con Chrome, Edge, Firefox o Safari.</p>;
+    contenido = (
+      <p className="aviso-inline">
+        <i className="ph ph-info" aria-hidden="true" />
+        Este navegador no permite avisos con la app cerrada. Probá con Chrome, Edge, Firefox o Safari.
+      </p>
+    );
   } else if (esIOSSinInstalar()) {
     contenido = (
       <>
-        <p className="texto-intro">
+        <p className="aviso-inline">
+          <i className="ph ph-device-mobile" aria-hidden="true" />
           En iPhone los avisos solo llegan con Taros Money agregada a la pantalla de inicio (iOS 16.4 o más nuevo). Instalala y
           volvé a esta sección desde el ícono.
         </p>
@@ -80,9 +87,12 @@ export default function AvisosPushCard({ onInstalar }) {
   } else if (!estado.activo) {
     contenido = (
       <>
-        <p className="texto-intro">
-          Te aviso en este dispositivo aunque tengas la app cerrada: cuando encuentro movimientos en tus mails, y a la mañana si un
-          servicio vence o una suscripción se cobra.
+        <p className="subtitulo titulo-con-info">
+          Avisos con la app cerrada
+          <Explicacion
+            texto="Te aviso en este dispositivo aunque tengas la app cerrada: cuando encuentro movimientos en tus mails, y a la mañana si un servicio vence o una suscripción se cobra."
+            etiqueta="Qué avisos te llegan"
+          />
         </p>
         {typeof Notification !== "undefined" && Notification.permission === "denied" && (
           <p className="aviso-inline">

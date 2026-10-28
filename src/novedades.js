@@ -7,7 +7,14 @@ export const NOVEDADES = [
     fecha: "2026-10-28",
     icono: "ph ph-fingerprint",
     titulo: "Bloqueo con huella o Face ID",
-    texto: "Si querés que nadie que agarre tu celu vea tus números, prendelo en Configuración › Seguridad: te pido la huella o Face ID al abrir la app. Si algún día no te anda, entrás con Google.",
+    texto: "Prendelo en Configuración › Seguridad y nadie que agarre tu celu ve tus números.",
+  },
+  {
+    id: "2026-10-28-menos-texto",
+    fecha: "2026-10-28",
+    icono: "ph ph-info",
+    titulo: "Menos texto a la vista",
+    texto: "Las explicaciones ahora están detrás de la «i»: tocala y te sale un cartelito con lo que necesitás saber.",
   },
   {
     id: "2026-10-28-reportes",
@@ -22,6 +29,13 @@ export const NOVEDADES = [
     icono: "ph ph-chat-circle-text",
     titulo: "Contame errores e ideas",
     texto: "Si algo anda mal o se te ocurre una mejora, mandámelo desde Configuración › Ayuda › «Mandar una sugerencia o error». Y si te aparece un error, tocá «Avisar del error» al lado (podés sumar una captura): me llega directo y lo arreglo.",
+  },
+  {
+    id: "2026-10-27-resumen-nuevo",
+    fecha: "2026-10-27",
+    icono: "ph ph-squares-four",
+    titulo: "Resumen renovado",
+    texto: "Arriba ves tu plata y lo que entró y salió (con el ojito la tapás). Abajo, accesos rápidos, lo que falta pagar, en qué se fue y tus últimos movimientos.",
   },
   {
     id: "2026-10-27-avisos-push",

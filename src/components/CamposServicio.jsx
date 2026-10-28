@@ -21,7 +21,7 @@ export default function CamposServicio({ form, campo, v, categorias, cuentas, au
         )}
       </Campo>
       <div className="fila-2">
-        <Campo etiqueta="Monto aproximado" ayuda="Lo ajustás al pagar" error={v.visible("monto")}>
+        <Campo etiqueta="Monto aproximado" explicacion="Poné más o menos cuánto viene. Cuando lo pagues, cargás el monto exacto." error={v.visible("monto")}>
           {(p) => (
             <input
               {...p}
@@ -36,7 +36,7 @@ export default function CamposServicio({ form, campo, v, categorias, cuentas, au
             />
           )}
         </Campo>
-        <Campo etiqueta="Día de vencimiento" ayuda="Del 1 al 31" error={v.visible("diaVencimiento")}>
+        <Campo etiqueta="Día de vencimiento" error={v.visible("diaVencimiento")}>
           {(p) => (
             <input
               {...p}

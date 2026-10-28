@@ -77,7 +77,7 @@ export default function ListaEsperaDialog({ onClose }) {
         <p className="mensaje-estado">
           Por ahora Taros Money es solo para invitados. Dejá tu mail de Google y te avisamos cuando puedas entrar.
         </p>
-        <Campo etiqueta="Tu mail de Google" ayuda="El mismo con el que vas a iniciar sesión." error={v.visible("email")}>
+        <Campo etiqueta="Tu mail de Google" explicacion="El mismo con el que vas a iniciar sesión." error={v.visible("email")}>
           {(p) => (
             <input
               {...p}

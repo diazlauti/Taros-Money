@@ -36,7 +36,7 @@ export default function CamposSuscripcion({ form, campo, v, categorias, cuentas,
             />
           )}
         </Campo>
-        <Campo etiqueta="Día de cobro" ayuda="Del 1 al 31" error={v.visible("diaCobro")}>
+        <Campo etiqueta="Día de cobro" error={v.visible("diaCobro")}>
           {(p) => (
             <input
               {...p}

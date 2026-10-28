@@ -88,7 +88,7 @@ export default function PrimeraCuenta({ onCreada, onCancelar }) {
 
       <Campo
         etiqueta="¿Cuánta plata tenés ahí hoy? (opcional)"
-        ayuda="En pesos. Si no sabés, dejalo vacío y lo ajustás después."
+        explicacion="En pesos. Si no sabés, dejalo vacío y lo ajustás después."
         error={v.visible("saldo")}
       >
         {(p) => (

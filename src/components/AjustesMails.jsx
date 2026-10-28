@@ -6,6 +6,7 @@ import { notificacionesSoportadas, notificar, pedirPermisoNotificaciones, permis
 import { playError, playSuccess } from "../sounds";
 import { BANCOS } from "../bancosMails";
 import Campo from "./Campo";
+import Explicacion from "./Explicacion";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 import MensajeError from "./MensajeError";
 
@@ -59,7 +60,12 @@ export default function AjustesMails({ modo }) {
 
   let avisosDispositivo;
   if (!notificacionesSoportadas()) {
-    avisosDispositivo = <p className="field-ayuda">Este navegador no permite notificaciones.</p>;
+    avisosDispositivo = (
+      <p className="aviso-inline">
+        <i className="ph ph-bell-slash" aria-hidden="true" />
+        Este navegador no permite notificaciones.
+      </p>
+    );
   } else if (permisoAvisos === "granted") {
     avisosDispositivo = (
       <p className="aviso-inline">
@@ -69,7 +75,8 @@ export default function AjustesMails({ modo }) {
     );
   } else if (permisoAvisos === "denied") {
     avisosDispositivo = (
-      <p className="field-ayuda">
+      <p className="aviso-inline">
+        <i className="ph ph-bell-slash" aria-hidden="true" />
         Las notificaciones están bloqueadas para esta app. Habilitalas desde los ajustes del navegador o del celular.
       </p>
     );
@@ -217,7 +224,10 @@ function ListaReglas({ titulo, ayuda, placeholder, tipo, sugeridos, lista, desha
 
   return (
     <fieldset className="field">
-      <legend>{titulo}</legend>
+      <legend className="titulo-con-info">
+        {titulo}
+        {ayuda && <Explicacion texto={ayuda} etiqueta={`Más info: ${titulo}`} />}
+      </legend>
       {sugeridos && (
         <div className="pila-chica">
           <p className="field-ayuda">Tocá los que usás:</p>
@@ -275,7 +285,6 @@ function ListaReglas({ titulo, ayuda, placeholder, tipo, sugeridos, lista, desha
           Agregar
         </button>
       </form>
-      <p className="field-ayuda">{ayuda}</p>
     </fieldset>
   );
 }
