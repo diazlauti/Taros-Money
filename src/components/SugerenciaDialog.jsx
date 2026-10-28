@@ -207,7 +207,7 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
               {errorCaptura}
             </p>
           )}
-          {!captura && <p className="field-ayuda">Opcional</p>}
+          {!captura && <p className="field-ayuda">(Opcional)</p>}
         </div>
         {/* Campo trampa para bots: invisible y fuera del orden de tabulación. */}
         <input
