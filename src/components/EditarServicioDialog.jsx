@@ -4,7 +4,7 @@ import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { parseMonto } from "../format";
 import { useValidacion } from "../hooks";
-import { playClick, playError, playSuccess } from "../sounds";
+import { playBorrar, playError, playSuccess } from "../sounds";
 import { validarServicio } from "../validaciones";
 import CamposServicio from "./CamposServicio";
 import Dialog from "./Dialog";
@@ -61,7 +61,7 @@ export default function EditarServicioDialog({ servicio, categorias, cuentas, on
     setError("");
     try {
       await borrarServicio(nombreOriginal);
-      playClick();
+      playBorrar();
       avisar("Servicio borrado");
       onGuardado?.();
       onClose();

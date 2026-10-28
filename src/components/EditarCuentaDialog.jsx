@@ -4,7 +4,7 @@ import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { fmtMoney } from "../format";
 import { useValidacion } from "../hooks";
-import { playClick, playError, playSuccess } from "../sounds";
+import { playBorrar, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
@@ -49,7 +49,7 @@ export default function EditarCuentaDialog({ cuenta, otrosNombres, onClose, onGu
     setError("");
     try {
       await borrarCuenta(cuenta.nombre);
-      playClick();
+      playBorrar();
       avisar("Cuenta borrada");
       onGuardado?.();
       onClose();
