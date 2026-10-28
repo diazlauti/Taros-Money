@@ -158,6 +158,9 @@
 --z-nav: 5;
 --z-globo: 9;
 --globo-max: 18rem;
+--interruptor-ancho: 44px;
+--interruptor-alto: 26px;
+--ajustes-icono: 34px;
 --z-tour-foco: 11;
 --z-tour: 12;
 --z-aviso: 15;
@@ -4919,4 +4922,265 @@ align-items: center;
 gap: var(--space-1);
 padding-left: calc(var(--icon-md) + var(--space-2));
 font-size: var(--text-xs);
+}
+
+/* --- Configuración estilo ajustes del celu ---
+   Todos los grupos en una sola lista: filas con un cuadradito de color,
+   título y resumen, separadas por una línea fina. Al abrir una, su
+   contenido aparece debajo, dentro de la misma lista. */
+.ajustes-lista {
+display: flex;
+flex-direction: column;
+border: var(--border-thin) solid var(--color-borde);
+border-radius: var(--radius-lg);
+background: var(--color-surface);
+box-shadow: var(--shadow-sm);
+}
+
+.ajustes-lista > .card.config-grupo {
+border: 0;
+border-radius: 0;
+background: none;
+box-shadow: none;
+}
+
+.ajustes-lista > .config-grupo + .config-grupo {
+border-top: var(--border-thin) solid var(--color-divider);
+}
+
+.ajustes-lista > .config-grupo:first-child > .config-grupo-cabeza {
+border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.ajustes-lista > .config-grupo:last-child:not([open]) > .config-grupo-cabeza {
+border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.ajustes-lista .config-grupo-cabeza {
+gap: var(--space-3);
+min-height: calc(var(--tap) + var(--space-3));
+padding: var(--space-2) var(--space-3);
+}
+
+.ajustes-lista .config-grupo-cabeza:hover {
+background: var(--color-surface-2);
+}
+
+.ajustes-lista .config-grupo-cabeza:hover .config-grupo-titulo {
+color: inherit;
+}
+
+.ajustes-lista .config-grupo-icono,
+.ajustes-lista .config-grupo[open] .config-grupo-icono {
+width: var(--ajustes-icono);
+height: var(--ajustes-icono);
+border-radius: var(--radius-sm);
+background: var(--color-accent);
+color: var(--color-on-accent);
+font-size: var(--icon-md);
+}
+
+.ajustes-lista .config-grupo-textos {
+gap: 0;
+}
+
+.ajustes-lista .config-grupo-titulo {
+font-size: var(--text-md);
+font-weight: var(--weight-medium);
+}
+
+.ajustes-lista .config-grupo-resumen {
+font-size: var(--text-xs);
+}
+
+.ajustes-lista .config-grupo-cuerpo {
+padding: var(--space-3);
+}
+
+/* Fila de opción: también como link y con un control abajo (ej. Tema). */
+a.opcion {
+text-decoration: none;
+color: var(--color-text);
+}
+
+a.opcion:hover {
+background: var(--color-surface-2);
+}
+
+a.opcion:focus-visible {
+outline: var(--focus-ring) solid var(--color-focus);
+outline-offset: calc(var(--focus-ring) * -1);
+}
+
+.opcion--columna {
+flex-direction: column;
+align-items: stretch;
+}
+
+.opcion-campo {
+gap: var(--space-2);
+margin: 0;
+}
+
+.opcion-campo legend {
+display: flex;
+align-items: center;
+gap: var(--space-3);
+margin-bottom: var(--space-2);
+font-weight: var(--weight-regular);
+}
+
+.opcion--peligro,
+.opcion--peligro .opcion-icono {
+color: var(--error);
+}
+
+/* Interruptor (prendido/apagado) para un botón con role="switch" o una
+   casilla con la clase .check--interruptor. */
+.interruptor {
+position: relative;
+flex: none;
+width: var(--interruptor-ancho);
+height: var(--interruptor-alto);
+border-radius: var(--radius-pill);
+background: var(--color-borde-fuerte);
+transition: background var(--dur-fast) var(--ease-out);
+}
+
+.interruptor::after {
+content: "";
+position: absolute;
+top: var(--border);
+left: var(--border);
+width: calc(var(--interruptor-alto) - var(--border) * 2);
+height: calc(var(--interruptor-alto) - var(--border) * 2);
+border-radius: 50%;
+background: var(--color-on-accent);
+box-shadow: var(--shadow-sm);
+transition: transform var(--dur-fast) var(--ease-out);
+}
+
+[aria-checked="true"] > .interruptor {
+background: var(--color-accent);
+}
+
+[aria-checked="true"] > .interruptor::after {
+transform: translateX(calc(var(--interruptor-ancho) - var(--interruptor-alto)));
+}
+
+/* Monedas: cada una es una fila, con su casilla como interruptor a la derecha. */
+.config-grupo .monedas-lista {
+gap: 0;
+border: var(--border-thin) solid var(--color-borde);
+border-radius: var(--radius-md);
+background: var(--color-surface);
+}
+
+.config-grupo .monedas-lista > li {
+padding: var(--space-2) var(--space-3);
+}
+
+.config-grupo .monedas-lista > li + li {
+padding-top: var(--space-2);
+}
+
+.config-grupo .monedas-lista .check {
+flex-direction: row-reverse;
+justify-content: space-between;
+align-items: center;
+}
+
+.config-grupo .monedas-lista .check input {
+appearance: none;
+position: relative;
+flex: none;
+width: var(--interruptor-ancho);
+height: var(--interruptor-alto);
+margin: 0;
+border-radius: var(--radius-pill);
+background: var(--color-borde-fuerte);
+cursor: pointer;
+transition: background var(--dur-fast) var(--ease-out);
+}
+
+.config-grupo .monedas-lista .check input::after {
+content: "";
+position: absolute;
+top: var(--border);
+left: var(--border);
+width: calc(var(--interruptor-alto) - var(--border) * 2);
+height: calc(var(--interruptor-alto) - var(--border) * 2);
+border-radius: 50%;
+background: var(--color-on-accent);
+box-shadow: var(--shadow-sm);
+transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.config-grupo .monedas-lista .check input:checked {
+background: var(--color-accent);
+}
+
+.config-grupo .monedas-lista .check input:checked::after {
+transform: translateX(calc(var(--interruptor-ancho) - var(--interruptor-alto)));
+}
+
+.config-grupo .monedas-lista .check input:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+.config-grupo .monedas-lista .check input:focus-visible {
+outline: var(--focus-ring) solid var(--color-focus);
+outline-offset: var(--border);
+}
+
+.config-grupo .monedas-lista .moneda-detalle,
+.config-grupo .monedas-lista .en-uso {
+padding-left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.interruptor,
+.interruptor::after,
+.config-grupo .monedas-lista .check input,
+.config-grupo .monedas-lista .check input::after {
+transition: none;
+}
+}
+
+/* Categorías en Configuración: una fila por categoría (tocás el nombre para
+   editarla, la cruz para sacarla). */
+#config-gastos .lista.chips {
+flex-direction: column;
+flex-wrap: nowrap;
+gap: 0;
+border: var(--border-thin) solid var(--color-borde);
+border-radius: var(--radius-md);
+background: var(--color-surface);
+}
+
+#config-gastos .lista.chips > .tag {
+width: 100%;
+padding: 0 var(--space-1) 0 0;
+border: 0;
+border-radius: 0;
+background: none;
+font-size: var(--text-md);
+justify-content: space-between;
+}
+
+#config-gastos .lista.chips > .tag + .tag {
+border-top: var(--border-thin) solid var(--color-divider);
+}
+
+#config-gastos .lista.chips .tag-editar {
+flex: 1;
+gap: var(--space-3);
+border-radius: var(--radius-md);
+text-align: left;
+}
+
+#config-gastos .lista.chips .tag-editar:hover {
+text-decoration: none;
+background: var(--color-surface-2);
 }
