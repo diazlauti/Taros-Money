@@ -133,6 +133,7 @@
 --z-version: 18;
 --z-dialog: 20;
 --z-confirmar: 25;
+--z-bloqueo: 30;
 
 color-scheme: light;
 }
@@ -2130,6 +2131,22 @@ align-items: center;
 justify-content: center;
 column-gap: var(--space-2);
 font-size: var(--text-sm);
+}
+
+/* --- Bloqueo con huella o Face ID --- */
+
+/* El envoltorio del panel no cambia el layout: solo sirve para dejarlo
+   inaccesible (inert) mientras está bloqueado. */
+.app-raiz {
+display: contents;
+}
+
+/* Tapa todo, incluso avisos y diálogos que hayan quedado abiertos. */
+.pantalla-bloqueo {
+position: fixed;
+inset: 0;
+z-index: var(--z-bloqueo);
+overflow-y: auto;
 }
 
 /* --- Landing (pantalla de entrada) --- */

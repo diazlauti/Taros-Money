@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-28-bloqueo-huella",
+    fecha: "2026-10-28",
+    icono: "ph ph-fingerprint",
+    titulo: "Bloqueo con huella o Face ID",
+    texto: "Si querés que nadie que agarre tu celu vea tus números, prendelo en Configuración › Seguridad: te pido la huella o Face ID al abrir la app. Si algún día no te anda, entrás con Google.",
+  },
+  {
     id: "2026-10-28-reportes",
     fecha: "2026-10-28",
     icono: "ph ph-chart-donut",
