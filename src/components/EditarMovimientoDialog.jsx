@@ -14,7 +14,7 @@ import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { fmtMoney, parseMonto } from "../format";
 import { useValidacion } from "../hooks";
-import { playClick, playError, playSuccess } from "../sounds";
+import { playBorrar, playDeshacer, playError, playSuccess } from "../sounds";
 import { avisarAccionTour } from "../tour";
 import { validarMovimiento } from "../validaciones";
 import Campo from "./Campo";
@@ -114,7 +114,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
     };
     try {
       await (esGasto ? agregarGasto : agregarIngreso)(original);
-      playSuccess();
+      playDeshacer();
       avisar(esGasto ? "Listo, el gasto volvió" : "Listo, el ingreso volvió");
       onGuardado?.();
     } catch (err) {
@@ -142,7 +142,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
     try {
       if (sinConfirmar) await descartarGastoDeMail(movimiento.idMail);
       else await (esGasto ? borrarGasto : borrarIngreso)(criterio);
-      playClick();
+      playBorrar();
       if (sinConfirmar) avisar("Gasto descartado");
       else avisar(esGasto ? "Gasto borrado" : "Ingreso borrado", "exito", { accion: "Deshacer", onAccion: deshacerBorrado });
       if (puedeIgnorar && ignorar) {
