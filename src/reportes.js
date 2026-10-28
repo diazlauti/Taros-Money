@@ -8,10 +8,14 @@ const COLORES_CATEGORIA = 8;
 export const SIN_CATEGORIA = "Sin categoría";
 
 // Mismo color por nombre que en Movimientos, así una categoría se ve igual en las dos.
-export function colorDeCategoria(nombre) {
+export function indiceDeCategoria(nombre) {
   let h = 0;
   for (const letra of nombre || "") h = (h * 31 + letra.charCodeAt(0)) >>> 0;
-  return `var(--cat-${h % COLORES_CATEGORIA})`;
+  return h % COLORES_CATEGORIA;
+}
+
+export function colorDeCategoria(nombre) {
+  return `var(--cat-${indiceDeCategoria(nombre)})`;
 }
 
 // La tendencia llega del más viejo al actual ({ mes: "Oct", ingresos, gastos }).
@@ -123,27 +127,87 @@ export function diaCorto(fecha) {
   return `${nombres[d.getDay()]} ${d.getDate()}`;
 }
 
-// Tramos de la dona sobre una vuelta de 1000: { categoria, desde, largo,
-// conIcono, x, y } con x/y en % del cuadro (dónde va el ícono, al medio del
-// tramo). Entre tramo y tramo queda un hueco chico.
-export function segmentosDona(lista, { hueco = 12, minimo = 6, pctIcono = 0.08 } = {}) {
-  const total = lista.reduce((s, c) => s + c.total, 0);
+// Medidas de la dona, en unidades del dibujo (viewBox de 200 × 200): el aro
+// va del radio 66 al 94 (centro en 80) y las esquinas se redondean con 4.
+export const DONA = { radio: 80, grosor: 28, esquina: 4, hueco: 5 };
+const MAX_TRAMOS = 8;
+
+const r2 = (n) => Math.round(n * 100) / 100;
+const punto = (radio, angulo) => `${r2(100 + radio * Math.cos(angulo))} ${r2(100 + radio * Math.sin(angulo))}`;
+
+// Tramos de la dona estilo Mercado Pago: cada uno es un arco grueso con las
+// esquinas apenas redondeadas y un hueco parejo entre tramo y tramo.
+// Devuelve [{ categoria, otros, indice, d, conIcono, x, y }]: d es el
+// dibujo del tramo (achicado `esquina` para todos lados; el trazo de ese
+// grosor con uniones redondas lo devuelve a su tamaño con las puntas
+// redondeadas) y x/y el centro del tramo en % del cuadro, donde va el ícono.
+// - Con más de 8 categorías, las más chicas se juntan en «Otras».
+// - Cada tramo tiene un largo mínimo para que se vea aunque sea el 1%.
+// - El ícono va solo si entra cómodo adentro del tramo.
+export function segmentosDona(lista) {
+  let items = lista.filter((c) => c.total > 0);
+  const total = items.reduce((s, c) => s + c.total, 0);
   if (!total) return [];
-  const conHueco = lista.length > 1 ? hueco : 0;
-  let desde = 0;
-  return lista.map((c) => {
-    const parte = (c.total / total) * 1000;
-    const largo = Math.max(minimo, parte - conHueco);
-    const angulo = ((desde + largo / 2) / 1000) * 2 * Math.PI - Math.PI / 2;
-    const tramo = {
-      categoria: c.categoria,
-      desde,
-      largo,
-      conIcono: c.total / total >= pctIcono,
-      x: Math.round((50 + 40 * Math.cos(angulo)) * 10) / 10,
-      y: Math.round((50 + 40 * Math.sin(angulo)) * 10) / 10,
-    };
-    desde += parte;
-    return tramo;
+  if (items.length > MAX_TRAMOS) {
+    const resto = items.slice(MAX_TRAMOS - 1).reduce((s, c) => s + c.total, 0);
+    items = [...items.slice(0, MAX_TRAMOS - 1), { categoria: "Otras", total: resto, otros: true }];
+  }
+
+  const { radio, grosor, esquina, hueco } = DONA;
+  const exterior = radio + grosor / 2 - esquina;
+  const interior = radio - grosor / 2 + esquina;
+  const centro = (angulo) => ({
+    x: r2(((100 + radio * Math.cos(angulo)) / 200) * 100),
+    y: r2(((100 + radio * Math.sin(angulo)) / 200) * 100),
   });
+  const ARRIBA = -Math.PI / 2;
+
+  if (items.length === 1) {
+    const c = items[0];
+    // Aro completo: dos círculos (el de adentro en sentido contrario hace el agujero).
+    const d =
+      `M ${punto(exterior, ARRIBA)} A ${exterior} ${exterior} 0 1 1 ${punto(exterior, ARRIBA + Math.PI)} ` +
+      `A ${exterior} ${exterior} 0 1 1 ${punto(exterior, ARRIBA)} Z ` +
+      `M ${punto(interior, ARRIBA)} A ${interior} ${interior} 0 1 0 ${punto(interior, ARRIBA + Math.PI)} ` +
+      `A ${interior} ${interior} 0 1 0 ${punto(interior, ARRIBA)} Z`;
+    return [{ ...base(c), d, conIcono: !c.otros, ...centro(ARRIBA + Math.PI / 4) }];
+  }
+
+  // Ángulo de cada tramo (hueco incluido): proporcional, con un mínimo. Los
+  // que quedan por debajo se fijan en el mínimo y el resto se reparte.
+  const VUELTA = 2 * Math.PI;
+  const minimo = (hueco + 2 * esquina + 4) / radio;
+  const fijos = new Set();
+  let angulos = [];
+  for (let vuelta = 0; vuelta < items.length; vuelta++) {
+    const libre = VUELTA - fijos.size * minimo;
+    const sumaLibres = items.reduce((s, c, i) => (fijos.has(i) ? s : s + c.total), 0);
+    angulos = items.map((c, i) => (fijos.has(i) ? minimo : (c.total / sumaLibres) * libre));
+    const nuevos = angulos.map((a, i) => (a < minimo && !fijos.has(i) ? i : -1)).filter((i) => i >= 0);
+    if (!nuevos.length) break;
+    nuevos.forEach((i) => fijos.add(i));
+  }
+
+  // El ícono entra si el arco (sin el hueco) mide al menos 1.2 veces el grosor del aro.
+  const minimoIcono = (hueco + grosor * 1.2) / radio;
+  let desde = ARRIBA;
+  return items.map((c, i) => {
+    const a0 = desde + hueco / 2 / radio;
+    const a1 = desde + angulos[i] - hueco / 2 / radio;
+    const medio = (a0 + a1) / 2;
+    // Se achica `esquina` en cada punta (en ángulo, según el radio).
+    const recorte = (radio2) => Math.min(esquina / radio2, (a1 - a0) / 2 - 0.0001);
+    const o0 = a0 + recorte(exterior), o1 = a1 - recorte(exterior);
+    const i0 = a0 + recorte(interior), i1 = a1 - recorte(interior);
+    const grande = o1 - o0 > Math.PI ? 1 : 0;
+    const d =
+      `M ${punto(exterior, o0)} A ${exterior} ${exterior} 0 ${grande} 1 ${punto(exterior, o1)} ` +
+      `L ${punto(interior, i1)} A ${interior} ${interior} 0 ${grande} 0 ${punto(interior, i0)} Z`;
+    desde += angulos[i];
+    return { ...base(c), d, conIcono: !c.otros && angulos[i] >= minimoIcono, ...centro(medio) };
+  });
+}
+
+function base(c) {
+  return { categoria: c.categoria, otros: !!c.otros, indice: c.otros ? null : indiceDeCategoria(c.categoria) };
 }

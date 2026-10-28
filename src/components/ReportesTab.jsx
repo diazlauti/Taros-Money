@@ -11,12 +11,16 @@ import {
   gastosDelMes,
   mesesDeTendencia,
   porCategoria,
+  DONA,
   segmentosDona,
   variacion,
 } from "../reportes";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
 
 const MESES_A_VER = 6;
+// Colores de categoría oscuros (--cat-1 azul, --cat-4 violeta): el ícono va
+// en blanco para que se lea; en el resto, en azul noche.
+const TINTA_CLARA = new Set([1, 4]);
 const pct = (n) => `${Math.round(Math.abs(n) * 100)}%`;
 
 export default function ReportesTab({ tendencia, monedaPorCuenta = {}, cotizaciones = {}, onNuevo }) {
@@ -134,29 +138,28 @@ function Categorias({ mes, anterior, gastos, monedaPorCuenta, cotizaciones, onNu
       <p className="reporte-subtitulo">Gastos por categoría</p>
       <div className="reporte-dona">
         <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-          {segmentos.map((s) => (
-            <circle
+          {segmentos.map((s, i) => (
+            <path
               key={s.categoria}
               className="reporte-dona-tramo"
-              cx="100"
-              cy="100"
-              r="80"
-              pathLength="1000"
-              strokeDasharray={`${s.largo} 1000`}
-              strokeDashoffset={-s.desde}
-              style={{ "--cat-color": colorDeCategoria(s.categoria) }}
+              d={s.d}
+              fillRule="evenodd"
+              strokeWidth={DONA.esquina * 2}
+              style={{ "--cat-color": s.otros ? "var(--color-gasto)" : colorDeCategoria(s.categoria), "--orden": i }}
             />
           ))}
         </svg>
         {segmentos
           .filter((s) => s.conIcono)
           .map((s) => (
-            <i
+            <span
               key={s.categoria}
-              className={"reporte-dona-icono " + iconoPorCategoria(s.categoria)}
+              className={"reporte-dona-icono" + (TINTA_CLARA.has(s.indice) ? " reporte-dona-icono--claro" : "")}
               style={{ "--x": `${s.x}%`, "--y": `${s.y}%` }}
               aria-hidden="true"
-            />
+            >
+              <i className={iconoPorCategoria(s.categoria)} />
+            </span>
           ))}
         <div className="reporte-dona-centro">
           <span className="reporte-dona-total">{fmtMoney(total)}</span>
