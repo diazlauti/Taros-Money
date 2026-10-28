@@ -7,7 +7,7 @@ export const NOVEDADES = [
     fecha: "2026-10-28",
     icono: "ph ph-chat-circle-text",
     titulo: "Contame errores e ideas",
-    texto: "Si algo anda mal o se te ocurre una mejora, mandámelo desde Configuración › Ayuda › «Mandar una sugerencia o error». Me llega directo y lo arreglo.",
+    texto: "Si algo anda mal o se te ocurre una mejora, mandámelo desde Configuración › Ayuda › «Mandar una sugerencia o error». Y si te aparece un error, tocá «Avisar del error» al lado: me llega directo y lo arreglo.",
   },
   {
     id: "2026-10-27-avisos-push",

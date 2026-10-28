@@ -7,6 +7,7 @@ import { playError, playSuccess } from "../sounds";
 import { BANCOS } from "../bancosMails";
 import Campo from "./Campo";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
+import MensajeError from "./MensajeError";
 
 // Búsqueda personalizada (remitentes y palabras), aviso por mail del modo
 // "siempre" y notificaciones en este dispositivo. Solo se muestra con la
@@ -167,9 +168,7 @@ export default function AjustesMails({ modo }) {
       </h3>
       {reglas}
       {errorGuardar && (
-        <p className="mensaje-error" role="alert">
-          {errorGuardar}
-        </p>
+        <MensajeError>{errorGuardar}</MensajeError>
       )}
     </div>
   );

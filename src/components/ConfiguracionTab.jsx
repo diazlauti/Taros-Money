@@ -15,6 +15,7 @@ import AvisosPushCard from "./AvisosPushCard";
 import SugerenciaDialog from "./SugerenciaDialog";
 import { pushConfigurado } from "../push";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
+import MensajeError from "./MensajeError";
 
 const OPCIONES_TEMA = [
   ["auto", "Automático"],
@@ -273,9 +274,7 @@ export default function ConfiguracionTab({
             </button>
           </form>
           {errorCategoria && (
-            <p className="mensaje-error" role="alert">
-              {errorCategoria}
-            </p>
+            <MensajeError>{errorCategoria}</MensajeError>
           )}
         </section>
 

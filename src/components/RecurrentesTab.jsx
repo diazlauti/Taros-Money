@@ -8,6 +8,7 @@ import { validarSuscripcion } from "../validaciones";
 import CamposSuscripcion from "./CamposSuscripcion";
 import EditarSuscripcionDialog from "./EditarSuscripcionDialog";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
+import MensajeError from "./MensajeError";
 
 const VACIO = { nombre: "", diaCobro: "", categoria: "", monto: "", cuenta: "" };
 
@@ -142,9 +143,7 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
         </h2>
         <CamposSuscripcion form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} nombreRef={nombreRef} />
         {errorForm && (
-          <p className="mensaje-error" role="alert">
-            {errorForm}
-          </p>
+          <MensajeError>{errorForm}</MensajeError>
         )}
         <button className="btn btn-primary" type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}

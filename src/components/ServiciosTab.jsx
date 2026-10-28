@@ -12,6 +12,7 @@ import CamposServicio from "./CamposServicio";
 import EditarServicioDialog from "./EditarServicioDialog";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import PagarServicioDialog from "./PagarServicioDialog";
+import MensajeError from "./MensajeError";
 
 const VACIO = { nombre: "", diaVencimiento: "", categoria: "", monto: "", cuenta: "" };
 
@@ -294,9 +295,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
         )}
         <CamposServicio form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} nombreRef={nombreRef} diaRef={diaRef} />
         {errorForm && (
-          <p className="mensaje-error" role="alert">
-            {errorForm}
-          </p>
+          <MensajeError>{errorForm}</MensajeError>
         )}
         <button className="btn btn-primary" type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}

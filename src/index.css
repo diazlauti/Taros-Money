@@ -1488,6 +1488,46 @@ color: var(--error);
 font-size: var(--text-sm);
 }
 
+/* Error con «Avisar del error» al lado (o abajo si no entra). */
+.mensaje-error-fila {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+column-gap: var(--space-3);
+row-gap: var(--space-1);
+}
+
+.btn-avisar-error {
+min-height: var(--tap);
+font-size: var(--text-sm);
+}
+
+/* Subrayado solo el texto, no el ícono. */
+.btn-avisar-error {
+text-decoration: none;
+}
+
+.btn-avisar-error span {
+text-decoration: underline;
+}
+
+.error-adjunto {
+display: flex;
+flex-direction: column;
+gap: var(--space-1);
+}
+
+.error-adjunto-texto {
+margin: 0;
+padding: var(--space-2);
+border-left: var(--border) solid var(--error);
+border-radius: var(--radius-sm);
+background: var(--color-surface-2);
+color: var(--color-text);
+font-size: var(--text-sm);
+overflow-wrap: anywhere;
+}
+
 .mensaje-estado {
 margin: 0;
 color: var(--color-text-dim);

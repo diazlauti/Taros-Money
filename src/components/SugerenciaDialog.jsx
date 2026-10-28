@@ -37,7 +37,10 @@ function errorMailOpcional(texto) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor) ? "" : "Revisá el mail, por ejemplo nombre@gmail.com.";
 }
 
-export default function SugerenciaDialog({ onClose }) {
+// Con `errorVisto` (desde «Avisar del error») el error ya va adjunto y
+// contar qué estabas haciendo es opcional.
+export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla = "" }) {
+  const desdeError = errorVisto !== null;
   const nombreTipo = useId();
   const [form, setForm] = useState(() => ({
     tipo: "error",
@@ -49,7 +52,7 @@ export default function SugerenciaDialog({ onClose }) {
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState("");
   const v = useValidacion(form, (f) => ({
-    mensaje: f.mensaje.trim() ? "" : f.tipo === "error" ? "Contame qué pasó." : "Contame tu idea.",
+    mensaje: f.mensaje.trim() || desdeError ? "" : f.tipo === "error" ? "Contame qué pasó." : "Contame tu idea.",
     email: errorMailOpcional(f.email),
   }));
 
@@ -70,6 +73,8 @@ export default function SugerenciaDialog({ onClose }) {
           "form-name": FORM_NAME,
           tipo: form.tipo === "error" ? "Error" : "Sugerencia",
           mensaje: form.mensaje.trim(),
+          error: errorVisto || "",
+          pantalla,
           email: form.email.trim(),
           version: NUMERO_VERSION || "",
           dispositivo: datosDelDispositivo(),
@@ -108,29 +113,46 @@ export default function SugerenciaDialog({ onClose }) {
   const sucio = form.mensaje !== "" && !enviando;
 
   return (
-    <Dialog titulo="Mandar una sugerencia o error" onClose={onClose} sucio={sucio}>
+    <Dialog titulo={desdeError ? "Avisar del error" : "Mandar una sugerencia o error"} onClose={onClose} sucio={sucio}>
       <form className="form" onSubmit={enviar} noValidate>
-        <fieldset className="field">
-          <legend>¿Qué querés contarme?</legend>
-          <div className="chips">
-            {TIPOS.map(([valor, texto, icono]) => (
-              <label className="chip-radio" key={valor}>
-                <input
-                  type="radio"
-                  name={nombreTipo}
-                  value={valor}
-                  checked={form.tipo === valor}
-                  onChange={cambiar("tipo")}
-                />
-                <i className={icono} aria-hidden="true" />
-                {texto}
-              </label>
-            ))}
+        {desdeError ? (
+          <div className="error-adjunto">
+            <p className="field-ayuda">Va adjunto este error, con la versión y el dispositivo:</p>
+            <p className="error-adjunto-texto">{errorVisto || "Un error sin mensaje"}</p>
           </div>
-        </fieldset>
+        ) : (
+          <fieldset className="field">
+            <legend>¿Qué querés contarme?</legend>
+            <div className="chips">
+              {TIPOS.map(([valor, texto, icono]) => (
+                <label className="chip-radio" key={valor}>
+                  <input
+                    type="radio"
+                    name={nombreTipo}
+                    value={valor}
+                    checked={form.tipo === valor}
+                    onChange={cambiar("tipo")}
+                  />
+                  <i className={icono} aria-hidden="true" />
+                  {texto}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
         <Campo
-          etiqueta={form.tipo === "error" ? "¿Qué pasó?" : "¿Cuál es tu idea?"}
-          ayuda={form.tipo === "error" ? "Dónde estabas y qué tocaste. La versión y el dispositivo van solos." : ""}
+          etiqueta={
+            desdeError
+              ? "¿Qué estabas haciendo? (opcional)"
+              : form.tipo === "error"
+                ? "¿Qué pasó?"
+                : "¿Cuál es tu idea?"
+          }
+          ayuda={
+            !desdeError && form.tipo === "error"
+              ? "Dónde estabas y qué tocaste. La versión y el dispositivo van solos."
+              : ""
+          }
           error={v.visible("mensaje")}
         >
           {(p) => (
