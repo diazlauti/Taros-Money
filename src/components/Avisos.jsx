@@ -20,6 +20,11 @@ export default function AvisosProvider({ children }) {
   const siguienteId = useRef(0);
   const timers = useRef(new Map());
   const pausado = useRef(false);
+  // Los avisos en pantalla, para no repetir uno que ya se ve.
+  const visibles = useRef([]);
+  useEffect(() => {
+    visibles.current = avisos;
+  }, [avisos]);
 
   const sacar = useCallback((id) => {
     clearTimeout(timers.current.get(id)?.timeout);
@@ -39,6 +44,9 @@ export default function AvisosProvider({ children }) {
     (texto, tipo = "exito", opciones = {}) => {
       const id = siguienteId.current++;
       const { accion, onAccion } = opciones;
+      // El mismo aviso repetido (ej. tocar varias veces un botón que falla)
+      // no se apila: queda uno solo.
+      if (!accion && visibles.current.some((x) => x.texto === texto && x.tipo === tipo)) return;
       setAvisos((a) => [...a, { id, texto, tipo, accion, onAccion }]);
       const ms = accion ? duracion("--dur-aviso-accion", 8000) : duracion("--dur-aviso", 3200);
       if (pausado.current) timers.current.set(id, { timeout: null, ms });
