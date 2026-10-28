@@ -135,7 +135,6 @@ function Categorias({ mes, anterior, gastos, monedaPorCuenta, cotizaciones, onNu
 
   return (
     <>
-      <p className="reporte-subtitulo">Gastos por categoría</p>
       <div className="reporte-dona">
         <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">
           {segmentos.map((s, i) => (

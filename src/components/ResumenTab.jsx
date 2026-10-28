@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria, nombreMes } from "../format";
 import RevisionMails from "./RevisionMails";
-import { serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
+import { etiquetaEstado, serviciosConEstado, textoVencimiento } from "../servicios";
 import { colorDeCategoria, nombreDia } from "../movimientos";
 import {
   categoriasOrdenadas,
@@ -282,15 +282,14 @@ function ParaHacer({ servicios, cotizaciones, monedaPorCuenta, onIrA }) {
                   <i className={iconoDeServicio(s)} />
                 </span>
                 <span className="movimiento-texto">
-                  <span className="movimiento-desc">Pagar {s.nombre}</span>
-                  <span className="texto-tenue texto-chico">
-                    {textoVencimiento(s)}
-                  </span>
+                  <span className="movimiento-desc">{s.nombre}</span>
                 </span>
                 <span className="mov-derecha">
                   <span className="movimiento-monto num">{fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}</span>
-                  {s.estado !== "pendiente" && (
-                    <span className={`tag tag-estado tag-estado--${s.estado}`}>{TEXTO_ESTADO[s.estado]}</span>
+                  {s.estado === "pendiente" ? (
+                    <span className="texto-tenue texto-chico">{etiquetaEstado(s)}</span>
+                  ) : (
+                    <span className={`tag tag-estado tag-estado--${s.estado}`}>{etiquetaEstado(s)}</span>
                   )}
                 </span>
               </button>
@@ -298,8 +297,7 @@ function ParaHacer({ servicios, cotizaciones, monedaPorCuenta, onIrA }) {
           ))}
         </ul>
         <p className="resumen-pie texto-tenue texto-chico">
-          Te {pendientes.length === 1 ? "falta 1" : `faltan ${pendientes.length}`} de {lista.length} ·{" "}
-          <span className="num">{fmtMoney(faltaPagar)}</span> en total
+          Falta <span className="num">{fmtMoney(faltaPagar)}</span>
         </p>
       </>
     );

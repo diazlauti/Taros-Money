@@ -53,6 +53,12 @@ export function textoVencimiento({ estado, diasRestantes }) {
   return `Vence en ${diasRestantes} días`;
 }
 
+// Lo que va en la pastilla: los días que faltan (o «Pagado»). Así no se
+// repite «Vence pronto» al lado de «Vence en 2 días».
+export function etiquetaEstado(servicio) {
+  return servicio.estado === "pagado" ? TEXTO_ESTADO.pagado : textoVencimiento(servicio);
+}
+
 // Lista con el estado calculado, ordenada por urgencia y después por día.
 export function serviciosConEstado(lista, ahora = new Date()) {
   return (lista || [])
