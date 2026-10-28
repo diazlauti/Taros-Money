@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
-import { buscarActualizacion, NUMERO_VERSION } from "../actualizacion";
+import { actualizarAhora, buscarActualizacion, NUMERO_VERSION } from "../actualizacion";
 import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import { iconoDeCategoria } from "../iconos";
@@ -353,13 +353,14 @@ export default function ConfiguracionTab({
   );
 }
 
-// Solo se avisa si no se pudo fijar: si hay versión nueva ya aparece el
-// cartel de arriba, y si no hay, no hace falta decir nada.
+// El resultado sale en un aviso corto de abajo, que se va solo (lauti
+// quiere poco texto fijo en Ayuda, pero sí enterarse de qué pasó).
 const SIN_CONEXION = "No pude fijarme: parece que no hay conexión.";
 
 // La app se actualiza sola, pero en el iPhone instalada no hay botón de
 // recargar: con esto se puede pedir que se fije ya.
 function BuscarActualizacion() {
+  const { avisar } = useAvisos();
   const [estado, setEstado] = useState("");
 
   async function buscar() {
@@ -367,7 +368,15 @@ function BuscarActualizacion() {
     playClick();
     const resultado = await buscarActualizacion();
     setEstado(resultado);
-    if (resultado === "sin-conexion") playError();
+    if (resultado === "sin-conexion") {
+      playError();
+      avisar(SIN_CONEXION, "error");
+    } else if (resultado === "nueva") {
+      playSuccess();
+      avisar("Hay una versión nueva", "exito", { accion: "Actualizar", onAccion: actualizarAhora });
+    } else {
+      avisar("Ya tenés la última versión", "exito");
+    }
   }
 
   return (
@@ -382,9 +391,6 @@ function BuscarActualizacion() {
         {estado === "buscando" ? "Buscando…" : "Buscar actualización"}
       </button>
       {NUMERO_VERSION && <p className="field-ayuda">Versión {NUMERO_VERSION}</p>}
-      <p className="field-ayuda" aria-live="polite">
-        {estado === "sin-conexion" ? SIN_CONEXION : ""}
-      </p>
     </div>
   );
 }
