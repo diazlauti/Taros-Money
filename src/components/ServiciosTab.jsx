@@ -229,13 +229,12 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
                 {s.estado === "pagado" ? (
                   <span className="texto-tenue texto-chico">
                     Pagaste {fmtMoney(s.montoPagado, moneda)} el {fmtFecha(s.fechaPago)}
-                    {s.gastoRegistrado ? " · cargado en gastos" : ""}
                   </span>
                 ) : (
                   <span className="fila-separada">
                     <span className="monto-chico">{s.monto ? `≈ ${fmtMoney(s.monto, moneda)}` : "Monto a definir"}</span>
-                    <span className="texto-tenue texto-chico">
-                      {textoVencimiento(s)} ({fmtFecha(s.vencimiento)})
+                    <span className="texto-tenue texto-chico" title={fmtFecha(s.vencimiento)}>
+                      {textoVencimiento(s)}
                     </span>
                   </span>
                 )}

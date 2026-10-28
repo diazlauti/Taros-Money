@@ -62,7 +62,7 @@ export function armarPendientes({ cantidadARevisar = 0, servicios = [], suscripc
         tipo: s.estado === "vencido" ? "urgente" : "servicio",
         icono: s.estado === "vencido" ? "ph ph-warning-circle" : "ph ph-clock",
         titulo: `${s.nombre}: ${textoVencimiento(s).toLowerCase()}`,
-        texto: s.monto ? `Son ${fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}. Cuando lo pagues, marcalo como pagado.` : "Cuando lo pagues, marcalo como pagado.",
+        texto: s.monto ? `Son ${fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}.` : "",
         accion: { texto: "Ver servicios", tab: "servicios" },
       });
     });

@@ -212,12 +212,11 @@ function Avisos({ revision, compacto }) {
   );
 }
 
-// La última revisión en una línea: "Hace 5 min · últimos 7 días".
-function lineaUltimaRevision(revision, dias) {
+// La última revisión en una línea: "Revisado hace 5 min".
+function lineaUltimaRevision(revision) {
   if (!revision) return "";
-  const cuando = haceCuanto(revision.cuando) || revision.cuando;
-  const diasRev = revision.dias || dias;
-  return [cuando ? `Última revisión ${cuando}` : "", diasRev ? `últimos ${diasRev} días` : ""].filter(Boolean).join(" · ");
+  const cuando = haceCuanto(revision.cuando) || (revision.cuando ? `el ${fmtFecha(String(revision.cuando).slice(0, 10))}` : "");
+  return cuando ? `Revisado ${cuando}` : "";
 }
 
 function Consejos({ dias, onIrABusqueda, onRevisar, onClose }) {
@@ -436,15 +435,13 @@ export default function RevisionMails({
     revisando: ocupado,
     cargandoPendientes,
   });
-  const ultima = lineaUltimaRevision(revision, dias);
+  const ultima = lineaUltimaRevision(revision);
   let pie = ultima;
   if (estado.modo === "error") pie = estado.detalle;
-  else if (estado.modo === "al-dia") pie = `${ultima}: ${estado.detalle}.`;
+  else if (estado.modo === "al-dia") pie = estado.detalle === "no había nada nuevo" ? ultima : `${ultima} · ${estado.detalle}`;
   else if (estado.modo === "pendientes") {
-    pie = pendientes.some((p) => p.sinConfirmar)
-      ? "Los sin confirmar no suman a tus gastos hasta que los confirmes."
-      : "Tocalos para elegir la categoría y confirmarlos.";
-  } else if (estado.modo === "nunca") pie = "Busco tus compras y pagos en Gmail y te los dejo acá para confirmar.";
+    pie = pendientes.some((p) => p.sinConfirmar) ? "Los sin confirmar no suman hasta que los confirmes." : "";
+  } else if (estado.modo === "nunca") pie = "";
   else if (estado.modo === "revisando") pie = "";
 
   const aLaVista = pendientes.slice(0, MAX_PENDIENTES_A_LA_VISTA);

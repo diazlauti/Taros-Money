@@ -284,7 +284,7 @@ function ParaHacer({ servicios, cotizaciones, monedaPorCuenta, onIrA }) {
                 <span className="movimiento-texto">
                   <span className="movimiento-desc">Pagar {s.nombre}</span>
                   <span className="texto-tenue texto-chico">
-                    {textoVencimiento(s)} · {fmtFecha(s.vencimiento)}
+                    {textoVencimiento(s)}
                   </span>
                 </span>
                 <span className="mov-derecha">
@@ -360,7 +360,7 @@ function CategoriasCard({ resumen, dias, onCambiarDias, onNuevo }) {
     contenido = (
       <>
         <div className="categorias-total">
-          <span className="texto-tenue">Últimos {dias} días</span>
+          <span className="texto-tenue">Total</span>
           {/* El backend ya pasa a pesos los gastos en otras monedas. */}
           <span className="num categorias-monto">{fmtMoney(datos.totalGeneral)}</span>
         </div>
