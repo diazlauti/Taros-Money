@@ -25,6 +25,17 @@
       <textarea name="mensaje"></textarea>
       <input type="text" name="bot-field" />
     </form>
+    <!-- Igual para las sugerencias y errores (SugerenciaDialog). -->
+    <form name="sugerencias" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="text" name="tipo" />
+      <textarea name="mensaje"></textarea>
+      <input type="email" name="email" />
+      <input type="text" name="version" />
+      <input type="text" name="dispositivo" />
+      <textarea name="error"></textarea>
+      <input type="text" name="pantalla" />
+      <input type="text" name="bot-field" />
+    </form>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

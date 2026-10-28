@@ -7,6 +7,7 @@ import { playError, playSuccess } from "../sounds";
 import { errorMonto } from "../validaciones";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
+import MensajeError from "./MensajeError";
 
 // Marca un servicio como pagado este mes. El monto arranca con el
 // aproximado, pero se puede cambiar (la boleta de la luz nunca es igual).
@@ -117,9 +118,7 @@ export default function PagarServicioDialog({ servicio, cuentas, monedaPorCuenta
           </Campo>
         )}
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError>{error}</MensajeError>
         )}
         <div className="dialog-actions">
           <button type="button" className="btn btn-secondary" onClick={onClose}>

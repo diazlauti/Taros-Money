@@ -8,6 +8,7 @@ import { playClick, playError, playSuccess } from "../sounds";
 import { errorMonto, errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
+import MensajeError from "./MensajeError";
 
 const aTexto = (n) => (n ? String(n).replace(".", ",") : "0");
 
@@ -117,9 +118,7 @@ export default function EditarMetaDialog({ meta, otrosNombres, onClose, onGuarda
           </Campo>
         </div>
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError>{error}</MensajeError>
         )}
         <div className="dialog-actions dialog-actions--separadas">
           <button type="button" className="btn btn-secondary btn-peligro" onClick={borrar} disabled={borrando || enviando}>

@@ -3,11 +3,18 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
-    id: "2026-10-27-reportes",
-    fecha: "2026-10-27",
+    id: "2026-10-28-reportes",
+    fecha: "2026-10-28",
     icono: "ph ph-chart-donut",
     titulo: "Reportes renovados",
     texto: "Ahora ves en qué se te fue la plata de cada mes en una dona por categoría, y si gastaste más o menos que el mes anterior. Con las flechitas cambiás de mes, y en «Más números» tenés el promedio por día y el gasto más grande.",
+  },
+  {
+    id: "2026-10-28-sugerencias",
+    fecha: "2026-10-28",
+    icono: "ph ph-chat-circle-text",
+    titulo: "Contame errores e ideas",
+    texto: "Si algo anda mal o se te ocurre una mejora, mandámelo desde Configuración › Ayuda › «Mandar una sugerencia o error». Y si te aparece un error, tocá «Avisar del error» al lado: me llega directo y lo arreglo.",
   },
   {
     id: "2026-10-27-avisos-push",

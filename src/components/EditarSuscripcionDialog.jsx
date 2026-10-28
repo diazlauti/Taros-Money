@@ -8,6 +8,7 @@ import { playClick, playError, playSuccess } from "../sounds";
 import { validarSuscripcion } from "../validaciones";
 import CamposSuscripcion from "./CamposSuscripcion";
 import Dialog from "./Dialog";
+import MensajeError from "./MensajeError";
 
 export default function EditarSuscripcionDialog({ suscripcion, categorias, cuentas, onClose, onGuardado }) {
   const { avisar } = useAvisos();
@@ -82,9 +83,7 @@ export default function EditarSuscripcionDialog({ suscripcion, categorias, cuent
         <CamposSuscripcion form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} autoFocus />
 
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError>{error}</MensajeError>
         )}
 
         <div className="dialog-actions dialog-actions--separadas">

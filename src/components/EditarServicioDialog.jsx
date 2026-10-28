@@ -8,6 +8,7 @@ import { playClick, playError, playSuccess } from "../sounds";
 import { validarServicio } from "../validaciones";
 import CamposServicio from "./CamposServicio";
 import Dialog from "./Dialog";
+import MensajeError from "./MensajeError";
 
 export default function EditarServicioDialog({ servicio, categorias, cuentas, onClose, onGuardado }) {
   const { avisar } = useAvisos();
@@ -78,9 +79,7 @@ export default function EditarServicioDialog({ servicio, categorias, cuentas, on
       <form className="form" onSubmit={guardar} noValidate>
         <CamposServicio form={form} campo={campo} v={v} categorias={categorias} cuentas={cuentas} autoFocus />
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError>{error}</MensajeError>
         )}
         <div className="dialog-actions dialog-actions--separadas">
           <button type="button" className="btn btn-secondary btn-peligro" onClick={borrar} disabled={borrando || enviando}>
