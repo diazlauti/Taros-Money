@@ -13,6 +13,7 @@ import Explicacion from "./Explicacion";
 import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import AvisosPushCard from "./AvisosPushCard";
+import BloqueoCard from "./BloqueoCard";
 import SugerenciaDialog from "./SugerenciaDialog";
 import { pushConfigurado } from "../push";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
@@ -333,6 +334,10 @@ export default function ConfiguracionTab({
             <AvisosPushCard onInstalar={onInstalar} />
           </GrupoConfig>
         )}
+
+        <GrupoConfig id="seguridad" icono="ph ph-fingerprint" titulo="Seguridad" resumen="Huella o Face ID al abrir la app" solo>
+          <BloqueoCard />
+        </GrupoConfig>
 
         <GrupoConfig
           id="visual"

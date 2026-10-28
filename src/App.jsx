@@ -26,6 +26,7 @@ mailsDisponible,
 idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa, sesionRecordada } from "./auth";
+import { bloqueoActivo, MINUTOS_AFUERA } from "./bloqueo";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
 import { fmtFecha, fmtMoney, mapaMonedas } from "./format";
 import { cotizacionesParaGuardar, registrarMonedasPropias, resolverCotizaciones, traerCotizaciones } from "./monedas";
@@ -56,6 +57,7 @@ import ReportesTab from "./components/ReportesTab";
 import ConfiguracionTab from "./components/ConfiguracionTab";
 import NuevoMovimientoDialog from "./components/NuevoMovimientoDialog";
 import Login from "./components/Login";
+import PantallaBloqueo from "./components/PantallaBloqueo";
 import Tour from "./components/Tour";
 import { tourVisto } from "./tour";
 import { leerNuevoDeUrl, leerVerDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
@@ -84,8 +86,35 @@ window.addEventListener("taros:sesion-vencida", onSesionVencida);
 return () => window.removeEventListener("taros:sesion-vencida", onSesionVencida);
 }, []);
 
+// Bloqueo con huella o Face ID (si está prendido en este dispositivo): pide
+// la huella al abrir y al volver después de un rato afuera. Recién después
+// de la primera vez se arma el panel, así no se carga ningún número antes.
+const [bloqueada, setBloqueada] = useState(bloqueoActivo);
+const [panelListo, setPanelListo] = useState(() => !bloqueoActivo());
+// «Entrar con Google» desde el bloqueo: que no vuelva a entrar solo con la
+// sesión larga mientras se termina de cerrar.
+const sinSilenciosa = useRef(false);
+
+useEffect(() => {
+let ocultaDesde = null;
+function alCambiar() {
+if (document.visibilityState === "hidden") {
+ocultaDesde = Date.now();
+} else if (ocultaDesde && bloqueoActivo() && Date.now() - ocultaDesde >= MINUTOS_AFUERA * 60000) {
+setBloqueada(true);
+}
+}
+document.addEventListener("visibilitychange", alCambiar);
+return () => document.removeEventListener("visibilitychange", alCambiar);
+}, []);
+
 useEffect(() => {
 if (autenticado) return;
+if (sinSilenciosa.current) {
+sinSilenciosa.current = false;
+setVerificando(false);
+return;
+}
 intentarSesionSilenciosa().then((datos) => {
 if (datos) setAutenticado(true);
 setVerificando(false);
@@ -112,13 +141,40 @@ return (
 if (!autenticado) {
 return (
 <ConfirmarProvider>
-<Login onSuccess={() => setAutenticado(true)} recordada={sesionRecordada()} />
+<Login
+onSuccess={() => {
+// Recién se verificó con Google: no hace falta además la huella.
+setBloqueada(false);
+setPanelListo(true);
+setAutenticado(true);
+}}
+recordada={sesionRecordada()}
+/>
 </ConfirmarProvider>
 );
 }
 
+const pantallaBloqueo = bloqueada && (
+<PantallaBloqueo
+onDesbloqueada={() => {
+setBloqueada(false);
+setPanelListo(true);
+}}
+onEntrarConGoogle={() => {
+sinSilenciosa.current = true;
+cerrarSesion();
+setAutenticado(false);
+}}
+/>
+);
+
+if (!panelListo) return pantallaBloqueo;
+
 return (
 <AvisosProvider>
+{/* Bloqueada al volver: el panel queda armado (no se pierde lo que estabas
+haciendo) pero tapado e inaccesible. */}
+<div className="app-raiz" inert={bloqueada} aria-hidden={bloqueada || undefined}>
 <ConfirmarProvider>
 <PanelPrincipal
 tema={tema}
@@ -131,6 +187,8 @@ setAutenticado(false);
 </ConfirmarProvider>
 {/* Solo adentro de la app: en la landing y el login no se ofrece. */}
 <AvisoActualizacion />
+</div>
+{pantallaBloqueo}
 </AvisosProvider>
 );
 }
