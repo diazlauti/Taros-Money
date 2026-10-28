@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-28-menos-texto",
+    fecha: "2026-10-28",
+    icono: "ph ph-info",
+    titulo: "Menos texto a la vista",
+    texto: "Las explicaciones ahora están detrás de la «i»: tocala y te sale un cartelito con lo que necesitás saber.",
+  },
+  {
     id: "2026-10-28-reportes",
     fecha: "2026-10-28",
     icono: "ph ph-chart-donut",

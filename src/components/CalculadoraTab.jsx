@@ -3,6 +3,7 @@ import { calcularImpuestos, guardarAjustesCalculadora, leerAjustesCalculadora, M
 import { fmtMoney, parseMonto } from "../format";
 import { fmtCotizacion, infoMoneda, valorAutomatico } from "../monedas";
 import Campo from "./Campo";
+import Explicacion from "./Explicacion";
 
 // "1565" → "1565"; 1549.2 → "1549,2" (como se escribe acá).
 function aTexto(n) {
@@ -93,12 +94,13 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
       {/* En compu: los datos a la izquierda y el resultado a la derecha. */}
       <div className="calc-columnas">
         <div className="pila">
-          <h2 className="card-kicker" id="titulo-calculadora">
+          <h2 className="card-kicker titulo-con-info" id="titulo-calculadora">
             Calculadora de impuestos
+            <Explicacion
+              texto="¿Cuánto te sale en pesos algo que pagás en dólares, con todos los impuestos? Elegí qué se cobra y cuánto."
+              etiqueta="Para qué sirve la calculadora"
+            />
           </h2>
-          <p className="texto-intro">
-            ¿Cuánto te sale en pesos algo que pagás en dólares, con todos los impuestos? Elegí qué se cobra y cuánto.
-          </p>
 
           <div className="fila-campos">
             <Campo etiqueta="Precio" error={intentado ? errorMonto : ""}>
@@ -139,7 +141,7 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
           {moneda !== "ARS" && (
             <Campo
               etiqueta={`Cuántos pesos vale 1 ${moneda}`}
-              ayuda={
+              explicacion={
                 cotizacionesHoy?.cargando && moneda === "USD"
                   ? "Trayendo la cotización de hoy…"
                   : sugerida.texto
@@ -168,13 +170,13 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
             <ul className="lista calc-impuestos">
               {ajustes.impuestos.map((imp) => (
                 <li key={imp.id} className="calc-impuesto">
-                  <label className="check">
-                    <input type="checkbox" checked={imp.activo} onChange={(e) => cambiarImpuesto(imp.id, { activo: e.target.checked })} />
-                    <span>
+                  <span className="calc-impuesto-nombre">
+                    <label className="check">
+                      <input type="checkbox" checked={imp.activo} onChange={(e) => cambiarImpuesto(imp.id, { activo: e.target.checked })} />
                       <span className="negrita">{imp.nombre}</span>
-                      {imp.ayuda && <span className="check-ayuda texto-tenue">{imp.ayuda}</span>}
-                    </span>
-                  </label>
+                    </label>
+                    {imp.ayuda && <Explicacion texto={imp.ayuda} etiqueta={`Qué es ${imp.nombre}`} />}
+                  </span>
                   <div className="calc-porcentaje">
                     <input
                       className="input"
@@ -259,7 +261,13 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
                   </div>
                 ))}
                 <div className="fila-separada calc-total">
-                  <span>Total</span>
+                  <span className="titulo-con-info">
+                    Total
+                    <Explicacion
+                      texto="Es una cuenta aproximada: los impuestos cambian seguido, revisalos en el resumen de tu tarjeta."
+                      etiqueta="Más info sobre el total"
+                    />
+                  </span>
                   <span>{fmtMoney(resultado.total)}</span>
                 </div>
               </>
@@ -267,9 +275,6 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
               <p className="mensaje-estado">Escribí el precio para ver cuánto te sale.</p>
             )}
           </div>
-          <p className="texto-chico texto-tenue">
-            Es una cuenta aproximada: los impuestos cambian seguido, revisalos en el resumen de tu tarjeta.
-          </p>
 
           <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={cargar}>
             <i className="ph ph-plus" aria-hidden="true" />

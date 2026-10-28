@@ -161,7 +161,7 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
         )}
       </Campo>
       <div className="fila-2">
-        <Campo etiqueta="Saldo actual" ayuda="Si lo dejás vacío, arranca en 0" error={v.visible("saldo")}>
+        <Campo etiqueta="Saldo actual" explicacion="Lo que tenés hoy en esa cuenta. Si lo dejás vacío, arranca en 0." error={v.visible("saldo")}>
           {(p) => (
             <input
               {...p}

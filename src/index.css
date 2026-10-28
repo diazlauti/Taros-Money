@@ -156,6 +156,8 @@
 --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
 --z-nav: 5;
+--z-globo: 9;
+--globo-max: 18rem;
 --z-tour-foco: 11;
 --z-tour: 12;
 --z-aviso: 15;
@@ -606,6 +608,7 @@ padding: 0;
 border: 0;
 border-radius: 0;
 background: none;
+box-shadow: none;
 }
 
 .config-grupo-cuerpo > .card + .card {
@@ -1864,11 +1867,15 @@ margin: 0;
 font-size: var(--text-sm);
 }
 
+/* Nota corta dentro de un bloque: en su propia cajita, no texto suelto. */
 .aviso-inline {
 display: flex;
 align-items: flex-start;
 gap: var(--space-2);
 margin: 0;
+padding: var(--space-2) var(--space-3);
+border-radius: var(--radius-md);
+background: var(--color-surface-2);
 font-size: var(--text-sm);
 color: var(--color-text-dim);
 }
@@ -3783,8 +3790,16 @@ justify-content: space-between;
 gap: var(--space-2);
 }
 
-.calc-impuesto .check {
+.calc-impuesto-nombre {
+display: flex;
+align-items: center;
+gap: var(--space-1);
 flex: 1;
+min-width: 0;
+}
+
+.calc-impuesto .check {
+align-items: center;
 min-width: 0;
 }
 
@@ -4674,4 +4689,234 @@ animation: resumen-entrar var(--dur-slow) var(--ease-out) both;
 @keyframes resumen-entrar {
 from { opacity: 0; transform: translateY(var(--space-2)); }
 to { opacity: 1; transform: none; }
+}
+
+/* --- Explicaciones que se tocan ---
+   Un término subrayado (o un ícono «i») abre un cartelito abajo, en vez de
+   dejar párrafos de explicación sueltos en la pantalla. */
+.explicacion {
+position: relative;
+display: inline;
+}
+
+.explicacion-termino {
+padding: 0;
+border: none;
+background: none;
+color: inherit;
+font: inherit;
+text-align: inherit;
+text-decoration: underline dotted;
+text-decoration-color: var(--color-accent-text);
+text-decoration-thickness: var(--border);
+text-underline-offset: 0.2em;
+cursor: help;
+}
+
+.explicacion-icono {
+display: inline-grid;
+place-items: center;
+width: var(--tap);
+height: var(--tap);
+margin-block: calc((var(--tap) - var(--icon-md)) / -2);
+margin-inline: calc((var(--tap) - var(--icon-md)) / -4);
+padding: 0;
+border: none;
+border-radius: var(--radius-sm);
+background: none;
+color: var(--color-text-dim);
+font-size: var(--icon-md);
+vertical-align: middle;
+cursor: pointer;
+}
+
+.explicacion-icono:hover,
+.explicacion-icono[aria-expanded="true"] {
+color: var(--color-accent-text);
+}
+
+.explicacion-termino:focus-visible,
+.explicacion-icono:focus-visible {
+outline: var(--focus-ring) solid var(--color-focus);
+outline-offset: var(--border);
+}
+
+.explicacion-globo {
+position: absolute;
+top: calc(100% + var(--space-2));
+left: 0;
+z-index: var(--z-globo);
+display: block;
+width: max-content;
+max-width: min(var(--globo-max), calc(100vw - var(--space-4) * 2));
+padding: var(--space-2) var(--space-3);
+border: var(--border-thin) solid var(--color-borde);
+border-radius: var(--radius-md);
+background: var(--color-surface);
+box-shadow: var(--shadow-md);
+color: var(--color-text);
+font-size: var(--text-sm);
+font-weight: var(--weight-regular);
+line-height: var(--leading-text);
+text-align: left;
+text-transform: none;
+white-space: normal;
+transform: translateX(var(--corrimiento, 0));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+.explicacion-globo {
+animation: explicacion-aparecer var(--dur-fast) var(--ease-out);
+}
+}
+
+@keyframes explicacion-aparecer {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+
+/* Título de un bloque con su «i» al lado. */
+.titulo-con-info {
+display: flex;
+align-items: center;
+gap: var(--space-1);
+}
+
+.field-cabeza {
+display: flex;
+align-items: center;
+gap: var(--space-1);
+}
+
+/* Selector de Servicios / Suscripciones con su «i» al lado. */
+.seg-con-info {
+display: flex;
+align-items: center;
+gap: var(--space-2);
+}
+
+/* Casilla con su «i» al lado (afuera del label, así tocar la «i» no la marca). */
+.check-con-info {
+display: flex;
+align-items: center;
+gap: var(--space-1);
+}
+
+.check-con-info .check {
+align-items: center;
+}
+
+/* Tarjeta de servicio: nombre y estado arriba, acciones juntas abajo. */
+.servicio-nombre {
+flex-wrap: wrap;
+min-width: 0;
+}
+
+.servicio-acciones {
+display: flex;
+gap: var(--space-2);
+}
+
+.servicio-acciones > .btn:first-child {
+flex: 1;
+}
+
+.btn-icono-borde {
+width: var(--tap);
+padding: 0;
+flex: none;
+}
+
+/* Lista de opciones (estilo ajustes del celu): filas con ícono, texto y
+   flechita, separadas por una línea fina. */
+.opciones {
+display: flex;
+flex-direction: column;
+margin: 0;
+padding: 0;
+list-style: none;
+border: var(--border-thin) solid var(--color-borde);
+border-radius: var(--radius-md);
+background: var(--color-surface);
+}
+
+.opciones > li + li {
+border-top: var(--border-thin) solid var(--color-divider);
+}
+
+.opcion-con-info {
+display: flex;
+align-items: center;
+padding-right: var(--space-2);
+}
+
+.opcion-con-info > .opcion {
+flex: 1;
+}
+
+.opcion {
+display: flex;
+align-items: center;
+gap: var(--space-3);
+width: 100%;
+min-height: calc(var(--tap) + var(--space-2));
+margin: 0;
+padding: var(--space-2) var(--space-3);
+border: none;
+background: none;
+color: var(--color-text);
+font: inherit;
+font-size: var(--text-sm);
+text-align: left;
+}
+
+button.opcion {
+cursor: pointer;
+}
+
+button.opcion:hover:not(:disabled) {
+background: var(--color-surface-2);
+}
+
+button.opcion:focus-visible {
+outline: var(--focus-ring) solid var(--color-focus);
+outline-offset: calc(var(--focus-ring) * -1);
+}
+
+.opciones > li:first-child .opcion {
+border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.opciones > li:last-child .opcion {
+border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.opcion-icono {
+color: var(--color-accent-text);
+font-size: var(--icon-md);
+flex: none;
+}
+
+.opcion-texto {
+flex: 1;
+min-width: 0;
+}
+
+.opcion-flecha {
+color: var(--color-text-dim);
+flex: none;
+}
+
+.opcion-dato {
+color: var(--color-text-dim);
+font-size: var(--text-xs);
+flex: none;
+}
+
+.en-uso {
+display: flex;
+align-items: center;
+gap: var(--space-1);
+padding-left: calc(var(--icon-md) + var(--space-2));
+font-size: var(--text-xs);
 }

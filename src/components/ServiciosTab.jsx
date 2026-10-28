@@ -10,6 +10,7 @@ import { ICONO_ESTADO, iconoServicio, SERVICIOS_TIPICOS, serviciosConEstado, TEX
 import { playClick, playError, playSuccess } from "../sounds";
 import { validarServicio } from "../validaciones";
 import CamposServicio from "./CamposServicio";
+import Explicacion from "./Explicacion";
 import EditarServicioDialog from "./EditarServicioDialog";
 import MensajeError from "./MensajeError";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
@@ -208,9 +209,13 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
             return (
               <li className={`card servicio servicio--${s.estado}`} key={s.nombre}>
                 <div className="fila-separada">
-                  <span className="fila">
+                  <span className="fila servicio-nombre">
                     <i className={iconoServicio(s.nombre) || iconoPorCategoria(s.categoria)} aria-hidden="true" />
                     <h2 className="card-title">{s.nombre}</h2>
+                    <span className={`tag tag-estado tag-estado--${s.estado}`}>
+                      <i className={ICONO_ESTADO[s.estado]} aria-hidden="true" />
+                      {TEXTO_ESTADO[s.estado]}
+                    </span>
                   </span>
                   <button
                     type="button"
@@ -221,10 +226,6 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
                     <i className="ph ph-pencil-simple" aria-hidden="true" />
                   </button>
                 </div>
-                <span className={`tag tag-estado tag-estado--${s.estado}`}>
-                  <i className={ICONO_ESTADO[s.estado]} aria-hidden="true" />
-                  {TEXTO_ESTADO[s.estado]}
-                </span>
                 {s.estado === "pagado" ? (
                   <span className="texto-tenue texto-chico">
                     Pagaste {fmtMoney(s.montoPagado, moneda)} el {fmtFecha(s.fechaPago)}
@@ -238,27 +239,34 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
                     </span>
                   </span>
                 )}
-                {s.estado === "pagado" ? (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => desmarcar(s)}
-                    disabled={desmarcando === s.nombre}
+                <div className="servicio-acciones">
+                  {s.estado === "pagado" ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => desmarcar(s)}
+                      disabled={desmarcando === s.nombre}
+                    >
+                      <i className="ph ph-arrow-counter-clockwise" aria-hidden="true" />
+                      {desmarcando === s.nombre ? "Desmarcando…" : "Volver a pendiente"}
+                    </button>
+                  ) : (
+                    <button type="button" className="btn btn-primary" onClick={() => setPagando(s)}>
+                      <i className="ph ph-check" aria-hidden="true" />
+                      Marcar pagado
+                    </button>
+                  )}
+                  <a
+                    className="btn btn-secondary btn-icono-borde"
+                    href={linkCalendario(s)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Recordarme ${s.nombre} todos los meses en Google Calendar (se abre en otra pestaña)`}
+                    title="Recordármelo en Google Calendar"
                   >
-                    <i className="ph ph-arrow-counter-clockwise" aria-hidden="true" />
-                    {desmarcando === s.nombre ? "Desmarcando…" : "Volver a pendiente"}
-                  </button>
-                ) : (
-                  <button type="button" className="btn btn-primary" onClick={() => setPagando(s)}>
-                    <i className="ph ph-check" aria-hidden="true" />
-                    Marcar pagado
-                  </button>
-                )}
-                <a className="link texto-chico" href={linkCalendario(s)} target="_blank" rel="noopener noreferrer">
-                  <i className="ph ph-calendar-plus" aria-hidden="true" />
-                  Recordármelo todos los meses en Google Calendar
-                  <span className="visualmente-oculto">(se abre en otra pestaña)</span>
-                </a>
+                    <i className="ph ph-calendar-plus" aria-hidden="true" />
+                  </a>
+                </div>
               </li>
             );
           })}
@@ -317,10 +325,6 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
       <button className="btn btn-primary" type="submit" disabled={enviando}>
         {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}
       </button>
-      <p className="aviso-inline">
-        <i className="ph ph-info" aria-hidden="true" />
-        Cada mes arrancan todos como pendientes. Lo que se debita solo (Netflix, Spotify) va en Suscripciones.
-      </p>
     </form>
   );
 
@@ -404,16 +408,19 @@ function AvisoMail({ estado, guardando, onCambiar }) {
   }
   const activo = !!estado.data?.activo;
   return (
-    <label className="check">
-      <input type="checkbox" checked={activo} disabled={guardando} onChange={(e) => onCambiar(e.target.checked)} />
-      <span>
-        {guardando ? "Guardando…" : "Avisarme por mail si algo está por vencer"}
-        <span className="texto-tenue texto-chico check-ayuda">
-          {activo && estado.data?.mail
+    <span className="check-con-info">
+      <label className="check">
+        <input type="checkbox" checked={activo} disabled={guardando} onChange={(e) => onCambiar(e.target.checked)} />
+        <span>{guardando ? "Guardando…" : "Avisarme por mail si algo está por vencer"}</span>
+      </label>
+      <Explicacion
+        texto={
+          activo && estado.data?.mail
             ? `Te llega a ${estado.data.mail} a la mañana, solo si hay algo vencido o que vence en 3 días.`
-            : "Un mail a la mañana, solo cuando hay algo vencido o que vence en 3 días."}
-        </span>
-      </span>
-    </label>
+            : "Un mail a la mañana, solo cuando hay algo vencido o que vence en 3 días."
+        }
+        etiqueta="Cómo es el aviso por mail"
+      />
+    </span>
   );
 }
