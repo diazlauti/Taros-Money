@@ -1503,11 +1503,13 @@ font-size: var(--text-sm);
 }
 
 /* Subrayado solo el texto, no el ícono. */
-.btn-avisar-error {
+.btn-avisar-error,
+.btn-texto-icono {
 text-decoration: none;
 }
 
-.btn-avisar-error span {
+.btn-avisar-error span,
+.btn-texto-icono span {
 text-decoration: underline;
 }
 
@@ -1526,6 +1528,30 @@ background: var(--color-surface-2);
 color: var(--color-text);
 font-size: var(--text-sm);
 overflow-wrap: anywhere;
+}
+
+/* Captura adjunta en «Mandar una sugerencia o error». */
+/* .field > label le saca el padding a las etiquetas; este es un botón. */
+.field > .btn-archivo {
+padding: var(--space-2) var(--space-3);
+}
+
+.btn-archivo:has(input:focus-visible) {
+outline: var(--focus-ring) solid var(--color-focus);
+}
+
+.captura-elegida {
+display: flex;
+align-items: center;
+gap: var(--space-3);
+}
+
+.captura-miniatura {
+width: calc(var(--tap) * 1.5);
+height: calc(var(--tap) * 1.5);
+object-fit: cover;
+border: var(--border) solid var(--ink);
+border-radius: var(--radius-sm);
 }
 
 .mensaje-estado {
