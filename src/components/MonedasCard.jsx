@@ -15,6 +15,7 @@ import {
 import { playError, playSuccess } from "../sounds";
 import Campo from "./Campo";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
+import MensajeError from "./MensajeError";
 
 // Pasa lo guardado a lo que edita el formulario (el valor fijo como texto).
 function aBorrador(config) {
@@ -450,9 +451,7 @@ export default function MonedasCard({ monedas, cotizacionesHoy, cuentas, onGuard
         </div>
 
         {errorGuardar && (
-          <p className="mensaje-error" role="alert">
-            {errorGuardar}
-          </p>
+          <MensajeError>{errorGuardar}</MensajeError>
         )}
         <button className="btn btn-primary btn-alinear-inicio" type="submit" disabled={guardando}>
           {guardando ? "Guardando…" : errorGuardar ? "Reintentar" : "Guardar monedas"}

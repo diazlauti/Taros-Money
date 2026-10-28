@@ -11,6 +11,7 @@ import Campo from "./Campo";
 import EditarCuentaDialog from "./EditarCuentaDialog";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import MontoDialog from "./MontoDialog";
+import MensajeError from "./MensajeError";
 
 const VACIO = { nombre: "", saldo: "", moneda: "ARS" };
 
@@ -189,9 +190,7 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
           </button>
         )}
         {errorForm && (
-          <p className="mensaje-error" role="alert">
-            {errorForm}
-          </p>
+          <MensajeError>{errorForm}</MensajeError>
         )}
         <button className="btn btn-primary" type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}

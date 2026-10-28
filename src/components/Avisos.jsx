@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AvisosContext } from "../avisos";
+import { avisarDelError } from "../reportarError";
 
 // Duraciones de los tokens --dur-aviso / --dur-aviso-accion de index.css
 // (con un valor de respaldo). Ojo: al compilar, el CSS minificado pasa
@@ -43,10 +44,15 @@ export default function AvisosProvider({ children }) {
   const avisar = useCallback(
     (texto, tipo = "exito", opciones = {}) => {
       const id = siguienteId.current++;
-      const { accion, onAccion } = opciones;
+      let { accion, onAccion } = opciones;
       // El mismo aviso repetido (ej. tocar varias veces un botón que falla)
       // no se apila: queda uno solo.
       if (!accion && visibles.current.some((x) => x.texto === texto && x.tipo === tipo)) return;
+      // Los errores traen «Avisar» para mandárselo al admin con un toque.
+      if (tipo === "error" && !accion) {
+        accion = "Avisar";
+        onAccion = () => avisarDelError(texto);
+      }
       setAvisos((a) => [...a, { id, texto, tipo, accion, onAccion }]);
       const ms = accion ? duracion("--dur-aviso-accion", 8000) : duracion("--dur-aviso", 3200);
       if (pausado.current) timers.current.set(id, { timeout: null, ms });

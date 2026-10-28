@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { useAvisos } from "../avisos";
 import { playError, playSuccess } from "../sounds";
+import MensajeError from "./MensajeError";
 
 const OPCIONES = [
   ["apagado", "Apagado", "No se lee ningún mail."],
@@ -50,9 +51,7 @@ export default function ModoMails({ modo, onCambiar }) {
         {guardando ? "Guardando…" : ""}
       </p>
       {error && (
-        <p className="mensaje-error" role="alert">
-          {error}
-        </p>
+        <MensajeError>{error}</MensajeError>
       )}
     </fieldset>
   );

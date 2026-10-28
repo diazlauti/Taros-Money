@@ -4,6 +4,7 @@ import { useValidacion } from "../hooks";
 import { errorMonto } from "../validaciones";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
+import MensajeError from "./MensajeError";
 
 // Pide un monto en un diálogo propio (reemplaza al window.prompt de antes).
 // Con "conSigno", deja elegir Sumar o Restar en vez de pedir un negativo.
@@ -66,9 +67,7 @@ export default function MontoDialog({ titulo, etiqueta, ayuda, conSigno = false,
           )}
         </Campo>
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError>{error}</MensajeError>
         )}
         <div className="dialog-actions">
           <button type="button" className="btn btn-secondary" onClick={onClose}>

@@ -12,6 +12,10 @@ import CategoriaChips from "./CategoriaChips";
 import Dialog from "./Dialog";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
 import PrimeraCuenta from "./PrimeraCuenta";
+import MensajeError from "./MensajeError";
+
+// Es un dato que falta, no una falla: ahí no se ofrece «Avisar del error».
+const FALTA_CUENTA = "Elegí de qué cuenta sale la plata.";
 
 function fechaHoraActual() {
   const ahora = new Date();
@@ -116,7 +120,7 @@ export default function NuevoMovimientoDialog({
     e.preventDefault();
     if (!v.intentar()) return;
     if (!form.cuenta) {
-      setError("Elegí de qué cuenta sale la plata.");
+      setError(FALTA_CUENTA);
       return;
     }
     setEnviando(true);
@@ -288,9 +292,7 @@ export default function NuevoMovimientoDialog({
         </div>
 
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError avisable={error !== FALTA_CUENTA}>{error}</MensajeError>
         )}
 
         <div className="dialog-actions">

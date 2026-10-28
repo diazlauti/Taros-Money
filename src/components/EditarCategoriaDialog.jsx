@@ -4,6 +4,7 @@ import { playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
+import MensajeError from "./MensajeError";
 
 // Tocar una categoría abre esto: cambiarle el nombre y el ícono en un solo
 // lugar. El nombre nuevo también se cambia en lo que ya estaba cargado.
@@ -73,9 +74,7 @@ export default function EditarCategoriaDialog({ categoria, otras, onGuardar, onC
         </fieldset>
 
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError>{error}</MensajeError>
         )}
 
         <div className="dialog-actions">
