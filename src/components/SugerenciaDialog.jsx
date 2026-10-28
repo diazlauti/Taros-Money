@@ -172,11 +172,9 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
               className="input"
               rows={4}
               placeholder={
-                desdeError
-                  ? "Por ejemplo: quería guardar un gasto en dólares."
-                  : form.tipo === "error"
-                    ? "Dónde estabas y qué tocaste. La versión y el dispositivo van solos."
-                    : "Contame qué te gustaría que tenga la app."
+                desdeError || form.tipo === "error"
+                  ? "Intenté revisar mis mails y…"
+                  : "Contame qué te gustaría que tenga la app."
               }
               maxLength={2000}
               value={form.mensaje}
