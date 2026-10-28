@@ -20,6 +20,7 @@ import { validarMovimiento } from "../validaciones";
 import Campo from "./Campo";
 import CategoriaChips from "./CategoriaChips";
 import Dialog from "./Dialog";
+import MensajeError from "./MensajeError";
 
 // Editar o borrar un gasto o un ingreso (mismo formulario; los ingresos no
 // tienen hora en la planilla).
@@ -280,9 +281,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
         )}
 
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError>{error}</MensajeError>
         )}
 
         <div className="dialog-actions dialog-actions--separadas">

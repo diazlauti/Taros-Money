@@ -22,6 +22,7 @@ import Campo from "./Campo";
 import Dialog from "./Dialog";
 import EditarMovimientoDialog from "./EditarMovimientoDialog";
 import { Cargando, ErrorEstado, SkeletonFilas, Vacio } from "./Estado";
+import MensajeError from "./MensajeError";
 
 const SIN_CATEGORIA = "Sin categoría";
 
@@ -348,9 +349,7 @@ export default function MovimientosTab({
             {confirmando ? "Confirmando…" : `Confirmar todos (${cantidadARevisar})`}
           </button>
           {errorConfirmar && (
-            <p className="mensaje-error" role="alert">
-              {errorConfirmar}
-            </p>
+            <MensajeError>{errorConfirmar}</MensajeError>
           )}
         </div>
       )}

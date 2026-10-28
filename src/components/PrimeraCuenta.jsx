@@ -4,6 +4,7 @@ import { parseMonto } from "../format";
 import { useValidacion } from "../hooks";
 import { playClick, playError, playSuccess } from "../sounds";
 import Campo from "./Campo";
+import MensajeError from "./MensajeError";
 
 const SUGERIDAS = ["Efectivo", "Mercado Pago", "Banco"];
 
@@ -106,9 +107,7 @@ export default function PrimeraCuenta({ onCreada, onCancelar }) {
       </Campo>
 
       {error && (
-        <p className="mensaje-error" role="alert">
-          {error}
-        </p>
+        <MensajeError>{error}</MensajeError>
       )}
 
       <div className="dialog-actions">

@@ -8,6 +8,7 @@ import { playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
+import MensajeError from "./MensajeError";
 
 // Renombrar o borrar una cuenta. Al renombrar, el backend también cambia el
 // nombre en los gastos, ingresos, suscripciones y servicios que la usan.
@@ -75,9 +76,7 @@ export default function EditarCuentaDialog({ cuenta, otrosNombres, onClose, onGu
           )}
         </Campo>
         {error && (
-          <p className="mensaje-error" role="alert">
-            {error}
-          </p>
+          <MensajeError>{error}</MensajeError>
         )}
         <div className="dialog-actions dialog-actions--separadas">
           <button type="button" className="btn btn-secondary btn-peligro" onClick={borrar} disabled={borrando || enviando}>

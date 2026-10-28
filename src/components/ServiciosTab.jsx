@@ -11,6 +11,7 @@ import { playClick, playError, playSuccess } from "../sounds";
 import { validarServicio } from "../validaciones";
 import CamposServicio from "./CamposServicio";
 import EditarServicioDialog from "./EditarServicioDialog";
+import MensajeError from "./MensajeError";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import PagarServicioDialog from "./PagarServicioDialog";
 
@@ -311,9 +312,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
         diaRef={diaRef}
       />
       {errorForm && (
-        <p className="mensaje-error" role="alert">
-          {errorForm}
-        </p>
+        <MensajeError>{errorForm}</MensajeError>
       )}
       <button className="btn btn-primary" type="submit" disabled={enviando}>
         {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}

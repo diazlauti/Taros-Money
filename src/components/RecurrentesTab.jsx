@@ -8,6 +8,7 @@ import { playError, playSuccess } from "../sounds";
 import { validarSuscripcion } from "../validaciones";
 import CamposSuscripcion from "./CamposSuscripcion";
 import EditarSuscripcionDialog from "./EditarSuscripcionDialog";
+import MensajeError from "./MensajeError";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 
 const VACIO = { nombre: "", diaCobro: "", categoria: "", monto: "", cuenta: "" };
@@ -158,9 +159,7 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
         nombreRef={nombreRef}
       />
       {errorForm && (
-        <p className="mensaje-error" role="alert">
-          {errorForm}
-        </p>
+        <MensajeError>{errorForm}</MensajeError>
       )}
       <button className="btn btn-primary" type="submit" disabled={enviando}>
         {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Agregar"}

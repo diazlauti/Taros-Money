@@ -95,6 +95,7 @@
 --card-min: 220px;
 --field-min: 136px;
 --donut: 128px;
+--dona-reporte: 240px;
 --chart-h: 128px;
 --bar-w: 16px;
 --logo: 96px;
@@ -1326,36 +1327,266 @@ background: var(--color-punto);
 flex: none;
 }
 
-/* --- Reportes: barras --- */
+/* --- Reportes: análisis del mes (dona por categoría estilo Mercado Pago) --- */
 
-.barras {
+.reportes {
 display: flex;
-align-items: flex-end;
+flex-direction: column;
 gap: var(--space-3);
-padding-top: var(--space-2);
+max-width: var(--content-max);
 }
 
-.barras-mes {
-flex: 1;
+@media (min-width: 781px) {
+.reportes {
+display: grid;
+grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+align-items: start;
+max-width: none;
+}
+}
+
+.reporte {
+gap: var(--space-3);
+}
+
+.reporte p {
+margin: 0;
+}
+
+.reporte-nav {
+display: grid;
+grid-template-columns: var(--tap) 1fr var(--tap);
+align-items: center;
+margin: calc(var(--space-2) * -1) calc(var(--space-2) * -1) 0;
+}
+
+.reporte-nav .btn-icono {
+min-height: var(--tap);
+font-size: var(--icon-md);
+}
+
+.reporte-nav .btn-icono:disabled {
+opacity: 0.35;
+}
+
+.reporte-titulo {
+margin: 0;
+text-align: center;
+font-family: var(--font-heading);
+font-size: var(--text-lg);
+font-weight: var(--weight-bold);
+}
+
+.reporte-subtitulo {
+font-weight: var(--weight-medium);
+color: var(--color-text-dim);
+font-size: var(--text-sm);
+}
+
+.reporte-dona,
+.reporte-dona-skeleton {
+position: relative;
+width: min(100%, var(--dona-reporte));
+aspect-ratio: 1;
+margin-inline: auto;
+}
+
+.reporte-dona-skeleton {
+display: block;
+border-radius: 50%;
+}
+
+.reporte-dona svg {
+display: block;
+width: 100%;
+height: 100%;
+overflow: visible;
+}
+
+.reporte-dona-tramo {
+fill: var(--cat-color);
+stroke: var(--cat-color);
+stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+.reporte-dona svg { animation: dona-girar var(--dur-slow) var(--ease-out) both; }
+.reporte-dona-icono { animation: dona-icono var(--dur-slow) var(--ease-out) both; animation-delay: var(--dur-base); }
+}
+
+@keyframes dona-girar {
+from { opacity: 0; rotate: -40deg; scale: 0.92; }
+}
+
+/* Solo opacidad y escala: si la animación tocara transform, pisaría el
+   centrado del ícono (ese era el desfase). */
+@keyframes dona-icono {
+from { opacity: 0; scale: 0.6; }
+}
+
+/* Caja cuadrada del tamaño del ícono, centrada justo en la mitad del aro. */
+.reporte-dona-icono {
+position: absolute;
+left: var(--x);
+top: var(--y);
+width: var(--icon-md);
+height: var(--icon-md);
+translate: -50% -50%;
+display: grid;
+place-items: center;
+font-size: var(--icon-md);
+line-height: 1;
+color: var(--color-on-resalte);
+pointer-events: none;
+}
+
+.reporte-dona-icono i {
+display: block;
+line-height: 1;
+}
+
+.reporte-dona-icono--claro {
+color: var(--color-on-accent);
+}
+
+.reporte-dona-centro {
+position: absolute;
+inset: 0;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: var(--space-1);
+text-align: center;
+}
+
+.reporte-dona-total {
+font-size: var(--text-xl);
+font-weight: var(--weight-bold);
+}
+
+.reporte-comparacion {
+align-self: center;
+display: inline-flex;
+align-items: center;
+gap: var(--space-1);
+font-size: var(--text-sm);
+color: var(--color-text-dim);
+}
+
+.reporte-comparacion i {
+font-size: var(--icon-md);
+}
+
+.reporte-comparacion--bien i { color: var(--exito); }
+.reporte-comparacion--mal i { color: var(--error); }
+.reporte-comparacion--igual i { color: var(--color-accent-text); }
+
+.reporte-top {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: var(--space-3);
+}
+
+.reporte-top li {
 display: flex;
 flex-direction: column;
 align-items: center;
 gap: var(--space-1);
-font-size: var(--text-xs);
+text-align: center;
+min-width: 0;
 }
 
-.barras-par {
+.reporte-top .texto-tenue {
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+max-width: 100%;
+}
+
+.reporte-ver-todas,
+.reporte-mas summary {
 display: flex;
-align-items: flex-end;
+align-items: center;
+justify-content: center;
 gap: var(--space-1);
-height: var(--chart-h);
+min-height: var(--tap);
+border: none;
+background: none;
+color: var(--color-accent-text);
+font: inherit;
+font-size: var(--text-sm);
+font-weight: var(--weight-medium);
+cursor: pointer;
 }
 
-.barra {
-width: var(--bar-w);
-height: var(--alto);
-border: var(--border-thin) solid var(--color-borde);
-border-radius: var(--space-1) var(--space-1) 0 0;
+.reporte-todas {
+display: flex;
+flex-direction: column;
+}
+
+.reporte-todas li {
+display: grid;
+grid-template-columns: var(--icono-circulo) minmax(0, 1fr) auto;
+align-items: center;
+gap: var(--space-3);
+padding: var(--space-2) 0;
+border-top: var(--border-thin) solid var(--color-divider);
+}
+
+.reporte-todas-nombre {
+display: flex;
+flex-direction: column;
+min-width: 0;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.reporte-mas {
+padding-block: var(--space-1);
+}
+
+.reporte-mas summary {
+justify-content: space-between;
+list-style: none;
+color: var(--color-text);
+font-size: var(--text-md);
+}
+
+.reporte-mas summary::-webkit-details-marker {
+display: none;
+}
+
+.reporte-mas summary i {
+transition: transform var(--dur-base) var(--ease-out);
+}
+
+.reporte-mas[open] summary i {
+transform: rotate(180deg);
+}
+
+.reporte-filas {
+margin: 0 0 var(--space-2);
+}
+
+.reporte-filas > div {
+display: flex;
+justify-content: space-between;
+align-items: baseline;
+gap: var(--space-3);
+padding: var(--space-2) 0;
+border-top: var(--border-thin) solid var(--color-divider);
+font-size: var(--text-sm);
+}
+
+.reporte-filas dt {
+color: var(--color-text-dim);
+}
+
+.reporte-filas dd {
+margin: 0;
+text-align: right;
+font-weight: var(--weight-medium);
 }
 
 .barra--ingreso,
@@ -1537,6 +1768,72 @@ justify-content: flex-start;
 margin: 0;
 color: var(--error);
 font-size: var(--text-sm);
+}
+
+/* Error con «Avisar del error» al lado (o abajo si no entra). */
+.mensaje-error-fila {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+column-gap: var(--space-3);
+row-gap: var(--space-1);
+}
+
+.btn-avisar-error {
+min-height: var(--tap);
+font-size: var(--text-sm);
+}
+
+/* Subrayado solo el texto, no el ícono. */
+.btn-avisar-error,
+.btn-texto-icono {
+text-decoration: none;
+}
+
+.btn-avisar-error span,
+.btn-texto-icono span {
+text-decoration: underline;
+}
+
+.error-adjunto {
+display: flex;
+flex-direction: column;
+gap: var(--space-1);
+}
+
+.error-adjunto-texto {
+margin: 0;
+padding: var(--space-2);
+border-left: var(--border) solid var(--error);
+border-radius: var(--radius-sm);
+background: var(--color-surface-2);
+color: var(--color-text);
+font-size: var(--text-sm);
+overflow-wrap: anywhere;
+}
+
+/* Captura adjunta en «Mandar una sugerencia o error». */
+/* .field > label le saca el padding a las etiquetas; este es un botón. */
+.field > .btn-archivo {
+padding: var(--space-2) var(--space-3);
+}
+
+.btn-archivo:has(input:focus-visible) {
+outline: var(--focus-ring) solid var(--color-focus);
+}
+
+.captura-elegida {
+display: flex;
+align-items: center;
+gap: var(--space-3);
+}
+
+.captura-miniatura {
+width: calc(var(--tap) * 1.5);
+height: calc(var(--tap) * 1.5);
+object-fit: cover;
+border: var(--border-thin) solid var(--color-borde);
+border-radius: var(--radius-sm);
 }
 
 .mensaje-estado {
@@ -2564,8 +2861,14 @@ from { opacity: 0; transform: translateY(var(--space-4)); }
 to { opacity: 1; transform: translateY(0); }
 }
 
+.input::placeholder {
+color: var(--color-text-dim);
+opacity: 1;
+}
+
 textarea.input {
 resize: vertical;
+font-family: inherit;
 }
 
 /* Campo trampa para bots del formulario de lista de espera. */

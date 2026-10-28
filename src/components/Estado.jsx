@@ -1,3 +1,5 @@
+import { BotonAvisarError } from "./MensajeError";
+
 // Los 4 estados de todo lo que carga datos remotos: cargando (skeleton con
 // la forma del contenido), error (mensaje + Reintentar), vacío (texto +
 // acción) y éxito (el contenido).
@@ -45,12 +47,15 @@ export function ErrorEstado({ mensaje, onReintentar }) {
     <div className="estado estado--error" role="alert">
       <i className="ph ph-warning-circle" aria-hidden="true" />
       <p>{mensaje}</p>
-      {onReintentar && (
-        <button type="button" className="btn btn-secondary" onClick={onReintentar}>
-          <i className="ph ph-arrow-clockwise" aria-hidden="true" />
-          Reintentar
-        </button>
-      )}
+      <div className="fila">
+        {onReintentar && (
+          <button type="button" className="btn btn-secondary" onClick={onReintentar}>
+            <i className="ph ph-arrow-clockwise" aria-hidden="true" />
+            Reintentar
+          </button>
+        )}
+        <BotonAvisarError texto={mensaje} />
+      </div>
     </div>
   );
 }

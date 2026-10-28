@@ -42,6 +42,7 @@ import NotificacionesDialog from "./components/NotificacionesDialog";
 import { armarPendientes, leerVistas, marcarVistas } from "./bandeja";
 import { NOVEDADES } from "./novedades";
 import AvisosProvider from "./components/Avisos";
+import ReporteErrores from "./components/ReporteErrores";
 import AvisoActualizacion from "./components/AvisoActualizacion";
 import ConfirmarProvider from "./components/Confirmar";
 import ResumenTab from "./components/ResumenTab";
@@ -680,7 +681,14 @@ onCambio={suscripciones.recargar}
 />
 )}
 
-{activeTab === "reportes" && <ReportesTab tendencia={tendencia} onNuevo={abrirNuevo} />}
+{activeTab === "reportes" && (
+<ReportesTab
+tendencia={tendencia}
+monedaPorCuenta={monedaPorCuenta}
+cotizaciones={cotizaciones}
+onNuevo={abrirNuevo}
+/>
+)}
 
 {activeTab === "calculadora" && (
 <CalculadoraTab
@@ -788,6 +796,7 @@ onClose={() => setNotisAbiertas(null)}
 />
 )}
 
+<ReporteErrores pantalla={activeItem.label} />
 </div>
 );
 }

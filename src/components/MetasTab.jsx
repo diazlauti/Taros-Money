@@ -8,6 +8,7 @@ import { errorMonto, errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
 import EditarMetaDialog from "./EditarMetaDialog";
+import MensajeError from "./MensajeError";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
 import MontoDialog from "./MontoDialog";
 
@@ -190,9 +191,7 @@ export default function MetasTab({ metas, onCambio }) {
         </Campo>
       </div>
       {errorForm && (
-        <p className="mensaje-error" role="alert">
-          {errorForm}
-        </p>
+        <MensajeError>{errorForm}</MensajeError>
       )}
       <button className="btn btn-primary" type="submit" disabled={enviando}>
         {enviando ? "Guardando…" : errorForm ? "Reintentar" : "Crear meta"}
