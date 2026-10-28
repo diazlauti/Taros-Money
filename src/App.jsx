@@ -663,6 +663,8 @@ dias={dias}
 onCambiarDias={setDias}
 onNuevo={abrirNuevo}
 onIrA={setActiveTab}
+categorias={categorias.data}
+onCambioMovimientos={recargarMovimientos}
 mails={
 mailsDisponible()
 ? {
