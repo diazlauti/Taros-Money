@@ -4,7 +4,7 @@ import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { parseMonto } from "../format";
 import { useValidacion } from "../hooks";
-import { playClick, playError, playSuccess } from "../sounds";
+import { playBorrar, playError, playSuccess } from "../sounds";
 import { validarSuscripcion } from "../validaciones";
 import CamposSuscripcion from "./CamposSuscripcion";
 import Dialog from "./Dialog";
@@ -64,7 +64,7 @@ export default function EditarSuscripcionDialog({ suscripcion, categorias, cuent
     setError("");
     try {
       await borrarSuscripcion(nombreOriginal);
-      playClick();
+      playBorrar();
       avisar("Suscripción borrada");
       onGuardado?.();
       onClose();

@@ -57,10 +57,17 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
     }
   }
 
-  // Para corregir el saldo de una cuenta ya creada: sumar o restar, nunca
-  // "recrearla" con el mismo nombre (el backend ahora rechaza eso a propósito,
-  // porque antes pisaba el saldo viejo sin avisar).
-  async function ajustar(delta) {
+  // Para corregir el saldo de una cuenta ya creada: se escribe el saldo real
+  // que tiene ahora y se manda la diferencia con el que figura (el backend
+  // suma esa diferencia). Nunca "recrearla" con el mismo nombre: el backend
+  // rechaza eso a propósito, porque antes pisaba el saldo viejo sin avisar.
+  async function ajustar(saldoReal) {
+    const actual = Number(ajustando.saldo) || 0;
+    const delta = Math.round((saldoReal - actual) * 100) / 100;
+    if (delta === 0) {
+      avisar("La cuenta ya tenía ese saldo");
+      return;
+    }
     try {
       await ajustarCuenta(ajustando.nombre, delta);
     } catch (err) {
@@ -122,7 +129,7 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
               <span className="texto-tenue texto-chico">Se actualiza sola con los mails del banco</span>
             ) : (
               <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={() => setAjustando(c)}>
-                <i className="ph ph-plus-minus" aria-hidden="true" />
+                <i className="ph ph-pencil-simple-line" aria-hidden="true" />
                 Ajustar saldo
               </button>
             )}
@@ -241,9 +248,10 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
       {ajustando && (
         <MontoDialog
           titulo={`Ajustar saldo de ${ajustando.nombre}`}
-          etiqueta={`Monto (${ajustando.moneda || "ARS"})`}
-          ayuda={`Saldo actual: ${fmtMoney(ajustando.saldo, ajustando.moneda)}`}
-          conSigno
+          etiqueta={`¿Cuánto tiene ahora? (${ajustando.moneda || "ARS"})`}
+          ayuda={`Figura ${fmtMoney(ajustando.saldo, ajustando.moneda)}. Poné el saldo real y se corrige.`}
+          placeholder={String(Number(ajustando.saldo) || 0).replace(".", ",")}
+          permitirCero
           textoBoton="Guardar"
           onConfirmar={ajustar}
           onClose={() => setAjustando(null)}

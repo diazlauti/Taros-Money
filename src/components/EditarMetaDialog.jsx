@@ -4,7 +4,7 @@ import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { parseMonto } from "../format";
 import { useValidacion } from "../hooks";
-import { playClick, playError, playSuccess } from "../sounds";
+import { playBorrar, playError, playSuccess } from "../sounds";
 import { errorMonto, errorNombreNuevo } from "../validaciones";
 import Campo from "./Campo";
 import Dialog from "./Dialog";
@@ -61,7 +61,7 @@ export default function EditarMetaDialog({ meta, otrosNombres, onClose, onGuarda
     setError("");
     try {
       await borrarMeta(meta.nombre);
-      playClick();
+      playBorrar();
       avisar("Meta borrada");
       onGuardado?.();
       onClose();
