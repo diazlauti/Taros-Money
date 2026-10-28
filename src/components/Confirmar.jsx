@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { ConfirmarContext } from "../confirmar";
 import Dialog from "./Dialog";
+import { playAtencion } from "../sounds";
 
 // Uso: const confirmar = useConfirmar();
 //      if (!(await confirmar({ titulo, texto, si: "Borrar", peligro: true }))) return;
@@ -14,6 +15,7 @@ export default function ConfirmarProvider({ children }) {
       new Promise((resolve) => {
         resolver.current?.(false);
         resolver.current = resolve;
+        if (opciones?.peligro) playAtencion();
         setPregunta(opciones);
       }),
     [],

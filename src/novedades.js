@@ -10,6 +10,13 @@ export const NOVEDADES = [
     texto: "En Cuentas › Ajustar saldo ahora ponés cuánta plata tiene la cuenta y listo: la app calcula sola la diferencia.",
   },
   {
+    id: "2026-10-28-sonidos",
+    fecha: "2026-10-28",
+    icono: "ph ph-speaker-high",
+    titulo: "Sonidos que ahora sí se escuchan",
+    texto: "En el celu no sonaban: ya está arreglado. Además son más suaves y hay nuevos al borrar, deshacer y cuando la revisión de mails encuentra algo. Se apagan en Configuración › Visual y sonido.",
+  },
+  {
     id: "2026-10-28-bloqueo-huella",
     fecha: "2026-10-28",
     icono: "ph ph-fingerprint",

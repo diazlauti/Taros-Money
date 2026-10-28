@@ -3,7 +3,7 @@ import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { estaInstalada } from "../instalacion";
 import { actualizarAhora, buscarActualizacion, NUMERO_VERSION } from "../actualizacion";
-import { playClick, playError, playSuccess } from "../sounds";
+import { playBorrar, playClick, playError, playSuccess } from "../sounds";
 import { errorNombreNuevo } from "../validaciones";
 import { iconoDeCategoria } from "../iconos";
 import ModoMails from "./ModoMails";
@@ -107,7 +107,7 @@ export default function ConfiguracionTab({
     setErrorCategoria("");
     try {
       await onBorrarCategoria(nombre);
-      playClick();
+      playBorrar();
       avisar(`Categoría "${nombre}" borrada`);
     } catch (err) {
       playError();

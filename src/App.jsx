@@ -37,7 +37,7 @@ import { avisarServiciosUrgentes } from "./recordatorios";
 import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
 import { useAvisos } from "./avisos";
-import { sonidoHabilitado, toggleSonido } from "./sounds";
+import { playChime, playClick, playSuccess, playTic, sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav, Insignia } from "./components/Layout";
 import NotificacionesDialog from "./components/NotificacionesDialog";
 import Explicacion from "./components/Explicacion";
@@ -438,6 +438,7 @@ const detalle = encontrados
 .map((g) => `${g.descripcion || "Sin descripción"} ${g.monto == null ? "(sin monto)" : `${g.tipo === "ingreso" ? "+" : ""}${fmtMoney(g.monto, g.moneda || "ARS")}`}${g.fecha ? ` (${fmtFecha(g.fecha)})` : ""}`)
 .join(", ");
 const resto = encontrados.length > 3 ? ` y ${encontrados.length - 3} más` : "";
+playChime();
 const titulo = n === 1 ? "Encontré 1 movimiento en tus mails" : `Encontré ${n} movimientos en tus mails`;
 avisar(`${titulo}: ${detalle}${resto}. Te los dejé para revisar en el Resumen.`);
 notificar(titulo, `${detalle}${resto}. Tocá para revisarlos.`);
@@ -507,8 +508,11 @@ avisarResultadoMails(await revisarMisMails({ interactivo: true, dias: 14 }));
 }
 }
 
+// Al prenderlo suena, así se sabe que anda.
 function alternarSonido() {
-setSonido(toggleSonido());
+const prendido = toggleSonido();
+setSonido(prendido);
+if (prendido) playSuccess();
 }
 
 async function agregarCategoriaYRecargar(nombre) {
@@ -578,6 +582,7 @@ gastos.error && !gastos.data && { cual: "tus movimientos", mensaje: gastos.error
 ].filter(Boolean);
 
 function abrirNotificaciones() {
+playClick();
 setNotisAbiertas(new Set(vistas));
 }
 
@@ -606,6 +611,7 @@ setDialogOpen(true);
 };
 // Navegar desde el menú abre Movimientos sin filtro.
 function irA(tab) {
+if (tab !== activeTab) playTic();
 setFiltroMovimientos("todos");
 setActiveTab(tab);
 }
