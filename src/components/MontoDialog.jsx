@@ -7,12 +7,17 @@ import Dialog from "./Dialog";
 import MensajeError from "./MensajeError";
 
 // Pide un monto en un diálogo propio (reemplaza al window.prompt de antes).
-// Con "conSigno", deja elegir Sumar o Restar en vez de pedir un negativo.
-export default function MontoDialog({ titulo, etiqueta, ayuda, conSigno = false, textoBoton, onConfirmar, onClose }) {
-  const [form, setForm] = useState({ monto: "", signo: "sumar" });
+// Con "permitirCero" acepta 0 (por ejemplo, el saldo real de una cuenta vacía).
+export default function MontoDialog({ titulo, etiqueta, ayuda, placeholder = "0", permitirCero = false, textoBoton, onConfirmar, onClose }) {
+  const [form, setForm] = useState({ monto: "" });
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
-  const v = useValidacion(form, (f) => ({ monto: errorMonto(f.monto) }));
+  const v = useValidacion(form, (f) => ({
+    monto:
+      permitirCero && parseMonto(f.monto) === 0
+        ? ""
+        : errorMonto(f.monto, { mensaje: permitirCero ? "Escribí solo números, por ejemplo 15000 o 15000,50." : undefined }),
+  }));
 
   async function enviar(e) {
     e.preventDefault();
@@ -20,8 +25,7 @@ export default function MontoDialog({ titulo, etiqueta, ayuda, conSigno = false,
     setEnviando(true);
     setError("");
     try {
-      const n = parseMonto(form.monto);
-      await onConfirmar(conSigno && form.signo === "restar" ? -n : n);
+      await onConfirmar(parseMonto(form.monto));
       onClose();
     } catch (err) {
       setError(err.message || "No se pudo guardar. Probá de nuevo.");
@@ -32,24 +36,6 @@ export default function MontoDialog({ titulo, etiqueta, ayuda, conSigno = false,
   return (
     <Dialog titulo={titulo} onClose={onClose} sucio={form.monto !== "" && !enviando}>
       <form className="form" onSubmit={enviar} noValidate>
-        {conSigno && (
-          <div className="seg" role="radiogroup" aria-label="Qué querés hacer">
-            {[
-              ["sumar", "Sumar"],
-              ["restar", "Restar"],
-            ].map(([valor, texto]) => (
-              <label className="seg-opt" key={valor}>
-                <input
-                  type="radio"
-                  name="signo"
-                  checked={form.signo === valor}
-                  onChange={() => setForm((f) => ({ ...f, signo: valor }))}
-                />
-                {texto}
-              </label>
-            ))}
-          </div>
-        )}
         <Campo etiqueta={etiqueta} ayuda={ayuda} error={v.visible("monto")}>
           {(p) => (
             <input
@@ -59,7 +45,7 @@ export default function MontoDialog({ titulo, etiqueta, ayuda, conSigno = false,
               type="text"
               inputMode="decimal"
               autoComplete="off"
-              placeholder="0"
+              placeholder={placeholder}
               value={form.monto}
               onChange={(e) => setForm((f) => ({ ...f, monto: e.target.value }))}
               onBlur={() => v.tocar("monto")}

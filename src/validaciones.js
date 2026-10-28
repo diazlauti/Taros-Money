@@ -3,9 +3,9 @@ import { parseMonto } from "./format";
 // Reglas de los formularios. Cada una devuelve { campo: "mensaje" } con ""
 // cuando está bien; los mensajes dicen qué hacer, no solo qué falló.
 
-export function errorMonto(texto, { permitirVacio = false } = {}) {
+export function errorMonto(texto, { permitirVacio = false, mensaje } = {}) {
   if (!String(texto ?? "").trim()) return permitirVacio ? "" : "Escribí el monto.";
-  return parseMonto(texto) > 0 ? "" : "Escribí solo números mayores a 0, por ejemplo 1500 o 1500,50.";
+  return parseMonto(texto) > 0 ? "" : mensaje || "Escribí solo números mayores a 0, por ejemplo 1500 o 1500,50.";
 }
 
 export function validarMovimiento({ monto, fecha, hora }, conHora) {

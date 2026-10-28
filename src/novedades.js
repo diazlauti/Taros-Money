@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-10-28-ajustar-saldo-real",
+    fecha: "2026-10-28",
+    icono: "ph ph-wallet",
+    titulo: "Ajustar saldo, más fácil",
+    texto: "En Cuentas › Ajustar saldo ahora ponés cuánta plata tiene la cuenta y listo: la app calcula sola la diferencia.",
+  },
+  {
     id: "2026-10-28-sonidos",
     fecha: "2026-10-28",
     icono: "ph ph-speaker-high",
