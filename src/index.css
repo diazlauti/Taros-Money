@@ -2579,6 +2579,11 @@ from { opacity: 0; transform: translateY(var(--space-4)); }
 to { opacity: 1; transform: translateY(0); }
 }
 
+.input::placeholder {
+color: var(--color-text-dim);
+opacity: 1;
+}
+
 textarea.input {
 resize: vertical;
 font-family: inherit;

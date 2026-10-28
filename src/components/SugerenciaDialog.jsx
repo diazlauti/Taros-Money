@@ -163,11 +163,6 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
                 ? "¿Qué pasó?"
                 : "¿Cuál es tu idea?"
           }
-          ayuda={
-            !desdeError && form.tipo === "error"
-              ? "Dónde estabas y qué tocaste. La versión y el dispositivo van solos."
-              : ""
-          }
           error={v.visible("mensaje")}
         >
           {(p) => (
@@ -176,6 +171,13 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
               data-autofocus
               className="input"
               rows={4}
+              placeholder={
+                desdeError
+                  ? "Por ejemplo: quería guardar un gasto en dólares."
+                  : form.tipo === "error"
+                    ? "Dónde estabas y qué tocaste. La versión y el dispositivo van solos."
+                    : "Contame qué te gustaría que tenga la app."
+              }
               maxLength={2000}
               value={form.mensaje}
               onChange={cambiar("mensaje")}
@@ -207,9 +209,7 @@ export default function SugerenciaDialog({ onClose, errorVisto = null, pantalla 
               {errorCaptura}
             </p>
           )}
-          <p className="field-ayuda">
-            La captura es opcional. Va con el mail de tu cuenta, por si necesito preguntarte algo.
-          </p>
+          {!captura && <p className="field-ayuda">Opcional</p>}
         </div>
         {/* Campo trampa para bots: invisible y fuera del orden de tabulación. */}
         <input
