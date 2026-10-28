@@ -32,7 +32,10 @@ export function avisarAccionTour(accion) {
 // objetivo es un selector CSS, con dos atajos:
 // - "nav:servicios": el botón del menú de esa sección. En el celu, si no
 //   está en la barra de abajo, se resalta «Más».
-// - "card:#titulo-monedas": la tarjeta que contiene ese elemento.
+// - "card:#titulo-monedas": la tarjeta que contiene ese elemento. Si está
+//   dentro de un desplegable cerrado (los grupos de Configuración), se abre.
+// - "cerrado:.config-grupos": ese elemento, con sus desplegables cerrados
+//   (para mostrar la lista de grupos entera, sin el que quedó abierto).
 // Si hay varios que coinciden, se usa el primero que se ve.
 
 function visible(el) {
@@ -48,7 +51,19 @@ export function buscarObjetivo(objetivo) {
     return primeroVisible(`[data-tour="nav-${objetivo.slice(4)}"]`) || primeroVisible('[data-tour="nav-mas"]');
   }
   if (objetivo.startsWith("card:")) {
-    return primeroVisible(objetivo.slice(5))?.closest("section, .card, form") || null;
+    const selector = objetivo.slice(5);
+    if (!primeroVisible(selector)) abrirDesplegable(selector);
+    return primeroVisible(selector)?.closest("section, .card, form") || null;
+  }
+  if (objetivo.startsWith("cerrado:")) {
+    const el = primeroVisible(objetivo.slice(8));
+    el?.querySelectorAll("details[open]").forEach((d) => (d.open = false));
+    return el;
   }
   return primeroVisible(objetivo);
+}
+
+function abrirDesplegable(selector) {
+  const cerrado = document.querySelector(selector)?.closest("details:not([open])");
+  if (cerrado) cerrado.open = true;
 }
