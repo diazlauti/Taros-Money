@@ -63,12 +63,16 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   const [ignorar, setIgnorar] = useState(false);
   const v = useValidacion(form, (f) => validarMovimiento(f, esGasto));
 
-  // Identifica la fila original en la planilla (antes de aplicar los
-  // cambios). Gastos: fecha + hora + monto. Ingresos no tienen "hora", así
-  // que se usa fecha + monto + descripción, tal como estaban al cargar.
-  const criterio = esGasto
-    ? { fecha: movimiento.fecha, hora: movimiento.hora, monto: movimiento.monto }
-    : { fecha: movimiento.fecha, monto: movimiento.monto, descripcion: movimiento.descripcion };
+  // Identifica la fila original en la planilla por su ID. Van también los
+  // datos tal como estaban al cargar (gastos: fecha + hora + monto; ingresos,
+  // que no tienen hora: fecha + monto + descripción): el backend los usa para
+  // confirmar que el ID sigue en esa fila, y para buscarla si no tiene ID.
+  const criterio = {
+    ...(movimiento.id ? { id: movimiento.id } : {}),
+    ...(esGasto
+      ? { fecha: movimiento.fecha, hora: movimiento.hora, monto: movimiento.monto }
+      : { fecha: movimiento.fecha, monto: movimiento.monto, descripcion: movimiento.descripcion }),
+  };
 
   function campo(nombre, valor) {
     setForm((f) => ({ ...f, [nombre]: valor }));
