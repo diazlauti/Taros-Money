@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { agregarGasto, agregarIngreso } from "../api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { agregarGasto, agregarIngreso, nuevoIdMovimiento } from "../api";
 import { useAvisos } from "../avisos";
 import { movimientosFrecuentes } from "../cargaRapida";
 import { fmtMoney, parseMonto } from "../format";
@@ -64,6 +64,10 @@ export default function NuevoMovimientoDialog({
   );
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
+  // Si falla y se toca Guardar otra vez con los mismos datos, va el mismo ID:
+  // si el primer intento sí había llegado, no se carga dos veces. Si cambiaste
+  // algo, es otro movimiento y lleva ID nuevo.
+  const ultimoEnvio = useRef({ datos: "", id: "" });
   const v = useValidacion(form, (f) => validarMovimiento(f, tipo === "gasto"));
 
   // Un ingreso manual casi nunca entra directo a la tarjeta (la pensión, la
@@ -137,10 +141,13 @@ export default function NuevoMovimientoDialog({
       };
       // El backend acredita/descuenta solo de la cuenta elegida (o la deja
       // como "Cuscatlán" si no hay otra cuenta) en la misma llamada.
+      const datos = JSON.stringify({ tipo, ...payload, cuenta: form.cuenta });
+      if (ultimoEnvio.current.datos !== datos) ultimoEnvio.current = { datos, id: nuevoIdMovimiento() };
+      const id = ultimoEnvio.current.id;
       if (tipo === "gasto") {
-        await agregarGasto({ ...payload, cuenta: form.cuenta });
+        await agregarGasto({ ...payload, cuenta: form.cuenta, id });
       } else {
-        await agregarIngreso({ ...payload, cuenta: form.cuenta });
+        await agregarIngreso({ ...payload, cuenta: form.cuenta, id });
       }
       playSuccess();
       avisar(tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado");

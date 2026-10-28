@@ -279,7 +279,7 @@ export default function MovimientosTab({
               </header>
               <ul className="lista">
                 {grupo.movimientos.map((t, i) => (
-                  <li key={`${t.tipo}-${t.fecha}-${t.hora || ""}-${t.monto}-${i}`}>{fila(t, gi === 0 && i === 0, false)}</li>
+                  <li key={t.id ? `${t.tipo}-${t.id}` : `${t.tipo}-${t.fecha}-${t.hora || ""}-${t.monto}-${i}`}>{fila(t, gi === 0 && i === 0, false)}</li>
                 ))}
               </ul>
             </section>
@@ -291,7 +291,7 @@ export default function MovimientosTab({
     contenido = (
       <ul className="lista">
         {filtrados.map((t, i) => (
-          <li key={`${t.tipo}-${t.fecha}-${t.hora || ""}-${t.monto}-${i}`}>{fila(t, i === 0, true)}</li>
+          <li key={t.id ? `${t.tipo}-${t.id}` : `${t.tipo}-${t.fecha}-${t.hora || ""}-${t.monto}-${i}`}>{fila(t, i === 0, true)}</li>
         ))}
       </ul>
     );

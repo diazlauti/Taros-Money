@@ -184,9 +184,33 @@ async function leer(funcion, parametros = []) {
 }
 
 // Escrituras: NO se reintentan solas. Si el pedido llegó pero se cortó la
-// respuesta, repetirlo duplicaría el gasto; la interfaz ofrece "Reintentar".
+// respuesta, repetirlo podría hacer el cambio dos veces; la interfaz ofrece
+// "Reintentar".
 function escribir(funcion, parametros = []) {
   return llamarUnaVez(funcion, parametros);
+}
+
+// ID propio de cada gasto o ingreso (columna oculta "ID Taros" en la
+// planilla). Lo arma la app antes de guardar: si se corta la respuesta y se
+// vuelve a mandar, el backend ve que ese ID ya está y no lo carga dos veces.
+export function nuevoIdMovimiento() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  const azar = () => Math.random().toString(36).slice(2, 10);
+  return `${Date.now().toString(36)}-${azar()}-${azar()}`;
+}
+
+// Cargar un movimiento nuevo con su ID sí se puede reintentar solo, como las
+// lecturas: repetirlo no lo duplica.
+async function agregarConId(funcion, movimiento) {
+  const conId = { ...movimiento, id: movimiento.id || nuevoIdMovimiento() };
+  for (let intento = 0; ; intento++) {
+    try {
+      return await llamarUnaVez(funcion, [conId]);
+    } catch (err) {
+      if (!err.transitorio || intento >= ESPERAS_REINTENTO_MS.length) throw err;
+      await esperar(ESPERAS_REINTENTO_MS[intento]);
+    }
+  }
 }
 
 export function getGastos(dias = 30) {
@@ -243,7 +267,7 @@ export function renombrarCategoria(nombreViejo, nombreNuevo) {
 }
 
 export function agregarGasto(gasto) {
-  return escribir("agregarGastoManual", [gasto]);
+  return agregarConId("agregarGastoManual", gasto);
 }
 
 export function editarGasto(criterio, cambios) {
@@ -269,7 +293,7 @@ export function descartarGastoDeMail(idMail) {
 }
 
 export function agregarIngreso(ingreso) {
-  return escribir("agregarIngresoManual", [ingreso]);
+  return agregarConId("agregarIngresoManual", ingreso);
 }
 
 export function editarIngreso(criterio, cambios) {
