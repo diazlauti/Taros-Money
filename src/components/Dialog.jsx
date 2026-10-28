@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useConfirmar } from "../confirmar";
 
 const ENFOCABLES =
@@ -9,6 +10,9 @@ const ENFOCABLES =
 // guardar), pregunta antes de cerrar para no perder lo que escribiste.
 // "variante" suma una clase (ej. "tour": en el celu va abajo y deja ver la
 // sección de atrás).
+// Se dibuja directo en <body>: si quedara adentro de una sección animada
+// (como los bloques del Resumen), la animación lo encierra en esa sección y
+// lo que viene después le pasa por encima.
 export default function Dialog({ titulo, onClose, sucio = false, variante, children }) {
   const panelRef = useRef(null);
   const tituloId = useId();
@@ -70,7 +74,7 @@ export default function Dialog({ titulo, onClose, sucio = false, variante, child
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return (
+  return createPortal(
     <div
       className={"dialog-backdrop" + (variante ? ` dialog-backdrop--${variante}` : "")}
       onMouseDown={(e) => {
@@ -83,6 +87,7 @@ export default function Dialog({ titulo, onClose, sucio = false, variante, child
         </h2>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

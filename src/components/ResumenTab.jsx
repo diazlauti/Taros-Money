@@ -12,6 +12,7 @@ import {
   ultimosMovimientos,
 } from "../resumen";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
+import EditarMovimientoDialog from "./EditarMovimientoDialog";
 import PeriodoSelector from "./PeriodoSelector";
 
 // Cuántas categorías y movimientos se ven sin tocar «Ver más».
@@ -28,12 +29,14 @@ export default function ResumenTab({
   ingresos,
   cuentas,
   servicios,
+  categorias,
   cotizaciones,
   monedaPorCuenta,
   dias,
   onCambiarDias,
   onNuevo,
   onIrA,
+  onCambioMovimientos,
   mails,
 }) {
   return (
@@ -57,8 +60,11 @@ export default function ResumenTab({
         ingresos={ingresos}
         dias={dias}
         monedaPorCuenta={monedaPorCuenta}
+        categorias={categorias}
+        cuentas={cuentas.data}
         onNuevo={onNuevo}
         onIrA={onIrA}
+        onCambio={onCambioMovimientos}
       />
     </div>
   );
@@ -400,8 +406,10 @@ function CategoriasCard({ resumen, dias, onCambiarDias, onNuevo }) {
   );
 }
 
-function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, onNuevo, onIrA }) {
+// Tocar un movimiento abre el mismo editor que en Movimientos.
+function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, categorias, cuentas, onNuevo, onIrA, onCambio }) {
   const lista = ultimosMovimientos(gastos.data, ingresos.data, MOVIMIENTOS_A_LA_VISTA);
+  const [editando, setEditando] = useState(null);
   let contenido;
 
   if (gastos.cargando || ingresos.cargando) {
@@ -429,22 +437,30 @@ function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, onNuevo, onIrA }
           const categoria = t.categoria || "Sin categoría";
           const dia = nombreDia(t.fecha);
           const cuando = dia === "Hoy" || dia === "Ayer" ? dia.toLowerCase() : fmtFecha(t.fecha);
+          const monto = fmtMoney(t.monto, t.moneda || monedaPorCuenta[t.cuenta] || "ARS");
           return (
-            <li key={`${t.tipo}-${t.fecha}-${t.hora || ""}-${i}`} className="resumen-fila">
-              <span className="mov-icono" style={{ "--mov-color": colorDeCategoria(categoria) }} aria-hidden="true">
-                <i className={iconoPorCategoria(t.categoria)} />
-              </span>
-              <span className="movimiento-texto">
-                <span className="movimiento-desc">{t.descripcion || "Sin descripción"}</span>
-                <span className="texto-tenue texto-chico mov-detalle">
-                  {categoria} · {cuando}
+            <li key={`${t.tipo}-${t.fecha}-${t.hora || ""}-${i}`}>
+              <button
+                type="button"
+                className="resumen-fila"
+                onClick={() => setEditando(t)}
+                aria-label={`Editar ${esIngreso ? "ingreso" : "gasto"}: ${t.descripcion || "sin descripción"}, ${categoria}, ${esIngreso ? "más" : "menos"} ${monto}, ${cuando}`}
+              >
+                <span className="mov-icono" style={{ "--mov-color": colorDeCategoria(categoria) }} aria-hidden="true">
+                  <i className={iconoPorCategoria(t.categoria)} />
                 </span>
-              </span>
-              <span className={"movimiento-monto num" + (esIngreso ? " es-ingreso" : "")}>
-                <span className="visualmente-oculto">{esIngreso ? "Entró" : "Salió"} </span>
-                <span aria-hidden="true">{esIngreso ? "+ " : "− "}</span>
-                {fmtMoney(t.monto, t.moneda || monedaPorCuenta[t.cuenta] || "ARS")}
-              </span>
+                <span className="movimiento-texto">
+                  <span className="movimiento-desc">{t.descripcion || "Sin descripción"}</span>
+                  <span className="texto-tenue texto-chico mov-detalle">
+                    {categoria} · {cuando}
+                  </span>
+                </span>
+                <span className={"movimiento-monto num" + (esIngreso ? " es-ingreso" : "")}>
+                  <span className="visualmente-oculto">{esIngreso ? "Entró" : "Salió"} </span>
+                  <span aria-hidden="true">{esIngreso ? "+ " : "− "}</span>
+                  {monto}
+                </span>
+              </button>
             </li>
           );
         })}
@@ -469,6 +485,17 @@ function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, onNuevo, onIrA }
         Últimos movimientos
       </Titulo>
       <div className="card resumen-card">{contenido}</div>
+      {editando && (
+        <EditarMovimientoDialog
+          movimiento={editando}
+          tipo={editando.tipo}
+          categorias={categorias}
+          cuentas={cuentas}
+          monedaPorCuenta={monedaPorCuenta}
+          onClose={() => setEditando(null)}
+          onGuardado={onCambio}
+        />
+      )}
     </section>
   );
 }
