@@ -13,6 +13,7 @@ import {
 } from "../resumen";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
 import EditarMovimientoDialog from "./EditarMovimientoDialog";
+import { EtiquetaSinSubir } from "./EstadoConexion";
 import PeriodoSelector from "./PeriodoSelector";
 
 // Cuántas categorías y movimientos se ven sin tocar «Ver más».
@@ -442,7 +443,7 @@ function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, categorias, cuen
                 type="button"
                 className="resumen-fila"
                 onClick={() => setEditando(t)}
-                aria-label={`Editar ${esIngreso ? "ingreso" : "gasto"}: ${t.descripcion || "sin descripción"}, ${categoria}, ${esIngreso ? "más" : "menos"} ${monto}, ${cuando}`}
+                aria-label={`Editar ${esIngreso ? "ingreso" : "gasto"}: ${t.descripcion || "sin descripción"}, ${categoria}, ${esIngreso ? "más" : "menos"} ${monto}, ${cuando}${t.pendiente ? ", sin subir" : ""}`}
               >
                 <span className="mov-icono" style={{ "--mov-color": colorDeCategoria(categoria) }} aria-hidden="true">
                   <i className={iconoPorCategoria(t.categoria)} />
@@ -452,6 +453,7 @@ function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, categorias, cuen
                   <span className="texto-tenue texto-chico mov-detalle">
                     {categoria} · {cuando}
                   </span>
+                  <EtiquetaSinSubir movimiento={t} />
                 </span>
                 <span className={"movimiento-monto num" + (esIngreso ? " es-ingreso" : "")}>
                   <span className="visualmente-oculto">{esIngreso ? "Entró" : "Salió"} </span>

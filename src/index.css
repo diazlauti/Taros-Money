@@ -5239,3 +5239,56 @@ text-align: left;
 text-decoration: none;
 background: var(--color-surface-2);
 }
+
+/* --- Sin conexión --- */
+
+/* Cartel debajo del encabezado. El lugar queda siempre (vacío no ocupa) para
+   que los lectores de pantalla anuncien los cambios. */
+.estado-conexion {
+display: flex;
+align-items: center;
+gap: var(--space-2);
+margin: 0;
+padding: var(--space-1) var(--space-3);
+min-height: var(--tap);
+background: var(--color-surface-2);
+border-bottom: var(--border-thin) solid var(--color-divider);
+color: var(--color-text-dim);
+font-size: var(--text-sm);
+}
+
+.estado-conexion i {
+font-size: var(--icon-md);
+flex: none;
+}
+
+.estado-conexion span {
+flex: 1;
+min-width: 0;
+}
+
+.estado-conexion--error,
+.estado-conexion--error i {
+color: var(--error);
+}
+
+.estado-conexion-accion {
+flex: none;
+}
+
+/* Movimiento cargado sin conexión que todavía no se subió. */
+.tag-sin-subir {
+align-self: flex-start;
+margin-top: var(--space-1);
+color: var(--color-text-dim);
+}
+
+.tag-sin-subir.tag-sin-subir--error {
+color: var(--error);
+border-color: currentColor;
+}
+
+.aviso-inline--error,
+.aviso-inline--error i {
+color: var(--error);
+}
