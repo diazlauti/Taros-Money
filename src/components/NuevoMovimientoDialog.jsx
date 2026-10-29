@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { agregarGasto, agregarIngreso, nuevoIdMovimiento } from "../api";
+import { nuevoIdMovimiento } from "../api";
+import { agregarMovimiento } from "../sinConexion";
 import { useAvisos } from "../avisos";
 import { movimientosFrecuentes } from "../cargaRapida";
 import { fmtMoney, parseMonto } from "../format";
@@ -145,13 +146,11 @@ export default function NuevoMovimientoDialog({
       const datos = JSON.stringify({ tipo, ...payload, cuenta: form.cuenta });
       if (ultimoEnvio.current.datos !== datos) ultimoEnvio.current = { datos, id: nuevoIdMovimiento() };
       const id = ultimoEnvio.current.id;
-      if (tipo === "gasto") {
-        await agregarGasto({ ...payload, cuenta: form.cuenta, id });
-      } else {
-        await agregarIngreso({ ...payload, cuenta: form.cuenta, id });
-      }
+      // Sin conexión queda en el dispositivo y se sube solo cuando vuelve.
+      const { enCola } = await agregarMovimiento(tipo, { ...payload, cuenta: form.cuenta, id });
       playSuccess();
-      avisar(tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado");
+      const guardado = tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado";
+      avisar(enCola ? `${guardado}. Se sube cuando vuelva internet.` : guardado);
       onGuardado?.(tipo);
       onClose();
       avisarAccionTour("movimiento-creado");

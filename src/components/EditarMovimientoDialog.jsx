@@ -1,15 +1,6 @@
 import { useState } from "react";
-import {
-  agregarGasto,
-  agregarIngreso,
-  borrarGasto,
-  borrarIngreso,
-  confirmarGastoDeMail,
-  descartarGastoDeMail,
-  editarGasto,
-  editarIngreso,
-  ignorarRemitenteMail,
-} from "../api";
+import { confirmarGastoDeMail, descartarGastoDeMail, ignorarRemitenteMail } from "../api";
+import { agregarMovimiento, borrarMovimiento, descartarPendientes, editarMovimiento } from "../sinConexion";
 import { useAvisos } from "../avisos";
 import { useConfirmar } from "../confirmar";
 import { fmtMoney, parseMonto } from "../format";
@@ -92,10 +83,12 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       ...(esGasto ? { hora: form.hora } : {}),
     };
     try {
+      let enCola = false;
       if (sinConfirmar) await confirmarGastoDeMail(movimiento.idMail, cambios);
-      else await (esGasto ? editarGasto : editarIngreso)(criterio, cambios);
+      else ({ enCola } = await editarMovimiento(tipo, movimiento, criterio, cambios));
       playSuccess();
-      avisar(movimiento.aRevisar ? (esGasto ? "Gasto confirmado" : "Ingreso confirmado") : "Cambios guardados");
+      const texto = movimiento.aRevisar ? (esGasto ? "Gasto confirmado" : "Ingreso confirmado") : "Cambios guardados";
+      avisar(enCola ? `${texto}. Se suben cuando vuelva internet.` : texto);
       onGuardado?.();
       onClose();
     } catch (err) {
@@ -117,7 +110,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       ...(esGasto ? { hora: movimiento.hora } : {}),
     };
     try {
-      await (esGasto ? agregarGasto : agregarIngreso)(original);
+      await agregarMovimiento(tipo, original);
       playDeshacer();
       avisar(esGasto ? "Listo, el gasto volvió" : "Listo, el ingreso volvió");
       onGuardado?.();
@@ -145,7 +138,7 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
     setError("");
     try {
       if (sinConfirmar) await descartarGastoDeMail(movimiento.idMail);
-      else await (esGasto ? borrarGasto : borrarIngreso)(criterio);
+      else await borrarMovimiento(tipo, movimiento, criterio);
       playBorrar();
       if (sinConfirmar) avisar("Gasto descartado");
       else avisar(esGasto ? "Gasto borrado" : "Ingreso borrado", "exito", { accion: "Deshacer", onAccion: deshacerBorrado });
@@ -162,6 +155,21 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       setError(err.message || "No se pudo borrar. Probá de nuevo.");
       setBorrando(false);
     }
+  }
+
+  // Lo que no se pudo subir (ej. la cuenta ya no existe): se saca de la fila
+  // y el movimiento vuelve a como está en la planilla.
+  async function descartar() {
+    const seguro = await confirmar({
+      titulo: "¿Descartar lo que no se subió?",
+      texto: "Lo que cambiaste sin conexión en este movimiento no se va a guardar.",
+      si: "Descartar",
+      peligro: true,
+    });
+    if (!seguro) return;
+    descartarPendientes(tipo, movimiento);
+    avisar("Listo, lo descartamos");
+    onClose();
   }
 
   // Aviso si la cuenta elegida no es de la moneda del mail (y el monto sigue
@@ -188,6 +196,24 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
             {sinConfirmar && " Hasta que lo confirmes no se suma a tus gastos ni a tus saldos."}
             {sugerencia?.categoria && ` Elegimos la categoría que usaste la última vez en ${movimiento.descripcion}.`}
           </p>
+        )}
+        {movimiento.pendiente && (
+          <div className={"aviso-inline" + (movimiento.errorCola ? " aviso-inline--error" : "")} role="status">
+            <i className={`ph ${movimiento.errorCola ? "ph-warning-circle" : "ph-cloud-slash"}`} aria-hidden="true" />
+            <span>
+              {movimiento.errorCola
+                ? `No se pudo subir: ${String(movimiento.errorCola).replace(/\.?$/, ".")} Corregilo y guardá, o descartalo.`
+                : "Todavía no se subió a tu planilla. Se sube solo cuando haya internet."}
+              {movimiento.errorCola && (
+                <>
+                  {" "}
+                  <button type="button" className="btn-link" onClick={descartar}>
+                    Descartar
+                  </button>
+                </>
+              )}
+            </span>
+          </div>
         )}
         {monedaDistinta && (
           <p className="aviso-inline" role="status">

@@ -36,6 +36,23 @@ import { ahoraArgentina, diasMailsGuardados, guardarDiasMails, ultimaRevisionMai
 import { avisarServiciosUrgentes } from "./recordatorios";
 import { serviciosConEstado } from "./servicios";
 import { useSeccion } from "./hooks";
+import {
+aplicarCola,
+aplicarColaACuentas,
+asegurarDueno,
+borrarDatosGuardados,
+hayConexion,
+hayCopias,
+leerCola,
+limpiarSubidos,
+pendientesDeSubir,
+subirCola,
+useCola,
+useConexion,
+useSubiendo,
+} from "./sinConexion";
+import { useConfirmar } from "./confirmar";
+import EstadoConexion from "./components/EstadoConexion";
 import { useAvisos } from "./avisos";
 import { playChime, playClick, playSuccess, playTic, sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav, Insignia } from "./components/Layout";
@@ -116,7 +133,14 @@ setVerificando(false);
 return;
 }
 intentarSesionSilenciosa().then((datos) => {
-if (datos) setAutenticado(true);
+if (datos?.token) {
+asegurarDueno(sesionRecordada()?.email);
+setAutenticado(true);
+} else if (datos?.sinRed && sesionRecordada() && hayCopias()) {
+// Sin internet y con la sesión vencida: entra igual con lo último
+// guardado. Al volver la conexión se renueva sola.
+setAutenticado(true);
+}
 setVerificando(false);
 });
 }, [autenticado]);
@@ -143,6 +167,8 @@ return (
 <ConfirmarProvider>
 <Login
 onSuccess={() => {
+// Si entró otra cuenta, que no vea lo guardado de la anterior.
+asegurarDueno(sesionRecordada()?.email);
 // Recién se verificó con Google: no hace falta además la huella.
 setBloqueada(false);
 setPanelListo(true);
@@ -181,6 +207,9 @@ tema={tema}
 onCambiarTema={cambiarTema}
 onCerrarSesion={() => {
 cerrarSesion();
+// Lo guardado en el dispositivo (copias y fila de espera) es de esta
+// sesión: al salir no queda nada.
+borrarDatosGuardados();
 setAutenticado(false);
 }}
 />
@@ -224,27 +253,55 @@ useEffect(() => {
 if (inicialNuevo || verInicial) limpiarNuevoDeUrl();
 }, [inicialNuevo, verInicial]);
 
-const saldo = useSeccion(getSaldo, []);
-const resumen = useSeccion(() => getResumen(dias), [dias]);
-const gastos = useSeccion(() => getGastos(dias), [dias]);
-const ingresos = useSeccion(() => getIngresos(dias), [dias]);
-const categorias = useSeccion(getCategorias, []);
-const iconosCategorias = useSeccion(getIconosCategorias, []);
-const cuentas = useSeccion(getCuentas, []);
-const metas = useSeccion(getMetas, []);
-const suscripciones = useSeccion(getSuscripciones, []);
-const servicios = useSeccion(getServicios, []);
-const tendencia = useSeccion(() => getTendencia(6), []);
-const monedas = useSeccion(getMonedas, []);
-const cotizacionesHoy = useSeccion(traerCotizaciones, []);
-const urlPlanilla = useSeccion(getUrlPlanilla, []);
-const configMails = useSeccion(() => (mailsDisponible() ? getConfigMails() : Promise.resolve(null)), []);
+// El tercer dato es con qué nombre se guarda la copia en el dispositivo
+// (para abrir al instante y sin internet).
+const saldo = useSeccion(getSaldo, [], "saldo");
+const resumen = useSeccion(() => getResumen(dias), [dias], `resumen-${dias}`);
+const gastosPlanilla = useSeccion(() => getGastos(dias), [dias], `gastos-${dias}`);
+const ingresosPlanilla = useSeccion(() => getIngresos(dias), [dias], `ingresos-${dias}`);
+const categorias = useSeccion(getCategorias, [], "categorias");
+const iconosCategorias = useSeccion(getIconosCategorias, [], "iconos");
+const cuentasPlanilla = useSeccion(getCuentas, [], "cuentas");
+const metas = useSeccion(getMetas, [], "metas");
+const suscripciones = useSeccion(getSuscripciones, [], "suscripciones");
+const servicios = useSeccion(getServicios, [], "servicios");
+const tendencia = useSeccion(() => getTendencia(6), [], "tendencia");
+const monedas = useSeccion(getMonedas, [], "monedas");
+const cotizacionesHoy = useSeccion(traerCotizaciones, [], "cotizaciones");
+const urlPlanilla = useSeccion(getUrlPlanilla, [], "planilla");
+const configMails = useSeccion(() => (mailsDisponible() ? getConfigMails() : Promise.resolve(null)), [], "config-mails");
+
+// Lo cargado sin conexión (o que todavía no se subió) ya se ve en las
+// listas y en los saldos, marcado como «Sin subir».
+const cola = useCola();
+const gastosVista = useMemo(
+() => aplicarCola(gastosPlanilla.data, cola, "gasto", gastosPlanilla.pedidoEn),
+[gastosPlanilla.data, gastosPlanilla.pedidoEn, cola],
+);
+const ingresosVista = useMemo(
+() => aplicarCola(ingresosPlanilla.data, cola, "ingreso", ingresosPlanilla.pedidoEn),
+[ingresosPlanilla.data, ingresosPlanilla.pedidoEn, cola],
+);
+const cuentasVista = useMemo(
+() => aplicarColaACuentas(cuentasPlanilla.data, cola, cuentasPlanilla.pedidoEn),
+[cuentasPlanilla.data, cuentasPlanilla.pedidoEn, cola],
+);
+const gastos = { ...gastosPlanilla, data: gastosVista };
+const ingresos = { ...ingresosPlanilla, data: ingresosVista };
+const cuentas = { ...cuentasPlanilla, data: cuentasVista };
+
+// Lo ya subido sale de la fila cuando las listas nuevas lo traen.
+const pedidoMasViejo = Math.min(gastosPlanilla.pedidoEn, ingresosPlanilla.pedidoEn, cuentasPlanilla.pedidoEn);
+useEffect(() => {
+if (pedidoMasViejo) limpiarSubidos(pedidoMasViejo);
+}, [pedidoMasViejo]);
 
 // Si una recarga falla pero ya había datos en pantalla, se siguen mostrando
-// los anteriores y se avisa (antes no se enteraba nadie).
+// los anteriores y se avisa (antes no se enteraba nadie). Sin internet no:
+// para eso está el cartel de arriba.
 const { avisar } = useAvisos();
 const erroresConDatos = [saldo, resumen, gastos, ingresos, cuentas, metas, suscripciones, servicios, tendencia]
-.filter((s) => s.error && s.data !== null)
+.filter((s) => s.error && s.data !== null && !s.sinRed)
 .map((s) => s.error);
 const primerError = erroresConDatos[0] || "";
 useEffect(() => {
@@ -343,6 +400,74 @@ if (tipo !== "gasto") ingresos.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 [saldo, resumen, gastos, ingresos, cuentas, tendencia],
 );
+
+// --- Sin conexión: subir lo que quedó esperando ---
+const conectado = useConexion();
+const subiendo = useSubiendo();
+const confirmar = useConfirmar();
+const sinSubir = pendientesDeSubir(cola);
+const conErrorAlSubir = sinSubir.filter((op) => op.error).length;
+
+const subirPendientes = useCallback(async () => {
+const { subidos, fallidos } = await subirCola();
+if (subidos > 0) {
+recargarMovimientos();
+playSuccess();
+avisar(subidos === 1 ? "Se subió 1 movimiento que estaba sin subir" : `Se subieron ${subidos} movimientos que estaban sin subir`);
+}
+if (fallidos.length) {
+const f = fallidos[0];
+avisar(`No se pudo subir «${f.datos?.descripcion || f.cambios?.descripcion || f.criterio?.descripcion || "un movimiento"}»: ${String(f.error).replace(/\.?$/, ".")} Tocalo en Movimientos para arreglarlo.`, "error");
+}
+}, [recargarMovimientos, avisar]);
+
+// Al abrir, al volver la conexión y al volver a la app.
+const conectadoAntes = useRef(conectado);
+useEffect(() => {
+const volvio = conectado && !conectadoAntes.current;
+conectadoAntes.current = conectado;
+if (!conectado) return;
+if (volvio) recargarTodo();
+subirPendientes();
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [conectado]);
+
+// Las funciones cambian en cada render: el intervalo usa siempre la última.
+const ultimas = useRef({});
+ultimas.current = { subirPendientes, recargarSaldo: saldo.recargar };
+useEffect(() => {
+function alVolver() {
+if (document.visibilityState === "visible" && hayConexion()) ultimas.current.subirPendientes();
+}
+// Wifi sin internet (el sistema dice que hay red): cada medio minuto se
+// prueba con un pedido chico; cuando anda, el efecto de arriba recarga todo.
+// Y si algo quedó sin subir por una falla de Google, se reintenta.
+const intervalo = setInterval(() => {
+if (!hayConexion()) return;
+if (!conectado) ultimas.current.recargarSaldo();
+else if (pendientesDeSubir(leerCola()).some((op) => !op.error)) ultimas.current.subirPendientes();
+}, 30000);
+document.addEventListener("visibilitychange", alVolver);
+return () => {
+clearInterval(intervalo);
+document.removeEventListener("visibilitychange", alVolver);
+};
+}, [conectado]);
+
+// Cerrar sesión con cosas sin subir las perdería: pregunta antes.
+async function cerrarSesionSegura() {
+if (sinSubir.length) {
+const n = sinSubir.length;
+const seguro = await confirmar({
+titulo: n === 1 ? "Tenés 1 movimiento sin subir" : `Tenés ${n} movimientos sin subir`,
+texto: "Si cerrás sesión ahora, se pierden. Esperá a tener internet para que se suban.",
+si: "Cerrar sesión igual",
+peligro: true,
+});
+if (!seguro) return;
+}
+onCerrarSesion();
+}
 
 // --- Gastos desde tus mails ---
 const [revisandoMails, setRevisandoMails] = useState(false);
@@ -476,14 +601,15 @@ avisar(err.message || "No se pudieron revisar tus mails. Probá de nuevo.", "err
 // el permiso de Gmail venció, avisa y se puede revisar con el botón.
 const yaRevisoAlAbrir = useRef(false);
 useEffect(() => {
-if (modoMails !== "al_abrir" || !planillaId || yaRevisoAlAbrir.current) return;
+// Sin internet espera: cuando vuelve, revisa.
+if (modoMails !== "al_abrir" || !planillaId || yaRevisoAlAbrir.current || !conectado) return;
 yaRevisoAlAbrir.current = true;
 revisarMisMails()
 .then((resultado) => {
 avisarResultadoMails(resultado, { siempreAvisar: false });
 })
 .catch((err) => avisar(`No se pudieron revisar tus mails: ${err.message}`, "error"));
-}, [modoMails, planillaId, revisarMisMails, avisar, avisarResultadoMails]);
+}, [modoMails, planillaId, revisarMisMails, avisar, avisarResultadoMails, conectado]);
 
 // Cambiar el modo desde Configuración. Se llama directo desde el click: la
 // primera vez, activarMails abre la ventana de permisos de Google.
@@ -647,6 +773,16 @@ title="Notificaciones"
 </button>
 </header>
 
+<EstadoConexion
+conectado={conectado}
+sinSubir={sinSubir.length}
+conError={conErrorAlSubir}
+subiendo={subiendo}
+guardadoEl={saldo.sinRed || !conectado ? pedidoMasViejo : 0}
+onReintentar={subirPendientes}
+onVer={() => irA("movimientos")}
+/>
+
 <div className="main-content">
 <div className="tab-pane" key={activeTab}>
 {activeTab === "resumen" && (
@@ -800,7 +936,7 @@ tema={tema}
 onCambiarTema={onCambiarTema}
 sonido={sonido}
 onToggleSonido={alternarSonido}
-onCerrarSesion={onCerrarSesion}
+onCerrarSesion={cerrarSesionSegura}
 onVerTour={() => {
 setTourDesdeConfig(true);
 setTourAbierto(true);

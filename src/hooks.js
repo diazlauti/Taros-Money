@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { guardarCopia, leerCopia } from "./sinConexion";
 
 // Carga una sección de datos de forma independiente: si el endpoint todavía
 // no existe en el Apps Script (secciones nuevas: cuentas, metas, etc.) esa
@@ -7,19 +9,38 @@ import { useCallback, useEffect, useState } from "react";
 // "cargando" solo es true la primera vez (cuando no hay nada para mostrar).
 // En las recargas posteriores los datos viejos quedan en pantalla y se usa
 // "actualizando", así no parpadea todo después de cada guardado.
-export function useSeccion(fetcher, deps = []) {
-const [estado, setEstado] = useState({ data: null, cargando: true, actualizando: false, error: "" });
+//
+// Con "clave", la última respuesta buena queda guardada en el dispositivo:
+// al abrir se muestra al toque (con o sin internet) mientras se actualiza.
+// "sinRed" dice que el último intento no llegó a Google; "pedidoEn", cuándo
+// se pidió lo que se está mostrando.
+export function useSeccion(fetcher, deps = [], clave = "") {
+const [estado, setEstado] = useState(() => {
+const copia = clave ? leerCopia(clave) : null;
+return copia
+? { data: copia.data, cargando: false, actualizando: true, error: "", sinRed: false, pedidoEn: copia.cuando || 0 }
+: { data: null, cargando: true, actualizando: false, error: "", sinRed: false, pedidoEn: 0 };
+});
+const ultimaClave = useRef(clave);
 
 const cargar = useCallback(() => {
 let cancelado = false;
-setEstado((e) => ({ ...e, cargando: e.data === null, actualizando: e.data !== null, error: "" }));
+// Cambió el período (otra clave): si hay copia de ese, se muestra ya.
+const copia = clave && clave !== ultimaClave.current ? leerCopia(clave) : null;
+ultimaClave.current = clave;
+setEstado((e) => {
+const data = copia ? copia.data : e.data;
+return { ...e, data, pedidoEn: copia ? copia.cuando || 0 : e.pedidoEn, cargando: data === null, actualizando: data !== null, error: "" };
+});
+const pedidoEn = Date.now();
 fetcher()
 .then((data) => {
-if (!cancelado) setEstado({ data, cargando: false, actualizando: false, error: "" });
+if (clave) guardarCopia(clave, data);
+if (!cancelado) setEstado({ data, cargando: false, actualizando: false, error: "", sinRed: false, pedidoEn });
 })
 .catch((err) => {
 if (!cancelado) {
-setEstado((e) => ({ ...e, cargando: false, actualizando: false, error: err.message || "No se pudo cargar." }));
+setEstado((e) => ({ ...e, cargando: false, actualizando: false, error: err.message || "No se pudo cargar.", sinRed: !!err.sinRed }));
 }
 });
 return () => {

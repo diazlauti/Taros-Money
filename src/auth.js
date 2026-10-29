@@ -5,6 +5,8 @@
 // Script (ver api.js). Cada quien se loguea con SU cuenta de Google, así
 // que del lado del script cada ejecución corre con sus propios permisos —
 // no hace falta ningún PIN ni tabla de sesiones nuestra.
+import { errorSinRed, hayConexion } from "./sinConexion";
+
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const TOKEN_KEY = "taros-google-token";
 
@@ -74,10 +76,19 @@ async function llamarSesion(accion, cuerpo) {
 // null mientras no se sabe. El login lo necesita saber ANTES del click (si
 // espera al servidor después del click, el navegador bloquea la ventana de
 // Google), por eso se pregunta apenas carga la app.
+// Si se abrió sin internet queda en null y se vuelve a preguntar la próxima
+// vez que haga falta (si no, al volver la conexión pedía entrar de nuevo).
 let sesionLarga = null;
-const estadoSesionLarga = llamarSesion("estado")
-  .then(({ estado, data }) => (sesionLarga = estado === 200 && !!data?.configurada))
-  .catch(() => (sesionLarga = false));
+let consultaEstado = null;
+function estadoSesionLarga() {
+  if (sesionLarga !== null) return Promise.resolve(sesionLarga);
+  consultaEstado ??= llamarSesion("estado")
+    .then(({ estado, data }) => (sesionLarga = estado === 200 && !!data?.configurada))
+    .catch(() => null)
+    .finally(() => (consultaEstado = null));
+  return consultaEstado;
+}
+estadoSesionLarga();
 
 // Después de que Google rechace un token, no se renueva solo por un rato:
 // si el problema no es el vencimiento (ej: falta un permiso), renovar y
@@ -86,14 +97,23 @@ let ultimoRechazo = 0;
 let renovando = null;
 
 // Pide un token nuevo con la cookie de sesión larga. Devuelve null si no hay
-// sesión larga (o venció) en vez de fallar.
+// sesión larga (o venció) en vez de fallar, y { sinRed: true } si no se pudo
+// preguntar porque no hay internet (la sesión sigue, no hay que salir).
 export function renovarSesion() {
   if (renovando) return renovando;
   renovando = (async () => {
     try {
-      await estadoSesionLarga;
-      if (!sesionLarga || Date.now() - ultimoRechazo < 60000) return null;
-      const { estado, data } = await llamarSesion("renovar");
+      if (!hayConexion()) return { sinRed: true };
+      const configurada = await estadoSesionLarga();
+      if (configurada === null) return { sinRed: true };
+      if (!configurada || Date.now() - ultimoRechazo < 60000) return null;
+      let respuesta;
+      try {
+        respuesta = await llamarSesion("renovar");
+      } catch {
+        return { sinRed: true };
+      }
+      const { estado, data } = respuesta;
       if (estado !== 200 || !data?.access_token) return null;
       recordarSesion(data.email);
       return guardarToken(data);
@@ -293,6 +313,7 @@ export async function obtenerTokenActual() {
   const datos = leerTokenGuardado();
   if (datos && datos.vencimiento > Date.now()) return datos.token;
   const nuevos = await renovarSesion();
+  if (nuevos?.sinRed) throw errorSinRed();
   return nuevos?.token || null;
 }
 
@@ -318,7 +339,7 @@ export async function iniciarSesionConGoogle({ email } = {}) {
   if (!(await esperarGoogle(2000))) {
     throw new Error("Todavía no cargó el login de Google. Esperá un segundo y probá de nuevo.");
   }
-  if (sesionLarga === null) await Promise.race([estadoSesionLarga, new Promise((r) => setTimeout(r, 1500))]);
+  if (sesionLarga === null) await Promise.race([estadoSesionLarga(), new Promise((r) => setTimeout(r, 1500))]);
   if (sesionLarga) {
     const respuesta = await pedirCodigo(email);
     if (respuesta.error || !respuesta.code) throw new Error(mensajeDeLogin(respuesta.error));
