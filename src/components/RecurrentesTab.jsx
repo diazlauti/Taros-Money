@@ -121,11 +121,9 @@ export default function RecurrentesTab({ suscripciones, categorias, cuentas, cot
                   </span>
                   <i className="ph ph-pencil-simple texto-tenue" aria-hidden="true" />
                 </span>
-                {s.categoria && <span className="tag">{s.categoria}</span>}
-                {s.cuenta && <span className="texto-tenue texto-chico">{s.cuenta}</span>}
                 <span className="fila-separada">
                   <span className="monto-chico">{fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}/mes</span>
-                  <span className="texto-tenue texto-chico">Próximo cobro: {fmtFecha(s.proximaFecha)}</span>
+                  <span className="texto-tenue texto-chico">Se cobra el {fmtFecha(s.proximaFecha)}</span>
                 </span>
                 <span className="visualmente-oculto">Tocá para editar o borrar</span>
               </button>

@@ -56,7 +56,7 @@ export default function NotificacionesDialog({ pendientes, cargando, errores, vi
                 <div className="noti-cuerpo">
                   <p className="noti-titulo">
                     {p.titulo}
-                    {esNueva(p.id) && <span className="tag tag-nuevo">Nuevo</span>}
+                    {esNueva(p.id) && <span className="punto-nuevo" role="img" aria-label="Nuevo" />}
                   </p>
                   <p className="texto-chico texto-tenue">{p.texto}</p>
                   <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={() => onIr(p.accion)}>
@@ -103,7 +103,7 @@ export default function NotificacionesDialog({ pendientes, cargando, errores, vi
                   <div className="noti-cuerpo">
                     <p className="noti-titulo">
                       {n.titulo}
-                      {esNueva(n.id) && <span className="tag tag-nuevo">Nuevo</span>}
+                      {esNueva(n.id) && <span className="punto-nuevo" role="img" aria-label="Nuevo" />}
                     </p>
                     <p className="texto-chico texto-tenue">{n.texto}</p>
                     <p className="texto-chico texto-tenue">{fmtFecha(n.fecha)}</p>

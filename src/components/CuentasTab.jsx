@@ -12,7 +12,7 @@ import Dialog from "./Dialog";
 import EditarCuentaDialog from "./EditarCuentaDialog";
 import MensajeError from "./MensajeError";
 import { Cargando, ErrorEstado, Skeleton, Vacio } from "./Estado";
-import MontoDialog from "./MontoDialog";
+import SaldoEditable from "./SaldoEditable";
 
 const VACIO = { nombre: "", saldo: "", moneda: "ARS" };
 
@@ -22,7 +22,6 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
   const [abierto, setAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
-  const [ajustando, setAjustando] = useState(null);
   const [editando, setEditando] = useState(null);
   const nombreRef = useRef(null);
   const lista = cuentas.data || [];
@@ -61,15 +60,15 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
   // que tiene ahora y se manda la diferencia con el que figura (el backend
   // suma esa diferencia). Nunca "recrearla" con el mismo nombre: el backend
   // rechaza eso a propósito, porque antes pisaba el saldo viejo sin avisar.
-  async function ajustar(saldoReal) {
-    const actual = Number(ajustando.saldo) || 0;
+  async function ajustar(cuenta, saldoReal) {
+    const actual = Number(cuenta.saldo) || 0;
     const delta = Math.round((saldoReal - actual) * 100) / 100;
     if (delta === 0) {
       avisar("La cuenta ya tenía ese saldo");
       return;
     }
     try {
-      await ajustarCuenta(ajustando.nombre, delta);
+      await ajustarCuenta(cuenta.nombre, delta);
     } catch (err) {
       playError();
       throw err;
@@ -88,7 +87,6 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
             <div className="card" key={i}>
               <Skeleton ancho="50%" />
               <Skeleton variante="monto-medio" />
-              <Skeleton variante="boton" />
             </div>
           ))}
         </div>
@@ -124,14 +122,13 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
                 </button>
               )}
             </div>
-            <div className="monto-medio">{fmtMoney(c.saldo, c.moneda)}</div>
             {c.esTarjeta ? (
-              <span className="texto-tenue texto-chico">Se actualiza sola con los mails del banco</span>
+              <>
+                <div className="monto-medio">{fmtMoney(c.saldo, c.moneda)}</div>
+                <span className="texto-tenue texto-chico">Se actualiza sola con los mails del banco</span>
+              </>
             ) : (
-              <button type="button" className="btn btn-secondary btn-alinear-inicio" onClick={() => setAjustando(c)}>
-                <i className="ph ph-pencil-simple-line" aria-hidden="true" />
-                Ajustar saldo
-              </button>
+              <SaldoEditable cuenta={c} onGuardar={(valor) => ajustar(c, valor)} />
             )}
           </li>
         ))}
@@ -242,19 +239,6 @@ export default function CuentasTab({ cuentas, monedasActivas = [], onCambio, onC
           otrosNombres={lista.filter((c) => c.nombre !== editando.nombre).map((c) => c.nombre)}
           onClose={() => setEditando(null)}
           onGuardado={onCambioGeneral}
-        />
-      )}
-
-      {ajustando && (
-        <MontoDialog
-          titulo={`Ajustar saldo de ${ajustando.nombre}`}
-          etiqueta={`¿Cuánto tiene ahora? (${ajustando.moneda || "ARS"})`}
-          ayuda={`Figura ${fmtMoney(ajustando.saldo, ajustando.moneda)}. Poné el saldo real y se corrige.`}
-          placeholder={String(Number(ajustando.saldo) || 0).replace(".", ",")}
-          permitirCero
-          textoBoton="Guardar"
-          onConfirmar={ajustar}
-          onClose={() => setAjustando(null)}
         />
       )}
     </div>

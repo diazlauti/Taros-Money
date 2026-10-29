@@ -22,7 +22,7 @@ export const IMPUESTOS_INICIALES = [
   },
   {
     id: "iibb",
-    nombre: "Ingresos Brutos de tu provincia",
+    nombre: "Ingresos Brutos",
     porcentaje: 2,
     activo: false,
     ayuda: "Cambia según la provincia: fijate en tu resumen de tarjeta.",
@@ -35,7 +35,13 @@ export const MAX_IMPUESTOS = 8;
 export function leerAjustesCalculadora() {
   try {
     const guardado = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (guardado && Array.isArray(guardado.impuestos)) return guardado;
+    if (guardado && Array.isArray(guardado.impuestos)) {
+      // El nombre viejo de Ingresos Brutos era más largo; se acorta si no lo cambiaron.
+      const impuestos = guardado.impuestos.map((i) =>
+        i.id === "iibb" && i.nombre === "Ingresos Brutos de tu provincia" ? { ...i, nombre: "Ingresos Brutos" } : i,
+      );
+      return { ...guardado, impuestos };
+    }
   } catch {
     /* sin storage o dato roto: arranca con los de siempre */
   }

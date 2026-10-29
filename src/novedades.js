@@ -6,8 +6,8 @@ export const NOVEDADES = [
     id: "2026-10-28-ajustar-saldo-real",
     fecha: "2026-10-28",
     icono: "ph ph-wallet",
-    titulo: "Ajustar saldo, más fácil",
-    texto: "En Cuentas › Ajustar saldo ahora ponés cuánta plata tiene la cuenta y listo: la app calcula sola la diferencia.",
+    titulo: "Cambiar el saldo, más fácil",
+    texto: "En Cuentas tocás el saldo, ponés cuánta plata tiene la cuenta y listo: la app calcula sola la diferencia.",
   },
   {
     id: "2026-10-28-sonidos",

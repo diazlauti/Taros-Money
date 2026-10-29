@@ -94,16 +94,16 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
       {/* En compu: los datos a la izquierda y el resultado a la derecha. */}
       <div className="calc-columnas">
         <div className="pila">
-          <h2 className="card-kicker titulo-con-info" id="titulo-calculadora">
+          <h2 className="visualmente-oculto" id="titulo-calculadora">
             Calculadora de impuestos
-            <Explicacion
-              texto="¿Cuánto te sale en pesos algo que pagás en dólares, con todos los impuestos? Elegí qué se cobra y cuánto."
-              etiqueta="Para qué sirve la calculadora"
-            />
           </h2>
 
           <div className="fila-campos">
-            <Campo etiqueta="Precio" error={intentado ? errorMonto : ""}>
+            <Campo
+              etiqueta="Precio"
+              explicacion="¿Cuánto te sale en pesos algo que pagás en dólares, con todos los impuestos? Elegí qué se cobra y cuánto."
+              error={intentado ? errorMonto : ""}
+            >
               {(p) => (
                 <input
                   {...p}
@@ -245,9 +245,9 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
         </div>
 
         <div className="pila calc-lado">
-          <div className="calc-resultado" aria-live="polite">
-            {resultado ? (
-              <>
+          <div aria-live="polite">
+            {resultado && (
+              <div className="calc-resultado">
                 <div className="fila-separada">
                   <span>Precio en pesos</span>
                   <span>{fmtMoney(resultado.base)}</span>
@@ -270,16 +270,16 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
                   </span>
                   <span>{fmtMoney(resultado.total)}</span>
                 </div>
-              </>
-            ) : (
-              <p className="mensaje-estado">Escribí el precio para ver cuánto te sale.</p>
+              </div>
             )}
           </div>
 
-          <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={cargar}>
-            <i className="ph ph-plus" aria-hidden="true" />
-            Cargar como gasto
-          </button>
+          {resultado && (
+            <button type="button" className="btn btn-primary btn-alinear-inicio" onClick={cargar}>
+              <i className="ph ph-plus" aria-hidden="true" />
+              Cargar como gasto
+            </button>
+          )}
         </div>
       </div>
     </section>

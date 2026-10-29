@@ -1385,11 +1385,6 @@ font-size: var(--text-lg);
 font-weight: var(--weight-bold);
 }
 
-.reporte-subtitulo {
-font-weight: var(--weight-medium);
-color: var(--color-text-dim);
-font-size: var(--text-sm);
-}
 
 .reporte-dona,
 .reporte-dona-skeleton {
@@ -4117,10 +4112,16 @@ font-weight: var(--weight-bold);
 font-size: var(--text-sm);
 }
 
-.tag-nuevo {
+
+/* Puntito de «nuevo» en la campanita: avisa sin sumar texto. */
+.punto-nuevo {
+display: inline-block;
+flex: none;
+width: var(--space-2);
+height: var(--space-2);
+border-radius: var(--radius-pill);
 background: var(--color-accent);
-color: var(--color-on-accent);
-font-weight: var(--weight-bold);
+vertical-align: middle;
 }
 
 .notis-al-dia {
@@ -4845,6 +4846,43 @@ flex: 1;
 width: var(--tap);
 padding: 0;
 flex: none;
+}
+
+/* Saldo de la cuenta que se toca y se cambia ahí mismo. */
+.saldo-editable {
+display: inline-flex;
+align-items: center;
+gap: var(--space-2);
+align-self: flex-start;
+min-height: var(--tap);
+padding: 0 var(--space-1);
+margin-left: calc(-1 * var(--space-1));
+background: transparent;
+border: none;
+border-radius: var(--radius-sm);
+color: inherit;
+font: inherit;
+cursor: pointer;
+}
+
+.saldo-editable:hover {
+background: var(--color-surface-2);
+}
+
+.saldo-editable-form {
+display: flex;
+flex-direction: column;
+gap: var(--space-2);
+}
+
+.saldo-editable-fila {
+display: flex;
+gap: var(--space-2);
+}
+
+.saldo-editable-fila .input {
+flex: 1;
+min-width: 0;
 }
 
 /* Lista de opciones (estilo ajustes del celu): filas con ícono, texto y

@@ -6,7 +6,7 @@ import { useConfirmar } from "../confirmar";
 import { aPesos, fmtFecha, fmtMoney, iconoPorCategoria, nombreMes, parseMonto } from "../format";
 import { useSeccion, useValidacion } from "../hooks";
 import { linkCalendario, notificacionesDisponibles, pedirPermisoNotificaciones, permisoNotificaciones } from "../recordatorios";
-import { ICONO_ESTADO, iconoServicio, SERVICIOS_TIPICOS, serviciosConEstado, TEXTO_ESTADO, textoVencimiento } from "../servicios";
+import { etiquetaEstado, ICONO_ESTADO, iconoServicio, SERVICIOS_TIPICOS, serviciosConEstado } from "../servicios";
 import { playClick, playError, playSuccess } from "../sounds";
 import { validarServicio } from "../validaciones";
 import CamposServicio from "./CamposServicio";
@@ -214,7 +214,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
                     <h2 className="card-title">{s.nombre}</h2>
                     <span className={`tag tag-estado tag-estado--${s.estado}`}>
                       <i className={ICONO_ESTADO[s.estado]} aria-hidden="true" />
-                      {TEXTO_ESTADO[s.estado]}
+                      {etiquetaEstado(s)}
                     </span>
                   </span>
                   <button
@@ -229,14 +229,10 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
                 {s.estado === "pagado" ? (
                   <span className="texto-tenue texto-chico">
                     Pagaste {fmtMoney(s.montoPagado, moneda)} el {fmtFecha(s.fechaPago)}
-                    {s.gastoRegistrado ? " · cargado en gastos" : ""}
                   </span>
                 ) : (
-                  <span className="fila-separada">
-                    <span className="monto-chico">{s.monto ? `≈ ${fmtMoney(s.monto, moneda)}` : "Monto a definir"}</span>
-                    <span className="texto-tenue texto-chico">
-                      {textoVencimiento(s)} ({fmtFecha(s.vencimiento)})
-                    </span>
+                  <span className="monto-chico" title={`Vence el ${fmtFecha(s.vencimiento)}`}>
+                    {s.monto ? fmtMoney(s.monto, moneda) : "Monto a definir"}
                   </span>
                 )}
                 <div className="servicio-acciones">
