@@ -23,15 +23,16 @@ export function Sidebar({ activeTab, onSelect, avisos = {} }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <i className="ph ph-wallet" aria-hidden="true" />
+        <img className="brand-logo" src="/icon-192.png" alt="" width="32" height="32" />
         Taros Money
       </div>
       <nav className="nav" aria-label="Secciones">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.map((item, i) => (
           <button
             key={item.id}
             type="button"
             className="nav-item"
+            aria-keyshortcuts={String(i + 1)}
             data-tour={`nav-${item.id}`}
             aria-current={item.id === seccionDelMenu(activeTab) ? "page" : undefined}
             aria-label={etiquetaConAviso(item.label, avisos[item.id])}
@@ -42,6 +43,9 @@ export function Sidebar({ activeTab, onSelect, avisos = {} }) {
               <Insignia aviso={avisos[item.id]} />
             </span>
             <span>{item.label}</span>
+            <kbd className="nav-atajo" aria-hidden="true">
+              {i + 1}
+            </kbd>
           </button>
         ))}
       </nav>

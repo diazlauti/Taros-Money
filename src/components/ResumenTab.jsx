@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria, nombreMes } from "../format";
 import RevisionMails from "./RevisionMails";
 import { etiquetaEstado, serviciosConEstado, textoVencimiento } from "../servicios";
@@ -136,7 +136,12 @@ function SaldoCard({ saldo, cuentas, gastos, ingresos, dias, cotizaciones, moned
               <span className="visualmente-oculto">Saldo oculto</span>
             </>
           ) : (
-            fmtMoney(hayCuentas ? totalCuentasArs : saldo.data)
+            <>
+              <span aria-hidden="true">
+                <NumeroQueSube valor={hayCuentas ? totalCuentasArs : saldo.data} />
+              </span>
+              <span className="visualmente-oculto">{fmtMoney(hayCuentas ? totalCuentasArs : saldo.data)}</span>
+            </>
           )}
         </p>
         <EntroSalio gastos={gastos} ingresos={ingresos} dias={dias} cotizaciones={cotizaciones} monedaPorCuenta={monedaPorCuenta} tapar={tapar} />
@@ -566,4 +571,36 @@ function MailsCard({
       <div className="card resumen-card mails-card">{contenido}</div>
     </section>
   );
+}
+
+// El total sube contando hasta el número nuevo (más satisfactorio que un
+// salto seco). Sin animación si la persona pidió menos movimiento.
+function NumeroQueSube({ valor }) {
+  const destino = Number(valor) || 0;
+  const quieto = () => !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const [mostrado, setMostrado] = useState(() => (quieto() ? destino : 0));
+  const actual = useRef(mostrado);
+
+  useEffect(() => {
+    const inicio = actual.current;
+    if (quieto() || inicio === destino) {
+      actual.current = destino;
+      setMostrado(destino);
+      return undefined;
+    }
+    const DURACION = 700;
+    const t0 = performance.now();
+    let cuadro;
+    const paso = (ahora) => {
+      const t = Math.min(1, (ahora - t0) / DURACION);
+      const suave = 1 - Math.pow(1 - t, 3);
+      actual.current = inicio + (destino - inicio) * suave;
+      setMostrado(actual.current);
+      if (t < 1) cuadro = requestAnimationFrame(paso);
+    };
+    cuadro = requestAnimationFrame(paso);
+    return () => cancelAnimationFrame(cuadro);
+  }, [destino]);
+
+  return fmtMoney(Math.round(mostrado));
 }
