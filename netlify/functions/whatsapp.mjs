@@ -240,20 +240,36 @@ async function pedirAlScript(datos) {
   }
 }
 
+// Meta entrega los números argentinos como 549… pero en la lista de prueba
+// (y a veces al contestar) solo acepta 54…: si rebota por eso, reintenta sin el 9.
+function sinNueveArgentino(numero) {
+  return /^549\d{10}$/.test(numero) ? `54${numero.slice(3)}` : null;
+}
+
+async function enviarTexto(phoneNumberId, para, texto) {
+  return fetch(`${GRAPH}/${phoneNumberId}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.WA_TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: para,
+      type: "text",
+      text: { body: texto, preview_url: false },
+    }),
+    signal: AbortSignal.timeout(8000),
+  });
+}
+
 async function contestar(phoneNumberId, para, texto) {
   try {
-    const res = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.WA_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: para,
-        type: "text",
-        text: { body: texto, preview_url: false },
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) console.error("WhatsApp no aceptó la respuesta:", res.status, (await res.text()).slice(0, 300));
+    let res = await enviarTexto(phoneNumberId, para, texto);
+    let cuerpo = res.ok ? "" : await res.text();
+    const alternativo = sinNueveArgentino(para);
+    if (!res.ok && alternativo && cuerpo.includes("131030")) {
+      res = await enviarTexto(phoneNumberId, alternativo, texto);
+      cuerpo = res.ok ? "" : await res.text();
+    }
+    if (!res.ok) console.error("WhatsApp no aceptó la respuesta:", res.status, cuerpo.slice(0, 300));
   } catch (err) {
     console.error("No pude contestar por WhatsApp:", err?.message || err);
   }
