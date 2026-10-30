@@ -304,6 +304,11 @@ export default async (req) => {
 
   const cuerpo = await req.text();
   if (!firmaValida(cuerpo, req.headers.get("x-hub-signature-256"), process.env.WA_APP_SECRET)) {
+    // Sin datos de nadie: solo para saber si Meta llama y la clave no coincide.
+    console.warn(
+      `WhatsApp: firma inválida (llegó la cabecera: ${req.headers.get("x-hub-signature-256") ? "sí" : "no"}). ` +
+        "Revisá que WA_APP_SECRET sea la «Clave secreta de la app» de Meta, sin espacios, y hacé un deploy nuevo.",
+    );
     return new Response("Firma inválida", { status: 401 });
   }
 
@@ -324,6 +329,7 @@ export default async (req) => {
       }
     }
   }
+  console.log(`WhatsApp: llegaron ${tareas.length} mensaje(s)`);
   await Promise.all(tareas);
   // Siempre 200: si no, Meta reintenta el mismo mensaje un montón de veces.
   return new Response("ok", { status: 200 });
