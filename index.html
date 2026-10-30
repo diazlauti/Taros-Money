@@ -7,7 +7,45 @@
     <meta name="theme-color" content="#e7e3f3" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1a1f45" media="(prefers-color-scheme: dark)" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Taros Money</title>
+    <title>Taros Money · Tus gastos e ingresos, claritos y en un solo lugar</title>
+    <!-- Lo que muestra Google (y WhatsApp, etc. al compartir el link). -->
+    <meta
+      name="description"
+      content="Taros Money es una app gratis y sin publicidad para anotar tus gastos e ingresos, seguir tus cuentas y ahorrar para tus metas. En pesos y en dólares, con tus datos en tu propia planilla de Google."
+    />
+    <link rel="canonical" href="https://tarosmoney.netlify.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Taros Money" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:url" content="https://tarosmoney.netlify.app/" />
+    <meta property="og:title" content="Taros Money" />
+    <meta property="og:description" content="Tus gastos e ingresos, claritos y en un solo lugar. Gratis y sin publicidad." />
+    <meta property="og:image" content="https://tarosmoney.netlify.app/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <!-- Ficha para Google: nombre del sitio y qué es. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "Taros Money",
+            "alternateName": ["TarosMoney", "Taro's Money"],
+            "url": "https://tarosmoney.netlify.app/"
+          },
+          {
+            "@type": "WebApplication",
+            "name": "Taros Money",
+            "url": "https://tarosmoney.netlify.app/",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Web, Android, iOS",
+            "inLanguage": "es-AR",
+            "description": "App para anotar gastos e ingresos, seguir cuentas y ahorrar para metas, con los datos en tu propia planilla de Google.",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "ARS" }
+          }
+        ]
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" />
@@ -17,6 +55,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Taros Money</h1>
+      <p>
+        App gratis y sin publicidad para anotar tus gastos e ingresos, seguir tus cuentas y ahorrar para tus metas.
+        Para usarla, activá JavaScript en el navegador.
+      </p>
+    </noscript>
     <!-- Copia estática del formulario de lista de espera: Netlify la lee al
          publicar para registrar los campos. El que se usa es ListaEsperaDialog. -->
     <form name="lista-espera" data-netlify="true" netlify-honeypot="bot-field" hidden>
