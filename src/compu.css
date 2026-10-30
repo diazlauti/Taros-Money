@@ -22,6 +22,9 @@
 --compu-saldo: 56px;
 --compu-accion-alto: 64px;
 --compu-scroll: 10px;
+--compu-dona: 168px;
+--compu-barras: 48px;
+--compu-barra-paso: 12ms;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -545,51 +548,237 @@ box-shadow: var(--shadow-md);
 }
 }
 
-/* Pantalla ancha: tablero de tres columnas. */
+/* Lo que solo existe en el tablero de la compu ancha. */
+.resumen-numeros,
+.saldo-botones-compu,
+.categorias-dona {
+display: none;
+}
+
+/* --- Pantalla ancha: el Resumen como tablero de compu ---
+   Arriba tu plata y lo que entró y salió (con barritas por día).
+   Al medio en qué se fue (dona) y los últimos movimientos.
+   Abajo lo que falta pagar y los mails. Cada bloque es un panel con su
+   título adentro, y los de una misma fila miden lo mismo. */
 @media (min-width: 1100px) {
-.saldo-card:has(> .saldo-total) {
-display: grid;
-grid-template-columns: minmax(0, 1fr) minmax(0, var(--panel-lateral));
-grid-template-areas:
-"cabeza mini"
-"total mini"
-"cuentas cuentas"
-"aviso aviso";
-column-gap: var(--space-5);
-row-gap: var(--space-2);
-}
-
-.saldo-card > .saldo-cabeza { grid-area: cabeza; }
-.saldo-card > .saldo-total { grid-area: total; align-self: center; }
-.saldo-card > .saldo-cuentas { grid-area: cuentas; margin-top: var(--space-3); }
-.saldo-card > .saldo-aviso { grid-area: aviso; }
-
-.saldo-card > .saldo-mini {
-grid-area: mini;
-grid-template-columns: 1fr;
-}
-
-/* El ojito al lado del título. */
-.saldo-card:has(> .saldo-total) > .saldo-cabeza {
-justify-content: flex-start;
-gap: var(--space-3);
-}
-
-
 .resumen {
+grid-template-columns: repeat(12, minmax(0, 1fr));
 grid-template-areas:
-"saldo saldo pagar"
-"acciones acciones pagar"
-"categorias categorias ultimos"
-"mails mails ultimos";
+"saldo saldo saldo saldo saldo saldo numeros numeros numeros numeros numeros numeros"
+"categorias categorias categorias categorias categorias categorias categorias ultimos ultimos ultimos ultimos ultimos"
+"pagar pagar pagar pagar pagar pagar mails mails mails mails mails mails";
+gap: var(--space-4);
+align-items: stretch;
 }
 
-/* Categorías en dos columnas: entran todas sin hacer scroll. */
-.resumen .categorias-lista {
+.resumen-area-numeros { grid-area: numeros; }
+
+/* Los accesos grandes y lo de adentro de la tarjeta se reemplazan por
+   los botones chicos de arriba y las dos tarjetas de al lado. */
+.resumen-area-acciones,
+.saldo-card > .saldo-mini {
+display: none;
+}
+
+.saldo-botones-compu {
+display: flex;
+gap: var(--space-2);
+margin-left: auto;
+}
+
+.saldo-boton {
+min-height: var(--tap);
+padding: 0 var(--space-3);
+border: var(--border-thin) solid var(--hero-borde);
+background: var(--hero-panel);
+color: var(--hero-text);
+font-size: var(--text-sm);
+}
+
+.saldo-boton:hover {
+background: var(--hero-skeleton);
+}
+
+.saldo-card {
+justify-content: space-between;
+}
+
+.saldo-card > .saldo-cabeza {
+gap: var(--space-2);
+}
+
+.saldo-card .saldo-cuentas {
+flex-wrap: wrap;
+overflow: visible;
+}
+
+/* Entró y salió: dos tarjetas con su barrita por día. */
+.resumen-numeros {
 display: grid;
 grid-template-columns: repeat(2, minmax(0, 1fr));
-column-gap: var(--space-5);
+gap: var(--space-4);
 }
+
+.numero-card {
+justify-content: space-between;
+gap: var(--space-3);
+padding: var(--space-4);
+}
+
+.numero-cabeza {
+display: flex;
+align-items: center;
+gap: var(--space-2);
+}
+
+.numero-cabeza h2 {
+margin: 0;
+font-size: var(--text-sm);
+font-weight: var(--weight-medium);
+}
+
+.numero-icono {
+display: grid;
+place-items: center;
+width: var(--ajustes-icono);
+height: var(--ajustes-icono);
+border-radius: var(--radius-md);
+background: color-mix(in srgb, var(--numero-color) 16%, transparent);
+color: var(--numero-color);
+font-size: var(--icon-md);
+}
+
+.numero-card--entro { --numero-color: var(--color-ingreso); }
+.numero-card--salio { --numero-color: var(--color-gasto); }
+
+.numero-valor {
+margin: 0;
+font-size: var(--text-2xl);
+font-weight: var(--weight-bold);
+letter-spacing: -0.02em;
+}
+
+.numero-card--entro .numero-valor {
+color: var(--color-ingreso);
+}
+
+.numero-barras {
+display: flex;
+align-items: flex-end;
+gap: var(--border);
+height: var(--compu-barras);
+}
+
+.numero-barras span {
+flex: 1;
+height: var(--alto);
+min-height: var(--border);
+border-radius: var(--border) var(--border) 0 0;
+background: var(--numero-color);
+opacity: 0.85;
+transform-origin: bottom;
+}
+
+.numero-barras span.vacia {
+opacity: 0.25;
+}
+
+/* Cada bloque es un panel: título adentro y misma altura que su vecino. */
+.resumen > .resumen-bloque {
+padding: var(--space-3) var(--space-4) var(--space-4);
+border: var(--border-thin) solid var(--compu-borde-lienzo);
+border-radius: var(--radius-lg);
+background: var(--color-surface);
+box-shadow: var(--shadow-sm);
+}
+
+.resumen > .resumen-bloque > .resumen-titulo {
+padding: 0;
+}
+
+.resumen > .resumen-bloque > .resumen-card,
+.resumen > .resumen-bloque > .mails-card {
+flex: 1;
+padding: 0;
+border: none;
+background: none;
+box-shadow: none;
+}
+
+/* En qué se fue: período arriba, dona a la izquierda y la lista al lado. */
+.resumen-area-categorias .resumen-card:has(.categorias-dona) {
+display: grid;
+grid-template-columns: var(--compu-dona) minmax(0, 1fr);
+grid-template-areas:
+"periodo periodo"
+"dona lista"
+"dona mas";
+grid-template-rows: auto 1fr auto;
+column-gap: var(--space-5);
+row-gap: var(--space-3);
+align-items: center;
+}
+
+.resumen-area-categorias .periodo { grid-area: periodo; }
+.resumen-area-categorias .categorias-lista { grid-area: lista; }
+.resumen-area-categorias .resumen-link { grid-area: mas; justify-self: start; }
+
+.resumen-area-categorias .categorias-total,
+.resumen-area-categorias .categorias-barra {
+display: none;
+}
+
+.categorias-dona {
+grid-area: dona;
+position: relative;
+display: grid;
+place-content: center;
+justify-items: center;
+gap: var(--space-1);
+width: var(--compu-dona);
+aspect-ratio: 1;
+border-radius: var(--radius-pill);
+text-align: center;
+}
+
+.categorias-dona::before {
+content: "";
+position: absolute;
+inset: 0;
+border-radius: inherit;
+background: var(--dona);
+-webkit-mask: radial-gradient(circle, transparent 60%, #000 61%);
+mask: radial-gradient(circle, transparent 60%, #000 61%);
+}
+
+.categorias-dona .num {
+font-size: var(--text-lg);
+font-weight: var(--weight-bold);
+}
+
+.resumen-area-categorias .categorias-lista li {
+padding: var(--space-1) 0;
+}
+}
+
+@media (min-width: 1100px) and (prefers-reduced-motion: no-preference) {
+.categorias-dona::before {
+animation: dona-girar var(--dur-slow) var(--ease-out) both;
+}
+.numero-barras span {
+animation: barra-crecer var(--dur-slow) var(--ease-out) both;
+animation-delay: calc(var(--orden) * var(--compu-barra-paso));
+}
+}
+
+@keyframes dona-girar {
+from { opacity: 0; transform: rotate(-60deg) scale(0.9); }
+to { opacity: 1; transform: none; }
+}
+
+@keyframes barra-crecer {
+from { transform: scaleY(0); }
+to { transform: scaleY(1); }
 }
 
 @media (min-width: 781px) and (prefers-reduced-motion: reduce) {

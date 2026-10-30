@@ -9,6 +9,7 @@ import {
   leerOcultarSaldo,
   soloConfirmados,
   totalEnPesos,
+  totalesPorDia,
   ultimosMovimientos,
 } from "../resumen";
 import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
@@ -39,9 +40,18 @@ export default function ResumenTab({
   onCambioMovimientos,
   mails,
 }) {
+  const [oculto, setOculto] = useState(leerOcultarSaldo);
+  function alternarOculto() {
+    guardarOcultarSaldo(!oculto);
+    setOculto(!oculto);
+  }
+
   return (
     <div className="resumen">
       <SaldoCard
+        oculto={oculto}
+        onAlternarOculto={alternarOculto}
+        onNuevo={onNuevo}
         saldo={saldo}
         cuentas={cuentas}
         gastos={gastos}
@@ -50,6 +60,14 @@ export default function ResumenTab({
         cotizaciones={cotizaciones}
         monedaPorCuenta={monedaPorCuenta}
         onIrA={onIrA}
+      />
+      <NumerosDelPeriodo
+        gastos={gastos}
+        ingresos={ingresos}
+        dias={dias}
+        cotizaciones={cotizaciones}
+        monedaPorCuenta={monedaPorCuenta}
+        oculto={oculto}
       />
       <AccionesRapidas onNuevo={onNuevo} onIrA={onIrA} />
       <ParaHacer servicios={servicios} cotizaciones={cotizaciones} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
@@ -80,8 +98,7 @@ function Titulo({ id, children, accion }) {
   );
 }
 
-function SaldoCard({ saldo, cuentas, gastos, ingresos, dias, cotizaciones, monedaPorCuenta, onIrA }) {
-  const [oculto, setOculto] = useState(leerOcultarSaldo);
+function SaldoCard({ oculto, onAlternarOculto, onNuevo, saldo, cuentas, gastos, ingresos, dias, cotizaciones, monedaPorCuenta, onIrA }) {
   const lista = cuentas.data || [];
   const hayCuentas = lista.length > 0;
   // El total es la suma de las cuentas (las de otras monedas pasadas a pesos
@@ -91,10 +108,6 @@ function SaldoCard({ saldo, cuentas, gastos, ingresos, dias, cotizaciones, moned
   const totalCuentasArs = lista.reduce((sum, c) => sum + (aPesos(c.saldo, c.moneda, cotizaciones) ?? 0), 0);
   const tapar = (texto) => (oculto ? "$ •••••" : texto);
 
-  function alternar() {
-    guardarOcultarSaldo(!oculto);
-    setOculto(!oculto);
-  }
 
   let contenido;
   if (cuentas.cargando || (!hayCuentas && saldo.cargando)) {
@@ -172,13 +185,24 @@ function SaldoCard({ saldo, cuentas, gastos, ingresos, dias, cotizaciones, moned
         <button
           type="button"
           className="saldo-ojo"
-          onClick={alternar}
+          onClick={onAlternarOculto}
           aria-pressed={oculto}
           aria-label={oculto ? "Mostrar montos" : "Ocultar montos"}
           title={oculto ? "Mostrar montos" : "Ocultar montos"}
         >
           <i className={oculto ? "ph ph-eye-slash" : "ph ph-eye"} aria-hidden="true" />
         </button>
+        {/* En la compu los accesos van acá arriba, chiquitos. */}
+        <div className="saldo-botones-compu" role="group" aria-label="Cargar">
+          <button type="button" className="btn saldo-boton" onClick={() => onNuevo("gasto")}>
+            <i className="ph ph-minus" aria-hidden="true" />
+            Gasto
+          </button>
+          <button type="button" className="btn saldo-boton" onClick={() => onNuevo("ingreso")}>
+            <i className="ph ph-plus" aria-hidden="true" />
+            Ingreso
+          </button>
+        </div>
       </div>
       {contenido}
     </section>
@@ -205,6 +229,46 @@ function EntroSalio({ gastos, ingresos, dias, cotizaciones, monedaPorCuenta, tap
         <dd className="num saldo-salio">{cargando ? <Skeleton ancho="70%" /> : salio}</dd>
       </div>
     </dl>
+  );
+}
+
+// Compu: lo que entró y salió en dos tarjetas propias, con una barrita por
+// día para ver de un vistazo cuándo se movió la plata.
+function NumerosDelPeriodo({ gastos, ingresos, dias, cotizaciones, monedaPorCuenta, oculto }) {
+  const tarjetas = [
+    { id: "entro", titulo: "Entró", icono: "ph ph-arrow-down-left", estado: ingresos, signo: "+" },
+    { id: "salio", titulo: "Salió", icono: "ph ph-arrow-up-right", estado: gastos, signo: "−" },
+  ];
+  return (
+    <div className="resumen-numeros resumen-area-numeros">
+      {tarjetas.map((t) => {
+        const cargando = t.estado.cargando;
+        const sinDatos = t.estado.error && !t.estado.data;
+        const total = totalEnPesos(soloConfirmados(t.estado.data), monedaPorCuenta, cotizaciones);
+        const barras = sinDatos || cargando ? [] : totalesPorDia(t.estado.data, dias, monedaPorCuenta, cotizaciones);
+        const maximo = Math.max(...barras, 0);
+        return (
+          <section key={t.id} className={`card numero-card numero-card--${t.id}`} aria-labelledby={`numero-${t.id}`}>
+            <div className="numero-cabeza">
+              <span className="numero-icono" aria-hidden="true">
+                <i className={t.icono} />
+              </span>
+              <h2 id={`numero-${t.id}`}>
+                {t.titulo} <span className="texto-tenue">· {dias} días</span>
+              </h2>
+            </div>
+            <p className="numero-valor num">
+              {cargando ? <Skeleton ancho="70%" /> : sinDatos ? "—" : oculto ? "$ •••••" : `${t.signo} ${fmtMoney(total)}`}
+            </p>
+            <div className="numero-barras" aria-hidden="true">
+              {barras.map((v, i) => (
+                <span key={i} style={{ "--alto": maximo ? `${Math.max(4, (v / maximo) * 100)}%` : "4%", "--orden": i }} className={v ? "" : "vacia"} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -366,8 +430,21 @@ function CategoriasCard({ resumen, dias, onCambiarDias, onNuevo }) {
     const otras = entradas.slice(CATEGORIAS_A_LA_VISTA);
     const pctOtras = otras.reduce((s, c) => s + c.pct, 0);
     const visibles = todas ? entradas : principales;
+    // Compu: la misma info como dona (con un hueco chico entre porciones).
+    let acumulado = 0;
+    const tramos = [...principales.map((c) => ({ pct: c.pct, color: colorDeCategoria(c.nombre) })), ...(pctOtras > 0 ? [{ pct: pctOtras, color: "var(--color-divider)" }] : [])]
+      .map((t) => {
+        const desde = acumulado;
+        acumulado += t.pct;
+        return `${t.color} ${desde}% calc(${acumulado}% - 0.6%), transparent calc(${acumulado}% - 0.6%) ${acumulado}%`;
+      })
+      .join(", ");
     contenido = (
       <>
+        <div className="categorias-dona" style={{ "--dona": `conic-gradient(${tramos})` }} aria-hidden="true">
+          <span className="num">{fmtMoney(datos.totalGeneral)}</span>
+          <span className="texto-tenue texto-chico">en {dias} días</span>
+        </div>
         <div className="categorias-total">
           <span className="texto-tenue">Total</span>
           {/* El backend ya pasa a pesos los gastos en otras monedas. */}
