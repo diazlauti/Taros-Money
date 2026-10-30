@@ -64,6 +64,9 @@ import { leerNuevoDeUrl, leerVerDeUrl, limpiarNuevoDeUrl } from "./cargaRapida";
 import InstalarAppDialog from "./components/InstalarAppDialog";
 import CalculadoraTab from "./components/CalculadoraTab";
 
+// «jueves, 29 de octubre» debajo del título, en la compu.
+const FECHA_DE_HOY = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long" });
+
 export default function App() {
 const [autenticado, setAutenticado] = useState(haySesion);
 // Si ya había entrado antes (otra visita, PWA reabierta), renueva el token
@@ -618,6 +621,31 @@ setActiveTab(tab);
 
 const activeItem = NAV_ITEMS.find((i) => i.id === seccionDelMenu(activeTab)) || NAV_ITEMS[0];
 
+// Atajos de teclado (compu): N carga un movimiento y 1 a 8 cambian de
+// sección. No hacen nada mientras escribís o con un cartel abierto.
+const atajosRef = useRef(null);
+atajosRef.current = { abrirNuevo, irA, tourAbierto };
+useEffect(() => {
+function alTeclear(e) {
+if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+const destino = e.target;
+if (destino.closest?.("input, textarea, select, [contenteditable='true']")) return;
+if (document.querySelector("[aria-modal='true']") || atajosRef.current.tourAbierto) return;
+if (e.key === "n" || e.key === "N") {
+e.preventDefault();
+atajosRef.current.abrirNuevo();
+return;
+}
+const item = /^[1-9]$/.test(e.key) ? NAV_ITEMS[Number(e.key) - 1] : null;
+if (item) {
+e.preventDefault();
+atajosRef.current.irA(item.id);
+}
+}
+window.addEventListener("keydown", alTeclear);
+return () => window.removeEventListener("keydown", alTeclear);
+}, []);
+
 return (
 <div className="app-shell">
 <Sidebar activeTab={activeTab} onSelect={irA} avisos={avisosMenu} />
@@ -625,7 +653,10 @@ return (
 <main className="main">
 <header className="main-header">
 <i className="ph ph-wallet brand-icono" role="img" aria-label="Taros Money" />
+<div className="main-header-textos">
 <h1>{activeItem.label}</h1>
+<p className="main-fecha">{FECHA_DE_HOY.format(new Date())}</p>
+</div>
 <button
 type="button"
 className={"btn btn-secondary btn-encabezado btn-campana" + (notisSinVer ? " btn-campana--nuevo" : "")}
@@ -640,10 +671,11 @@ title="Notificaciones"
 <Insignia aviso={avisoCampana} />
 </span>
 </button>
-<button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento" aria-label="Nuevo movimiento">
+<button type="button" className="btn btn-primary" onClick={abrirNuevo} data-tour="nuevo-movimiento" aria-label="Nuevo movimiento" aria-keyshortcuts="N">
 <i className="ph ph-plus" aria-hidden="true" />
 {/* En celus angostos dice solo «Nuevo» para que entre el título. */}
 <span>Nuevo<span className="texto-si-entra"> movimiento</span></span>
+<kbd className="solo-compu" aria-hidden="true">N</kbd>
 </button>
 </header>
 
