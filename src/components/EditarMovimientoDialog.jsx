@@ -59,7 +59,9 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
   const [borrando, setBorrando] = useState(false);
   const [error, setError] = useState("");
   // Mercado Pago no se ofrece: ignorarlo cortaría todos sus gastos.
-  const puedeIgnorar = movimiento.aRevisar && movimiento.origenMail && movimiento.origenMail !== "Mercado Pago";
+  // Lo mandó por WhatsApp: no vino de un mail, no hay remitente para ignorar.
+  const deWhatsApp = movimiento.origenMail === "WhatsApp";
+  const puedeIgnorar = movimiento.aRevisar && movimiento.origenMail && movimiento.origenMail !== "Mercado Pago" && !deWhatsApp;
   const [ignorar, setIgnorar] = useState(false);
   const v = useValidacion(form, (f) => validarMovimiento(f, esGasto));
 
@@ -181,8 +183,10 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
       <form className="form" onSubmit={guardar} noValidate>
         {movimiento.aRevisar && (
           <p className="aviso-inline">
-            <i className="ph ph-envelope-simple" aria-hidden="true" />
-            {sinMonto
+            <i className={deWhatsApp ? "ph ph-whatsapp-logo" : "ph ph-envelope-simple"} aria-hidden="true" />
+            {deWhatsApp
+              ? "Lo mandaste por WhatsApp. Elegí la categoría y la cuenta, y confirmalo."
+              : sinMonto
               ? `Lo encontramos en un mail de ${movimiento.origenMail}, pero no decía el precio. Poné cuánto gastaste, elegí la categoría y la cuenta, y confirmalo.`
               : `Lo encontramos en un mail de ${movimiento.origenMail}. Revisá el monto, elegí la categoría y la cuenta, y confirmalo.`}
             {sinConfirmar && " Hasta que lo confirmes no se suma a tus gastos ni a tus saldos."}

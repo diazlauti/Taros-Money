@@ -513,3 +513,22 @@ export function desactivarPushBackend(endpoint) {
 export function probarPushBackend(endpoint) {
   return escribir("probarPush", [endpoint]);
 }
+
+// --- Gastos por WhatsApp (archivo "whatsapp" del Apps Script) ---
+// Si el backend todavía no tiene el archivo, la tarjeta no aparece.
+export async function getWhatsApp() {
+  try {
+    return await leer("obtenerWhatsApp");
+  } catch (err) {
+    if (err.noDisponible) return { configurado: false, vinculado: false };
+    throw err;
+  }
+}
+
+export function crearCodigoWhatsApp() {
+  return escribir("crearCodigoWhatsApp");
+}
+
+export function desvincularWhatsApp() {
+  return escribir("desvincularWhatsApp");
+}
