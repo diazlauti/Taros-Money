@@ -6,6 +6,9 @@ getGastos,
 getCategorias,
 getIconosCategorias,
 guardarIconoCategoria,
+getFijos,
+agregarGasto,
+agregarIngreso,
 renombrarCategoria,
 agregarCategoria,
 borrarCategoria,
@@ -26,6 +29,7 @@ mailsDisponible,
 idDePlanilla,
 } from "./api";
 import { haySesion, cerrarSesion, intentarSesionSilenciosa, sesionRecordada } from "./auth";
+import { fijosPendientes, recordarHecho } from "./fijos";
 import { bloqueoActivo, MINUTOS_AFUERA } from "./bloqueo";
 import { aplicarTema, getTemaInicial, guardarTema, NAV_ITEMS, seccionDelMenu } from "./theme";
 import { fmtFecha, fmtMoney, mapaMonedas } from "./format";
@@ -265,6 +269,7 @@ const ingresosPlanilla = useSeccion(() => getIngresos(dias), [dias], `ingresos-$
 const categorias = useSeccion(getCategorias, [], "categorias");
 const iconosCategorias = useSeccion(getIconosCategorias, [], "iconos");
 const cuentasPlanilla = useSeccion(getCuentas, [], "cuentas");
+const fijos = useSeccion(getFijos, [], "fijos");
 const metas = useSeccion(getMetas, [], "metas");
 const suscripciones = useSeccion(getSuscripciones, [], "suscripciones");
 const servicios = useSeccion(getServicios, [], "servicios");
@@ -403,6 +408,46 @@ if (tipo !== "gasto") ingresos.recargar();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 [saldo, resumen, gastos, ingresos, cuentas, tendencia],
 );
+
+// Sueldo, alquiler… los «fijos» se anotan solos el día que toca, una vez por
+// mes (ver fijos.js). Se revisa al abrir la app, cuando ya llegaron los fijos
+// y las cuentas; cada carga tiene un ID por mes, así que no se repite.
+const fijosRevisados = useRef(false);
+useEffect(() => {
+if (fijosRevisados.current || !fijos.data || !cuentas.data) return;
+fijosRevisados.current = true;
+const cuentasQueHay = new Set(cuentas.data.map((c) => c.nombre));
+const pendientes = fijosPendientes(fijos.data.fijos).filter((p) => cuentasQueHay.has(p.fijo.cuenta));
+if (pendientes.length === 0) return;
+(async () => {
+const cargados = [];
+for (const p of pendientes) {
+const { fijo } = p;
+const mov = {
+id: p.id,
+fecha: p.fecha,
+hora: "09:00",
+monto: fijo.monto,
+descripcion: fijo.nombre,
+categoria: fijo.categoria || "",
+cuenta: fijo.cuenta,
+};
+try {
+await (fijo.tipo === "ingreso" ? agregarIngreso(mov) : agregarGasto(mov));
+recordarHecho(p.id);
+cargados.push(fijo.nombre);
+} catch {
+// Se vuelve a intentar la próxima vez que se abra la app.
+}
+}
+if (cargados.length > 0) {
+recargarMovimientos();
+avisar(
+cargados.length === 1 ? `Cargué «${cargados[0]}» solo.` : `Cargué ${cargados.length} movimientos fijos solos.`,
+);
+}
+})();
+}, [fijos.data, cuentas.data, recargarMovimientos, avisar]);
 
 // --- Sin conexión: subir lo que quedó esperando ---
 const conectado = useConexion();
@@ -939,6 +984,8 @@ setDialogOpen(true);
 
 {activeTab === "configuracion" && (
 <ConfiguracionTab
+fijos={fijos}
+onFijosGuardados={fijos.recargar}
 urlPlanilla={urlPlanilla}
 monedas={monedas}
 cotizacionesHoy={cotizacionesHoy}

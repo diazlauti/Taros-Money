@@ -21,8 +21,11 @@
     <meta property="og:url" content="https://tarosmoney.netlify.app/" />
     <meta property="og:title" content="Taros Money" />
     <meta property="og:description" content="Tus gastos e ingresos, claritos y en un solo lugar. Gratis y sin publicidad." />
-    <meta property="og:image" content="https://tarosmoney.netlify.app/icon-512.png" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://tarosmoney.netlify.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Taros Money: tus gastos, ingresos y ahorros, claros y en un solo lugar." />
+    <meta name="twitter:card" content="summary_large_image" />
     <!-- Ficha para Google: nombre del sitio y qué es. -->
     <script type="application/ld+json">
       {
@@ -53,9 +56,42 @@
     <!-- Solo el peso "regular" de los íconos, con versión fija. -->
     <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      .arranque {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #e7e3f3;
+      }
+      .arranque img {
+        border-radius: 22px;
+        animation: arranque-pulso 1.4s ease-in-out infinite;
+      }
+      @keyframes arranque-pulso {
+        50% {
+          transform: scale(1.06);
+          opacity: 0.85;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        .arranque {
+          background: #1a1f45;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .arranque img {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Pantalla de carga con la marca: se ve hasta que React arma la app y la reemplaza. -->
+    <div id="root">
+      <div class="arranque" role="status" aria-label="Cargando Taros Money">
+        <img src="/icon-192.png" width="96" height="96" alt="" />
+      </div>
+    </div>
     <noscript>
       <h1>Taros Money</h1>
       <p>
