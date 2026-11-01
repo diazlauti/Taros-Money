@@ -60,6 +60,9 @@ export default defineConfig({
         ],
         // Mantener apretado el ícono de la app (Android, y escritorio en
         // Chrome/Edge) muestra estos atajos: abren el formulario directo.
+        // «Compartir» → Taros Money (Android, app instalada): abre el formulario
+        // con el monto y la descripción sacados del texto compartido.
+        share_target: { action: '/', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
         shortcuts: [
           { name: 'Nuevo gasto', short_name: 'Gasto', url: '/?nuevo=gasto', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
           { name: 'Nuevo ingreso', short_name: 'Ingreso', url: '/?nuevo=ingreso', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },

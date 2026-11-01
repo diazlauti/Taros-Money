@@ -4,6 +4,7 @@
 // logueado — por eso cada quien termina leyendo/escribiendo su propia
 // planilla, sin que el backend tenga que saber de PINes ni sesiones.
 import { cerrarSesion, obtenerTokenActual, obtenerTokenMails, olvidarTokenMails, tokenRechazado } from "./auth";
+import { guardarFijosLocales, leerFijosLocales } from "./fijos";
 import { guardarIconosLocales, leerIconosLocales } from "./iconos";
 
 const SCRIPT_ID = import.meta.env.VITE_APPS_SCRIPT_ID;
@@ -258,6 +259,27 @@ export async function guardarIconoCategoria(nombre, icono) {
     else delete iconos[nombre];
     guardarIconosLocales(iconos);
     return { iconos, soloEsteDispositivo: true };
+  }
+}
+
+// Movimientos fijos (sueldo, alquiler…). Si el backend todavía no tiene el
+// archivo de fijos, quedan en este dispositivo.
+export async function getFijos() {
+  try {
+    return { fijos: (await leer("obtenerFijos")) || [] };
+  } catch (err) {
+    if (!err.noDisponible) throw err;
+    return { fijos: leerFijosLocales(), soloEsteDispositivo: true };
+  }
+}
+
+export async function guardarFijos(fijos) {
+  try {
+    return { fijos: (await escribir("guardarFijos", [fijos])) || [] };
+  } catch (err) {
+    if (!err.noDisponible) throw err;
+    guardarFijosLocales(fijos);
+    return { fijos, soloEsteDispositivo: true };
   }
 }
 

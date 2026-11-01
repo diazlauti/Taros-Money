@@ -14,6 +14,7 @@ import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import AvisosPushCard from "./AvisosPushCard";
 import BloqueoCard from "./BloqueoCard";
+import FijosCard from "./FijosCard";
 import WhatsAppCard from "./WhatsAppCard";
 import SugerenciaDialog from "./SugerenciaDialog";
 import { pushConfigurado } from "../push";
@@ -45,6 +46,8 @@ export default function ConfiguracionTab({
   diasMails,
   onCambiarDiasMails,
   categorias,
+  fijos,
+  onFijosGuardados,
   onAgregarCategoria,
   onBorrarCategoria,
   onEditarCategoria,
@@ -296,6 +299,8 @@ export default function ConfiguracionTab({
               {mails}
             </section>
           )}
+
+          <FijosCard fijos={fijos} cuentas={cuentas} categorias={categorias.data} onGuardado={onFijosGuardados} />
 
           <WhatsAppCard />
 

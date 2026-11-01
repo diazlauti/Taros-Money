@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-11-01-fijos-y-compartir",
+    fecha: "2026-11-01",
+    icono: "ph ph-arrows-clockwise",
+    titulo: "Menos para anotar",
+    texto: "Tu sueldo o el alquiler se cargan solos el día que toca (Configuración › Gastos › Se cargan solos). Y desde el celu, con «Compartir» un comprobante o aviso de transferencia, se arma el movimiento solo.",
+  },
+  {
     id: "2026-10-28-ajustar-saldo-real",
     fecha: "2026-10-28",
     icono: "ph ph-wallet",
