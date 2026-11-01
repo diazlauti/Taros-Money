@@ -10,6 +10,13 @@ export const NOVEDADES = [
     texto: "Tu sueldo o el alquiler se cargan solos el día que toca (Configuración › Gastos › Se cargan solos). Y desde el celu, con «Compartir» un comprobante o aviso de transferencia, se arma el movimiento solo.",
   },
   {
+    id: "2026-11-01-sin-conexion",
+    fecha: "2026-11-01",
+    icono: "ph ph-cloud-slash",
+    titulo: "Funciona sin internet",
+    texto: "Abre al toque con lo último guardado. Si cargás, editás o borrás un movimiento sin conexión, se sube solo cuando vuelve.",
+  },
+  {
     id: "2026-10-28-ajustar-saldo-real",
     fecha: "2026-10-28",
     icono: "ph ph-wallet",

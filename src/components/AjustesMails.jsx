@@ -16,7 +16,7 @@ import MensajeError from "./MensajeError";
 
 export default function AjustesMails({ modo }) {
   const { avisar } = useAvisos();
-  const ajustes = useSeccion(() => getAjustesMails(), []);
+  const ajustes = useSeccion(() => getAjustesMails(), [], "ajustes-mails");
   const [guardando, setGuardando] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState("");
   const [permisoAvisos, setPermisoAvisos] = useState(permisoNotificaciones);

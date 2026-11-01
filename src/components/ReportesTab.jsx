@@ -32,6 +32,7 @@ export default function ReportesTab({ tendencia, monedaPorCuenta = {}, cotizacio
   const gastos = useSeccion(
     () => (tendencia.data ? getGastos(diasParaMeses(meses.length || MESES_A_VER)) : Promise.resolve(null)),
     [tendencia.data],
+    "reportes-gastos",
   );
 
   if (tendencia.cargando) {
