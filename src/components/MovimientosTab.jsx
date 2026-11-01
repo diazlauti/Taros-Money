@@ -177,7 +177,7 @@ export default function MovimientosTab({
         className="movimiento mov-fila"
         data-tour={esPrimera ? "primer-movimiento" : undefined}
         onClick={() => setEditando(t)}
-        aria-label={`${t.aRevisar ? "Revisar" : "Editar"} ${esIngreso ? "ingreso" : "gasto"}${t.aRevisar ? " detectado en tus mails" : ""}: ${t.descripcion || "sin descripción"}, ${categoria}, ${esIngreso ? "más" : "menos"} ${monto}, ${fmtFecha(t.fecha)}${hora ? ` a las ${hora}` : ""}${t.pendiente ? ", sin subir" : ""}`}
+        aria-label={`${t.aRevisar ? "Revisar" : "Editar"} ${esIngreso ? "ingreso" : "gasto"}${t.aRevisar ? (t.origenMail === "WhatsApp" ? " mandado por WhatsApp" : " detectado en tus mails") : ""}: ${t.descripcion || "sin descripción"}, ${categoria}, ${esIngreso ? "más" : "menos"} ${monto}, ${fmtFecha(t.fecha)}${hora ? ` a las ${hora}` : ""}${t.pendiente ? ", sin subir" : ""}`}
       >
         <span className="mov-icono" style={{ "--mov-color": colorDeCategoria(categoria) }} aria-hidden="true">
           <i className={iconoPorCategoria(t.categoria)} />

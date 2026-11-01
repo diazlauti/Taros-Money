@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Privacidad · Taros Money</title>
+    <style>
+      :root {
+        --bg: #e7e3f3;
+        --surface: #f9f8fd;
+        --text: #1a1f45;
+        --text-dim: #4a5072;
+        --accent: #6a4bc4;
+        --borde: rgba(26, 31, 69, 0.14);
+        --radio: 14px;
+        --espacio: 16px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1a1f45;
+          --surface: #262c5c;
+          --text: #f4f1ff;
+          --text-dim: #c4c2e6;
+          --accent: #b9a6ff;
+          --borde: rgba(244, 241, 255, 0.18);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: calc(var(--espacio) * 2) var(--espacio);
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        line-height: 1.6;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: calc(var(--espacio) * 1.5);
+        background: var(--surface);
+        border: 1px solid var(--borde);
+        border-radius: var(--radio);
+      }
+      h1 {
+        margin: 0 0 var(--espacio);
+        font-size: 1.6rem;
+        line-height: 1.2;
+      }
+      h2 {
+        margin: calc(var(--espacio) * 1.5) 0 8px;
+        font-size: 1.1rem;
+      }
+      p,
+      li {
+        color: var(--text-dim);
+      }
+      a {
+        color: var(--accent);
+      }
+      a:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .fecha {
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Privacidad en Taros Money</h1>
+      <p class="fecha">Última actualización: 30 de octubre de 2026.</p>
+      <p>
+        Taros Money es una app para llevar tus gastos, ingresos, cuentas y metas. Esto es lo que guardamos, para qué y cómo
+        podés borrarlo.
+      </p>
+
+      <h2>Qué datos usamos</h2>
+      <ul>
+        <li>
+          <strong>Tu cuenta de Google.</strong> Entrás con Google. Solo vemos tu nombre y tu mail para saber quién sos.
+        </li>
+        <li>
+          <strong>Tus movimientos.</strong> Gastos, ingresos, cuentas, metas, servicios y suscripciones viven en una planilla de
+          Google Sheets que es tuya, en tu Google Drive. Nosotros no tenemos otra copia.
+        </li>
+        <li>
+          <strong>Tus mails (opcional).</strong> Si prendés «Gastos desde tus mails», leemos solo los mails de compras y pagos
+          para proponerte gastos. No borramos ni mandamos nada.
+        </li>
+        <li>
+          <strong>WhatsApp (opcional).</strong> Si vinculás WhatsApp, guardamos una huella irreversible de tu número (no el
+          número) y sus últimos 4 dígitos para mostrártelos. De cada mensaje que le mandás al bot usamos solo el texto del
+          gasto («café 2500») y la fecha.
+        </li>
+      </ul>
+
+      <h2>Para qué los usamos</h2>
+      <p>
+        Solo para mostrarte tus números y anotar lo que cargás. No vendemos ni compartimos tus datos, no hacemos publicidad y
+        no los usamos para entrenar sistemas de inteligencia artificial.
+      </p>
+
+      <h2>Quiénes intervienen</h2>
+      <p>
+        Google (login, Sheets y Apps Script), Netlify (donde corre la app) y Meta (el envío y la recepción de mensajes de
+        WhatsApp). Cada uno tiene sus propias políticas.
+      </p>
+
+      <h2>Cómo borrar tus datos</h2>
+      <ul>
+        <li>
+          <strong>WhatsApp:</strong> en la app, Configuración › Gastos › Gastos por WhatsApp › Desvincular. También podés
+          mandarle «desvincular» al bot. Se borra la huella de tu número.
+        </li>
+        <li>
+          <strong>Planilla y movimientos:</strong> son tuyos. Borrá la planilla de tu Google Drive cuando quieras, o pedinos que
+          lo hagamos.
+        </li>
+        <li>
+          <strong>Acceso a tu cuenta de Google:</strong> sacá a Taros Money desde
+          <a href="https://myaccount.google.com/permissions" rel="noopener noreferrer">myaccount.google.com/permissions</a>.
+        </li>
+        <li>
+          <strong>Todo lo demás:</strong> escribinos a
+          <a href="mailto:tarosmoney@gmail.com">tarosmoney@gmail.com</a> y lo borramos.
+        </li>
+      </ul>
+
+      <h2>Contacto</h2>
+      <p>
+        Lautaro Diaz Rosselli · <a href="mailto:tarosmoney@gmail.com">tarosmoney@gmail.com</a>
+      </p>
+    </main>
+  </body>
+</html>

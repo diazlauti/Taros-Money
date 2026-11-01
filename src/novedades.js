@@ -3,8 +3,8 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
-    id: "2026-10-29-sin-conexion",
-    fecha: "2026-10-29",
+    id: "2026-11-01-sin-conexion",
+    fecha: "2026-11-01",
     icono: "ph ph-cloud-slash",
     titulo: "Funciona sin internet",
     texto: "Abre al toque con lo último guardado. Si cargás, editás o borrás un movimiento sin conexión, se sube solo cuando vuelve.",

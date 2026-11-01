@@ -14,6 +14,7 @@ import EditarCategoriaDialog from "./EditarCategoriaDialog";
 import MonedasCard from "./MonedasCard";
 import AvisosPushCard from "./AvisosPushCard";
 import BloqueoCard from "./BloqueoCard";
+import WhatsAppCard from "./WhatsAppCard";
 import SugerenciaDialog from "./SugerenciaDialog";
 import { pushConfigurado } from "../push";
 import { Cargando, ErrorEstado, Skeleton } from "./Estado";
@@ -295,6 +296,8 @@ export default function ConfiguracionTab({
               {mails}
             </section>
           )}
+
+          <WhatsAppCard />
 
           <section className="card" aria-labelledby="titulo-planilla">
             <h2 className="card-kicker titulo-con-info" id="titulo-planilla">

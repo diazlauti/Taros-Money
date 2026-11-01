@@ -54,3 +54,23 @@ export function guardarOcultarSaldo(ocultar) {
     /* modo privado: vuelve a mostrarse al recargar, no pasa nada */
   }
 }
+
+// Cuánto entró o salió cada día del período (para las barritas de la
+// compu). Como mucho 30 barras: en 90 días cada barra junta 3 días.
+export function totalesPorDia(lista, dias, monedaPorCuenta = {}, cotizaciones = {}, hoy = new Date()) {
+  const porBarra = Math.max(1, Math.ceil(dias / 30));
+  const barras = Math.ceil(dias / porBarra);
+  const totales = new Array(barras).fill(0);
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const clave = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const indice = {};
+  for (let i = 0; i < barras * porBarra; i++) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - i);
+    indice[clave(d)] = barras - 1 - Math.floor(i / porBarra);
+  }
+  soloConfirmados(lista).forEach((t) => {
+    const i = indice[t.fecha];
+    if (i !== undefined) totales[i] += totalEnPesos([t], monedaPorCuenta, cotizaciones);
+  });
+  return totales;
+}
