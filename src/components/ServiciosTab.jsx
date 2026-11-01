@@ -29,7 +29,7 @@ export default function ServiciosTab({ servicios, categorias, cuentas, cotizacio
   const [pagando, setPagando] = useState(null);
   const [desmarcando, setDesmarcando] = useState("");
   const [permiso, setPermiso] = useState(permisoNotificaciones);
-  const avisoMail = useSeccion(getAvisoServicios, []);
+  const avisoMail = useSeccion(getAvisoServicios, [], "aviso-servicios");
   const [guardandoAviso, setGuardandoAviso] = useState(false);
   const nombreRef = useRef(null);
   const diaRef = useRef(null);

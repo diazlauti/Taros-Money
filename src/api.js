@@ -5,6 +5,7 @@
 // planilla, sin que el backend tenga que saber de PINes ni sesiones.
 import { cerrarSesion, obtenerTokenActual, obtenerTokenMails, olvidarTokenMails, tokenRechazado } from "./auth";
 import { guardarIconosLocales, leerIconosLocales } from "./iconos";
+import { errorSinRed, hayConexion, registrarPedido } from "./sinConexion";
 
 const SCRIPT_ID = import.meta.env.VITE_APPS_SCRIPT_ID;
 // Proyecto aparte "Taros Money Mails" (el único que lee Gmail). Si no está
@@ -30,7 +31,6 @@ const TIEMPO_LIMITE_MS = 20000;
 const TIEMPO_LIMITE_MAILS_MS = 90000;
 const ESPERAS_REINTENTO_MS = [800, 2000];
 
-const MENSAJE_SIN_RED = "No hay conexión o Google no respondió. Revisá tu internet y probá de nuevo.";
 const MENSAJE_LENTO = "Google está tardando demasiado en responder. Probá de nuevo.";
 export const MENSAJE_FALTA_PERMISO = "Falta que aceptes un permiso nuevo de Google. Volvé a entrar para aceptarlo.";
 const MENSAJE_GOOGLE = "Google tuvo un problema al responder. Probá de nuevo en un rato.";
@@ -129,6 +129,8 @@ function apiMails(interactivo) {
 // o 403 en vez de 200.
 async function llamarUnaVez(funcion, parametros, destino = API_PRINCIPAL) {
   chequearConfig();
+  // Sin red ni se intenta: así no espera ni pide renovar el token.
+  if (!hayConexion()) throw errorSinRed();
   const token = await destino.obtenerToken();
   if (!token) destino.sinPermiso();
 
@@ -146,10 +148,13 @@ async function llamarUnaVez(funcion, parametros, destino = API_PRINCIPAL) {
       signal: control.signal,
     });
   } catch (err) {
-    throw errorTransitorio(err.name === "AbortError" ? MENSAJE_LENTO : MENSAJE_SIN_RED);
+    if (err.name === "AbortError") throw errorTransitorio(MENSAJE_LENTO);
+    registrarPedido(false);
+    throw errorSinRed();
   } finally {
     clearTimeout(temporizador);
   }
+  registrarPedido(true);
 
   if (res.status === 401 || res.status === 403) destino.rechazado();
 
@@ -177,7 +182,7 @@ async function leer(funcion, parametros = []) {
     try {
       return await llamarUnaVez(funcion, parametros);
     } catch (err) {
-      if (!err.transitorio || intento >= ESPERAS_REINTENTO_MS.length) throw err;
+      if (!err.transitorio || !hayConexion() || intento >= ESPERAS_REINTENTO_MS.length) throw err;
       await esperar(ESPERAS_REINTENTO_MS[intento]);
     }
   }
@@ -207,7 +212,7 @@ async function agregarConId(funcion, movimiento) {
     try {
       return await llamarUnaVez(funcion, [conId]);
     } catch (err) {
-      if (!err.transitorio || intento >= ESPERAS_REINTENTO_MS.length) throw err;
+      if (!err.transitorio || !hayConexion() || intento >= ESPERAS_REINTENTO_MS.length) throw err;
       await esperar(ESPERAS_REINTENTO_MS[intento]);
     }
   }

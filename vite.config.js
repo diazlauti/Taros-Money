@@ -36,13 +36,32 @@ export default defineConfig({
       // golpe mientras cargás algo, y en el iPhone instalado se entera.
       registerType: 'prompt',
       injectRegister: false,
-      // No cachea llamadas a la API (los datos de la planilla siempre tienen
-      // que venir frescos): sólo el shell de la app (HTML/JS/CSS/íconos),
-      // así abre instantáneo y queda instalable, sin mostrar datos viejos.
+      // El service worker no guarda llamadas a la API: sólo el shell de la
+      // app (HTML/JS/CSS/íconos), así abre instantáneo y sin internet. La
+      // última copia de los datos la guarda la app (src/sinConexion.js).
       workbox: {
         navigateFallbackDenylist: [/\/api\//, /^\/\.netlify\//],
         // Avisos push con la app cerrada (public/push-sw.js).
         importScripts: ['push-sw.js'],
+        // La letra (Google Fonts) y los íconos (Phosphor, de unpkg) vienen de
+        // afuera: se guardan la primera vez, así sin internet no desaparecen.
+        // Los datos no van acá: los guarda la app (src/sinConexion.js).
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'letra-css' },
+          },
+          {
+            urlPattern: ({ url }) => url.origin === 'https://fonts.gstatic.com' || url.origin === 'https://unpkg.com',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'letra-e-iconos',
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 30, maxAgeSeconds: 365 * 24 * 60 * 60 },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'Taros Money',
