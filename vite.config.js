@@ -40,7 +40,7 @@ export default defineConfig({
       // que venir frescos): sólo el shell de la app (HTML/JS/CSS/íconos),
       // así abre instantáneo y queda instalable, sin mostrar datos viejos.
       workbox: {
-        navigateFallbackDenylist: [/\/api\//, /^\/\.netlify\//],
+        navigateFallbackDenylist: [/\/api\//, /^\/\.netlify\//, /^\/privacidad\.html/],
         // Avisos push con la app cerrada (public/push-sw.js).
         importScripts: ['push-sw.js'],
       },

@@ -196,7 +196,12 @@ export default function Login({ onSuccess, recordada = null }) {
             {errorEntrar("hero")}
             <p className="login-privacidad">
               <i className="ph ph-lock-simple" aria-hidden="true" />
-              La primera vez Google te pide permiso para crear tu propia planilla. Es solo tuya: nadie más ve tus datos.
+              <span>
+                La primera vez Google te pide permiso para crear tu propia planilla. Es solo tuya: nadie más ve tus datos.{" "}
+                <a href="/privacidad.html" target="_blank" rel="noopener noreferrer">
+                  Privacidad
+                </a>
+              </span>
             </p>
             <p className="login-espera">
               ¿Google no te deja entrar?
@@ -398,7 +403,12 @@ export default function Login({ onSuccess, recordada = null }) {
             {errorEntrar("final")}
             <p className="login-privacidad">
               <i className="ph ph-lock-simple" aria-hidden="true" />
-              Tu planilla es solo tuya: nadie más ve tus datos.
+              <span>
+                Tu planilla es solo tuya: nadie más ve tus datos.{" "}
+                <a href="/privacidad.html" target="_blank" rel="noopener noreferrer">
+                  Privacidad
+                </a>
+              </span>
             </p>
             <p className="login-espera">
               ¿Google no te deja entrar? Por ahora es solo para invitados.

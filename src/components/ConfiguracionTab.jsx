@@ -406,6 +406,13 @@ export default function ConfiguracionTab({
             </h2>
             <ul className="opciones">
               <li>
+                <a className="opcion" href="/privacidad.html" target="_blank" rel="noopener noreferrer">
+                  <i className="ph ph-shield-check opcion-icono" aria-hidden="true" />
+                  <span className="opcion-texto">Privacidad y tus datos</span>
+                  <i className="ph ph-arrow-square-out opcion-flecha" aria-hidden="true" />
+                </a>
+              </li>
+              <li>
                 <button type="button" className="opcion" onClick={onVerTour}>
                   <i className="ph ph-signpost opcion-icono" aria-hidden="true" />
                   <span className="opcion-texto">Ver el recorrido de nuevo</span>

@@ -4912,6 +4912,10 @@ padding-right: var(--space-2);
 flex: 1;
 }
 
+a.opcion {
+text-decoration: none;
+}
+
 .opcion {
 display: flex;
 align-items: center;
