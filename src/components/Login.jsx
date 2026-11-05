@@ -453,6 +453,8 @@ export default function Login({ onSuccess, recordada = null }) {
             <a href="#para-quien">Para quién</a>
             <a href="#quien">Quién la hizo</a>
             <a href="#proyectos">Otros proyectos</a>
+            <a href="/privacidad.html">Privacidad</a>
+            <a href="/terminos.html">Términos</a>
             <button type="button" className="btn btn-texto" onClick={() => setEsperaAbierta(true)}>
               Pedí acceso
             </button>
