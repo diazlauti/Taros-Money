@@ -16,12 +16,26 @@ export const ORDENES = [
 
 const COLORES_CATEGORIA = 8;
 
-// Color fijo por nombre de categoría (siempre el mismo, filtres lo que
-// filtres). Lo usan Movimientos y el Resumen.
-export function colorDeCategoria(nombre) {
+// Color fijo por categoría (siempre el mismo, filtres lo que filtres). Las
+// categorías de la persona se reparten los colores en orden alfabético, así
+// hasta 8 no se repite ninguno; las que no están en su lista (ej. las de
+// ingresos) usan uno sacado del nombre. Lo usan Movimientos, Resumen y Reportes.
+let indicePorNombre = new Map();
+
+export function registrarCategorias(lista) {
+  const orden = [...new Set((lista || []).map((c) => String(c)))].sort((a, b) => a.localeCompare(b, "es"));
+  indicePorNombre = new Map(orden.map((nombre, i) => [nombre, i % COLORES_CATEGORIA]));
+}
+
+export function indiceDeCategoria(nombre) {
+  if (indicePorNombre.has(nombre)) return indicePorNombre.get(nombre);
   let h = 0;
   for (const letra of nombre || "") h = (h * 31 + letra.charCodeAt(0)) >>> 0;
-  return `var(--cat-${h % COLORES_CATEGORIA})`;
+  return h % COLORES_CATEGORIA;
+}
+
+export function colorDeCategoria(nombre) {
+  return `var(--cat-${indiceDeCategoria(nombre)})`;
 }
 
 const pad2 = (n) => String(n).padStart(2, "0");

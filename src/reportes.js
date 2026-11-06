@@ -1,22 +1,14 @@
 // Cuentas de la pantalla Reportes: meses de la tendencia, gastos de un mes
 // por categoría y datos sueltos del mes. Sin React, para poder leerlo solo.
 import { aPesos } from "./format";
+import { colorDeCategoria, indiceDeCategoria } from "./movimientos";
 
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const pad2 = (n) => String(n).padStart(2, "0");
-const COLORES_CATEGORIA = 8;
 export const SIN_CATEGORIA = "Sin categoría";
 
-// Mismo color por nombre que en Movimientos, así una categoría se ve igual en las dos.
-export function indiceDeCategoria(nombre) {
-  let h = 0;
-  for (const letra of nombre || "") h = (h * 31 + letra.charCodeAt(0)) >>> 0;
-  return h % COLORES_CATEGORIA;
-}
-
-export function colorDeCategoria(nombre) {
-  return `var(--cat-${indiceDeCategoria(nombre)})`;
-}
+// Mismo color por categoría que en Movimientos, así se ve igual en todos lados.
+export { colorDeCategoria, indiceDeCategoria };
 
 // La tendencia llega del más viejo al actual ({ mes: "Oct", ingresos, gastos }).
 // Se le agrega la clave "2026-10", el nombre largo y cuánto sobró.

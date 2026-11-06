@@ -40,7 +40,7 @@ export default defineConfig({
       // app (HTML/JS/CSS/íconos), así abre instantáneo y sin internet. La
       // última copia de los datos la guarda la app (src/sinConexion.js).
       workbox: {
-        navigateFallbackDenylist: [/\/api\//, /^\/\.netlify\//],
+        navigateFallbackDenylist: [/\/api\//, /^\/\.netlify\//, /^\/privacidad\.html/, /^\/terminos\.html/],
         // Avisos push con la app cerrada (public/push-sw.js).
         importScripts: ['push-sw.js'],
         // La letra (Google Fonts) y los íconos (Phosphor, de unpkg) vienen de

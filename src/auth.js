@@ -8,6 +8,11 @@
 import { errorSinRed, hayConexion } from "./sinConexion";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+// "Gastos desde tus mails" pide leer el Gmail, un permiso que Google solo
+// verifica con una auditoría paga. Si va en otro proyecto de Google Cloud
+// (con su propio ID de cliente), el login principal se verifica solo y los
+// mails siguen en modo prueba sin afectarlo. Sin esta variable, usa el mismo.
+const CLIENT_ID_MAILS = import.meta.env.VITE_GOOGLE_CLIENT_ID_MAILS || CLIENT_ID;
 const TOKEN_KEY = "taros-google-token";
 
 // Spreadsheets: leer/escribir los gastos y también crear la planilla "Taros
@@ -193,12 +198,13 @@ const clientes = {};
 
 function obtenerCliente(scopes) {
   if (clientes[scopes]) return clientes[scopes];
+  const clientId = scopes === SCOPES_MAILS ? CLIENT_ID_MAILS : CLIENT_ID;
   if (!window.google?.accounts?.oauth2) {
     throw new Error("Todavía no cargó el login de Google. Esperá un segundo y probá de nuevo.");
   }
   const cliente = { resolverPendiente: null };
   cliente.tokenClient = window.google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
+    client_id: clientId,
     scope: scopes,
     callback: (respuesta) => {
       if (cliente.resolverPendiente) {

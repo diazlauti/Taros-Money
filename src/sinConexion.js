@@ -230,7 +230,8 @@ export function aplicarCola(lista, ops, tipo, pedidoEn = 0) {
   if (!propias.length) return lista;
   let resultado = [...lista];
   for (const op of propias) {
-    const marca = { pendiente: !op.subidoEn, claveCola: op.clave, errorCola: op.error || "" };
+    // Lo que se está guardando de fondo se ve como ya guardado.
+    const marca = { pendiente: !op.subidoEn && (!op.deFondo || !!op.error), claveCola: op.clave, errorCola: op.error || "" };
     if (op.accion === "agregar") {
       if (resultado.some((m) => m.id && m.id === op.datos.id)) continue;
       resultado = [{ ...op.datos, ...marca }, ...resultado];
@@ -299,12 +300,19 @@ async function intentarOEncolar(op, enviar) {
   }
 }
 
-export async function agregarMovimiento(tipo, datos) {
+// Con deFondo (el formulario de «Nuevo movimiento») no se espera a Google:
+// va directo a la fila, que lo muestra al toque y lo sube enseguida. Si la
+// subida no llega (red o Google caídos), queda como «Sin subir», igual que
+// lo cargado sin conexión.
+export async function agregarMovimiento(tipo, datos, { deFondo = false } = {}) {
   const a = api;
   const conId = { ...datos, id: datos.id || a.nuevoIdMovimiento() };
-  return intentarOEncolar({ accion: "agregar", tipo, clave: conId.id, datos: conId }, () =>
-    funcionesDe(a, tipo).agregar(conId),
-  );
+  const op = { accion: "agregar", tipo, clave: conId.id, datos: conId };
+  if (deFondo && hayConexion()) {
+    encolar({ ...op, deFondo: true });
+    return { deFondo: true };
+  }
+  return intentarOEncolar(op, () => funcionesDe(a, tipo).agregar(conId));
 }
 
 export async function editarMovimiento(tipo, movimiento, criterio, cambios) {
@@ -312,7 +320,7 @@ export async function editarMovimiento(tipo, movimiento, criterio, cambios) {
   const clave = claveMovimiento(tipo, movimiento);
   const ops = leerCola();
   // Todavía no se subió: se cambia lo que está esperando.
-  const alta = ops.find((op) => op.clave === clave && op.accion === "agregar" && !op.subidoEn);
+  const alta = ops.find((op) => op.clave === clave && op.accion === "agregar" && !op.subidoEn && op.idOp !== enVuelo);
   if (alta) {
     guardarCola(ops.map((op) => (op === alta ? { ...op, datos: { ...op.datos, ...cambios }, error: undefined } : op)));
     return { enCola: true };
@@ -337,8 +345,9 @@ export async function borrarMovimiento(tipo, movimiento, criterio) {
   const a = api;
   const clave = claveMovimiento(tipo, movimiento);
   const ops = leerCola();
-  // Nunca se subió: alcanza con sacarlo de la fila.
-  if (ops.some((op) => op.clave === clave && op.accion === "agregar" && !op.subidoEn)) {
+  // Nunca se subió: alcanza con sacarlo de la fila. (Si se está subiendo
+  // justo ahora, el borrado va a la fila y se sube después.)
+  if (ops.some((op) => op.clave === clave && op.accion === "agregar" && !op.subidoEn && op.idOp !== enVuelo)) {
     guardarCola(ops.filter((op) => op.clave !== clave || op.subidoEn));
     return {};
   }
@@ -359,6 +368,8 @@ export async function borrarMovimiento(tipo, movimiento, criterio) {
 // --- Subir la fila ---
 
 let subiendo = null;
+// El que se está mandando ahora: cambiarlo en la fila no llegaría a Google.
+let enVuelo = null;
 const oyentesSubiendo = new Set();
 
 function cambiarSubiendo(valor) {
@@ -386,27 +397,37 @@ function marcar(idOp, cambios) {
 export function subirCola() {
   if (subiendo) return subiendo;
   const pendientes = pendientesDeSubir(leerCola()).filter((op) => !op.error);
-  if (!pendientes.length || !hayConexion()) return Promise.resolve({ subidos: 0, fallidos: [] });
+  if (!pendientes.length || !hayConexion()) return Promise.resolve({ subidos: 0, subidosDeFondo: 0, fallidos: [] });
   const tarea = (async () => {
     const a = api;
     let subidos = 0;
+    let subidosDeFondo = 0;
     const fallidos = [];
     const trabados = new Set(pendientesDeSubir(leerCola()).filter((op) => op.error).map((op) => op.clave));
-    for (const { idOp } of pendientes) {
-      const op = leerCola().find((o) => o.idOp === idOp);
-      // Se borró o cambió mientras se subía lo anterior.
-      if (!op || op.subidoEn || op.error) continue;
+    // Lo que se carga mientras se está subiendo también entra en esta vuelta.
+    const probados = new Set();
+    for (;;) {
+      const op = pendientesDeSubir(leerCola()).find((o) => !o.error && !probados.has(o.idOp));
+      if (!op) break;
+      const { idOp } = op;
+      probados.add(idOp);
       // Un cambio anterior del mismo movimiento no se pudo subir: este espera.
       if (trabados.has(op.clave)) continue;
       const f = funcionesDe(a, op.tipo);
+      enVuelo = idOp;
       try {
         if (op.accion === "agregar") await f.agregar(op.datos);
         else if (op.accion === "editar") await f.editar(op.criterio, op.cambios);
         else await f.borrar(op.criterio);
         marcar(idOp, { subidoEn: Date.now() });
-        subidos++;
+        if (op.deFondo) subidosDeFondo++;
+        else subidos++;
       } catch (err) {
-        if (err.transitorio || err.requiereLogin) break;
+        // No llegó: desde ahora se muestra como cualquier cosa sin subir.
+        if (err.transitorio || err.requiereLogin) {
+          if (op.deFondo) marcar(idOp, { deFondo: false });
+          break;
+        }
         // Borrar algo que ya no está es lo mismo que haberlo borrado.
         if (op.accion === "borrar" && /no encontr/i.test(err.message || "")) {
           marcar(idOp, { subidoEn: Date.now() });
@@ -416,9 +437,11 @@ export function subirCola() {
         marcar(idOp, { error: err.message || "No se pudo subir." });
         trabados.add(op.clave);
         fallidos.push({ ...op, error: err.message });
+      } finally {
+        enVuelo = null;
       }
     }
-    return { subidos, fallidos };
+    return { subidos, subidosDeFondo, fallidos };
   })();
   cambiarSubiendo(tarea);
   tarea.finally(() => cambiarSubiendo(null));

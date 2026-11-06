@@ -1201,12 +1201,13 @@ flex-direction: column;
 gap: var(--space-4);
 }
 
+/* En el celu el saldo va siempre abajo del día: al costado entraba solo en
+   «Hoy» y «Ayer», y los días quedaban con formatos distintos. */
 .mov-dia-cabecera {
 display: flex;
-flex-wrap: wrap;
-align-items: baseline;
-justify-content: space-between;
-gap: var(--space-1) var(--space-2);
+flex-direction: column;
+align-items: flex-start;
+gap: var(--space-1);
 padding-bottom: var(--space-2);
 border-bottom: var(--border) solid var(--color-divider);
 }
@@ -4279,14 +4280,15 @@ font-weight: var(--weight-bold);
 .saldo-salio { color: var(--hero-salio); }
 
 /* Cuentas en una fila que se desliza de costado si no entran. */
+/* Las cuentas bajan a otra fila en vez de cortarse: deslizando de costado
+   no se notaba que había más, y con teclado no se llegaba. */
 .saldo-cuentas {
 display: flex;
+flex-wrap: wrap;
 gap: var(--space-2);
 margin: 0;
 padding: 0;
 list-style: none;
-overflow-x: auto;
-scrollbar-width: none;
 }
 
 .saldo-cuentas li {
