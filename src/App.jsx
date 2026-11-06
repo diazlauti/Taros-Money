@@ -33,7 +33,9 @@ const [autenticado, setAutenticado] = useState(haySesion);
 // solo con la sesión larga, sin mostrar nada — evita pedir el login de nuevo
 // cada vez que el token de una hora vence. Sólo corre si todavía no hay
 // una sesión guardada válida.
-const [verificando, setVerificando] = useState(!haySesion());
+// Quien nunca entró desde este dispositivo no tiene sesión que renovar: ve
+// la página de inicio al toque, sin esperar la consulta a Netlify.
+const [verificando, setVerificando] = useState(() => !haySesion() && !!sesionRecordada());
 // El tema vive acá (y no en el panel) para que el login también lo use.
 const [tema, setTema] = useState(getTemaInicial);
 
@@ -73,7 +75,7 @@ return () => document.removeEventListener("visibilitychange", alCambiar);
 
 useEffect(() => {
 if (autenticado) return;
-if (sinSilenciosa.current) {
+if (sinSilenciosa.current || !sesionRecordada()) {
 sinSilenciosa.current = false;
 setVerificando(false);
 return;
