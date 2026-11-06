@@ -10,9 +10,18 @@ import Login from "./components/Login";
 import PantallaBloqueo from "./components/PantallaBloqueo";
 // El panel (todas las secciones) se baja aparte: la página de inicio y el
 // login cargan solos y se ven más rápido.
-// Con la sesión abierta se empieza a bajar enseguida, sin esperar al login.
+// Con la sesión abierta se baja enseguida y main.jsx lo espera antes de
+// dibujar: así no pasa por «Abriendo…» (React lo deja mínimo 0,3 s).
 const cargarPanel = () => import("./Panel");
-if (haySesion() || sesionRecordada()) cargarPanel();
+let PanelListo = null;
+export const panelPrecargado =
+haySesion() || sesionRecordada()
+? cargarPanel()
+.then((m) => {
+PanelListo = m.default;
+})
+.catch(() => {})
+: Promise.resolve();
 const PanelPrincipal = lazy(cargarPanel);
 
 function Abriendo() {
@@ -28,6 +37,7 @@ return (
 }
 
 export default function App() {
+const Panel = PanelListo || PanelPrincipal;
 const [autenticado, setAutenticado] = useState(haySesion);
 // Si ya había entrado antes (otra visita, PWA reabierta), renueva el token
 // solo con la sesión larga, sin mostrar nada — evita pedir el login de nuevo
@@ -141,7 +151,7 @@ haciendo) pero tapado e inaccesible. */}
 <div className="app-raiz" inert={bloqueada} aria-hidden={bloqueada || undefined}>
 <ConfirmarProvider>
 <Suspense fallback={<Abriendo />}>
-<PanelPrincipal
+<Panel
 tema={tema}
 onCambiarTema={cambiarTema}
 onCerrarSesion={() => {
