@@ -147,7 +147,7 @@ export default function NuevoMovimientoDialog({
       if (ultimoEnvio.current.datos !== datos) ultimoEnvio.current = { datos, id: nuevoIdMovimiento() };
       const id = ultimoEnvio.current.id;
       // Sin conexión queda en el dispositivo y se sube solo cuando vuelve.
-      const { enCola } = await agregarMovimiento(tipo, { ...payload, cuenta: form.cuenta, id });
+      const { enCola } = await agregarMovimiento(tipo, { ...payload, cuenta: form.cuenta, id }, { deFondo: true });
       playSuccess();
       const guardado = tipo === "gasto" ? "Gasto guardado" : "Ingreso guardado";
       avisar(enCola ? `${guardado}. Se sube cuando vuelva internet.` : guardado);

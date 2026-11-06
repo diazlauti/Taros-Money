@@ -265,9 +265,9 @@ export default function MovimientosTab({
           return (
             <section className="mov-dia" key={grupo.fecha || gi} aria-labelledby={idTitulo}>
               <header className="mov-dia-cabecera">
-                <h3 className="mov-dia-titulo" id={idTitulo}>
+                <h2 className="mov-dia-titulo" id={idTitulo}>
                   {nombreDia(grupo.fecha)}
-                </h3>
+                </h2>
                 {saldo !== undefined && (
                   <p className="mov-dia-saldo texto-tenue">Saldo del día {fmtMoney(saldo)}</p>
                 )}

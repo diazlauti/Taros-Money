@@ -49,9 +49,12 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    <!-- La letra y los íconos vienen de afuera: con media="print" no frenan
+         la carga, y src/main.jsx los activa apenas arranca la app. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" media="print" data-sin-frenar />
     <!-- Solo el peso "regular" de los íconos, con versión fija. -->
-    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" media="print" data-sin-frenar />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
