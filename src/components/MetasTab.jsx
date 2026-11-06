@@ -98,12 +98,8 @@ export default function MetasTab({ metas, onCambio }) {
   } else if (lista.length === 0) {
     contenido = (
       <div className="card">
-        <Vacio icono="ph ph-target" texto="Todavía no tenés metas de ahorro. Creá una (vacaciones, un fondo de emergencia…) y andá sumando aportes.">
-          <button type="button" className="btn btn-secondary" onClick={() => nombreRef.current?.focus()}>
-            <i className="ph ph-plus" aria-hidden="true" />
-            Crear meta
-          </button>
-        </Vacio>
+        {/* Sin botón: el formulario para crearla ya está acá abajo. */}
+        <Vacio icono="ph ph-target" texto="Todavía no tenés metas. Creá una abajo y andá sumando aportes." />
       </div>
     );
   } else {

@@ -421,8 +421,10 @@ border-bottom: var(--border-thin) solid var(--color-divider);
 }
 
 .main-header .brand-icono {
-font-size: var(--icon-lg);
-color: var(--color-text);
+width: var(--icon-lg);
+height: var(--icon-lg);
+border-radius: var(--radius-sm);
+flex-shrink: 0;
 }
 
 .main-header h1 {
@@ -1007,6 +1009,25 @@ transform: scale(0.96);
 background: var(--color-accent);
 color: var(--color-on-accent);
 font-weight: var(--weight-bold);
+}
+
+/* Fila de chips que se desliza de costado en vez de bajar en varias filas. */
+.chips-desliza {
+flex-wrap: nowrap;
+overflow-x: auto;
+padding: var(--space-1);
+margin: calc(var(--space-1) * -1);
+scroll-snap-type: x proximity;
+scrollbar-width: none;
+}
+
+.chips-desliza::-webkit-scrollbar {
+display: none;
+}
+
+.chips-desliza > * {
+flex-shrink: 0;
+scroll-snap-align: start;
 }
 
 .chip-frecuente i {
@@ -1865,6 +1886,26 @@ color: var(--error);
 .estado p {
 margin: 0;
 font-size: var(--text-sm);
+}
+
+/* El mismo error que ya se explicó arriba: una línea y Reintentar. */
+.estado--corto {
+flex-direction: row;
+flex-wrap: wrap;
+align-items: center;
+justify-content: space-between;
+}
+
+.estado--corto p {
+display: inline-flex;
+align-items: center;
+gap: var(--space-1);
+color: var(--color-text-dim);
+}
+
+.estado--corto p i {
+color: var(--error);
+font-size: var(--icon-md);
 }
 
 /* Nota corta dentro de un bloque: en su propia cajita, no texto suelto. */
@@ -3705,6 +3746,12 @@ line-height: 1;
 animation: tour-pop var(--dur-slow) var(--ease-bounce);
 }
 
+/* Al lado del texto (menú, Más, pestañas): no tapa el ícono. */
+.insignia--linea {
+position: static;
+margin-inline-start: var(--space-1);
+}
+
 .btn-encabezado {
 min-width: var(--tap);
 padding-left: var(--space-2);
@@ -4682,6 +4729,17 @@ align-items: start;
 position: sticky;
 top: 0;
 }
+.calc-lado .calc-vacio {
+display: flex;
+}
+}
+
+.calc-vacio {
+display: none;
+margin: 0;
+align-items: center;
+flex-direction: row;
+gap: var(--space-2);
 }
 
 @media (min-width: 1024px) {

@@ -235,7 +235,7 @@ export default function MovimientosTab({
           icono="ph ph-funnel-x"
           texto={
             textoBusqueda
-              ? `No hay movimientos que coincidan con "${busqueda.trim()}".`
+              ? `No hay movimientos con «${busqueda.trim()}».`
               : "No hay movimientos con estos filtros."
           }
         >

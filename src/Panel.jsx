@@ -635,7 +635,7 @@ return (
 
 <main className="main">
 <header className="main-header">
-<i className="ph ph-wallet brand-icono" role="img" aria-label="Taros Money" />
+<img className="brand-icono" src="/icon-192.png" alt="Taros Money" width="32" height="32" />
 <div className="main-header-textos">
 <h1>{activeItem.label}</h1>
 <p className="main-fecha">{FECHA_DE_HOY.format(new Date())}</p>

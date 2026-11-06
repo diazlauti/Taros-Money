@@ -31,9 +31,9 @@ const TIEMPO_LIMITE_MS = 20000;
 const TIEMPO_LIMITE_MAILS_MS = 90000;
 const ESPERAS_REINTENTO_MS = [800, 2000];
 
-const MENSAJE_LENTO = "Google está tardando demasiado en responder. Probá de nuevo.";
+const MENSAJE_LENTO = "Google está tardando mucho. Probá de nuevo.";
 export const MENSAJE_FALTA_PERMISO = "Falta que aceptes un permiso nuevo de Google. Volvé a entrar para aceptarlo.";
-const MENSAJE_GOOGLE = "Google tuvo un problema al responder. Probá de nuevo en un rato.";
+const MENSAJE_GOOGLE = "Google no respondió bien. Probá de nuevo en un rato.";
 
 // Cierra la sesión y vuelve al login, que pide todos los permisos de nuevo.
 export function volverAEntrar() {
@@ -54,6 +54,18 @@ function esperar(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// Los mensajes del backend, todos con el mismo tono: mayúscula al principio,
+// sin aclaraciones entre paréntesis ni guiones largos.
+function limpiarMensaje(texto) {
+  let t = String(texto)
+    .replace(/\s*\([^).]*\)/g, "") // "(puede que ya lo hayan borrado)"; un link entre paréntesis queda
+    .replace(/\s+—\s+/g, ". ")
+    .replace(/\. ([a-záéíóú])/g, (_, l) => ". " + l.toUpperCase())
+    .trim();
+  if (t && !/[.!?]$/.test(t)) t += ".";
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 // Pasa los mensajes técnicos de Apps Script a algo entendible. Los mensajes
 // que tira el backend a propósito ya vienen en castellano y se dejan tal cual.
 function mensajeDelBackend(data) {
@@ -69,15 +81,15 @@ function mensajeDelBackend(data) {
   }
   // Límites y fallas de Google: llegan en inglés y no dicen nada útil.
   if (/too many times|quota|limit exceeded|rate limit/i.test(crudo)) {
-    return "Google limitó el uso por hoy. Probá de nuevo en un rato (a más tardar mañana se libera).";
+    return "Google limitó el uso por hoy. Probá más tarde.";
   }
   if (/too many simultaneous|lock|timed out waiting/i.test(crudo)) {
-    return "Hay muchas cosas guardándose a la vez. Esperá unos segundos y probá de nuevo.";
+    return "Se están guardando otras cosas. Probá en unos segundos.";
   }
   if (/exceeded maximum execution time|service (spreadsheets|unavailable)|internal error|server error|try again later/i.test(crudo)) {
     return MENSAJE_GOOGLE;
   }
-  return crudo || "No se pudo completar. Probá de nuevo.";
+  return limpiarMensaje(crudo) || "No se pudo completar. Probá de nuevo.";
 }
 
 // A qué proyecto de Apps Script se llama y con qué token. El principal usa

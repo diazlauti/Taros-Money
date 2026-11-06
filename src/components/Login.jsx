@@ -67,7 +67,7 @@ const ANIO = new Date().getFullYear();
 
 const PASOS = [
   {
-    titulo: 'Tocá "Entrar con Google"',
+    titulo: "Tocá «Entrar con Google»",
     texto: "Usá la cuenta de Google que tengas en el celu o la compu.",
   },
   {
@@ -262,22 +262,22 @@ export default function Login({ onSuccess, recordada = null }) {
           <div className="landing-muestra" aria-hidden="true">
             <div className="landing-muestra-card">
               <p className="landing-muestra-kicker">Saldo del mes</p>
-              <p className="landing-muestra-monto">$ 184.500</p>
+              <p className="landing-muestra-monto">$184.500</p>
               <ul className="landing-muestra-lista">
                 <li>
                   <span className="landing-muestra-punto landing-muestra-punto--0" />
                   Súper
-                  <span>$ 62.300</span>
+                  <span>$62.300</span>
                 </li>
                 <li>
                   <span className="landing-muestra-punto landing-muestra-punto--1" />
                   Transporte
-                  <span>$ 18.900</span>
+                  <span>$18.900</span>
                 </li>
                 <li>
                   <span className="landing-muestra-punto landing-muestra-punto--2" />
                   Salidas
-                  <span>$ 34.000</span>
+                  <span>$34.000</span>
                 </li>
               </ul>
             </div>
