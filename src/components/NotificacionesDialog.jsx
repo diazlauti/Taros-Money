@@ -81,11 +81,9 @@ export default function NotificacionesDialog({ pendientes, cargando, errores, vi
             {pestanas.map(([valor, texto, icono, sinVer]) => (
               <label className="seg-opt" key={valor}>
                 <input type="radio" name="notis-pestana" checked={pestana === valor} onChange={() => setPestana(valor)} />
-                <span className="con-insignia">
-                  <i className={icono} aria-hidden="true" />
-                  <Insignia aviso={sinVer ? { cantidad: sinVer } : null} />
-                </span>
+                <i className={icono} aria-hidden="true" />
                 {texto}
+                <Insignia aviso={sinVer ? { cantidad: sinVer } : null} enLinea />
                 {sinVer > 0 && <span className="visualmente-oculto">, {sinVer} sin ver</span>}
               </label>
             ))}

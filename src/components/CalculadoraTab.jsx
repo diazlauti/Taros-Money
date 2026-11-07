@@ -246,6 +246,13 @@ export default function CalculadoraTab({ cotizaciones, configMonedas, cotizacion
 
         <div className="pila calc-lado">
           <div aria-live="polite">
+            {/* En la compu esta columna quedaba vacía hasta escribir un precio. */}
+            {!resultado && (
+              <p className="calc-resultado calc-vacio texto-tenue">
+                <i className="ph ph-calculator" aria-hidden="true" />
+                Escribí un precio y acá ves el total en pesos.
+              </p>
+            )}
             {resultado && (
               <div className="calc-resultado">
                 <div className="fila-separada">

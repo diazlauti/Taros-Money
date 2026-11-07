@@ -207,7 +207,8 @@ export default function NuevoMovimientoDialog({
               {tipo === "gasto" ? "Tus gastos frecuentes" : "Tus ingresos frecuentes"}
               <Explicacion texto="Tocá uno para completar el formulario y después «Guardar»." etiqueta="Cómo usar los frecuentes" />
             </legend>
-            <div className="chips">
+            {/* Una sola fila que se desliza: así el monto queda a la vista. */}
+            <div className="chips chips-desliza">
               {frecuentes.map((fr) => (
                 <button
                   type="button"

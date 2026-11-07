@@ -172,6 +172,11 @@ transition: transform var(--dur-base) var(--ease-bounce);
 transform: scaleY(1);
 }
 
+/* Con el numerito de aviso al lado no entra el atajo: se esconde para que el texto no baje de línea. */
+.nav-item .insignia--linea ~ .nav-atajo {
+display: none;
+}
+
 .nav-atajo {
 margin-left: auto;
 min-width: var(--icon-md);

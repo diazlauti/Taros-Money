@@ -1,4 +1,9 @@
+import { createContext, useContext } from "react";
 import { BotonAvisarError } from "./MensajeError";
+
+// Si una pantalla ya muestra un error arriba, las tarjetas con el MISMO
+// error lo dicen corto en vez de repetir el mensaje entero.
+export const ErrorYaMostrado = createContext(null);
 
 // Los 4 estados de todo lo que carga datos remotos: cargando (skeleton con
 // la forma del contenido), error (mensaje + Reintentar), vacío (texto +
@@ -42,7 +47,24 @@ export function Cargando({ texto, children }) {
   );
 }
 
-export function ErrorEstado({ mensaje, onReintentar }) {
+// principal: el que explica el error (los demás con el mismo dicen solo "No se pudo cargar").
+export function ErrorEstado({ mensaje, onReintentar, principal = false }) {
+  const yaMostrado = useContext(ErrorYaMostrado);
+  if (!principal && yaMostrado && yaMostrado === mensaje) {
+    return (
+      <div className="estado estado--error estado--corto">
+        <p>
+          <i className="ph ph-warning-circle" aria-hidden="true" /> No se pudo cargar.
+        </p>
+        {onReintentar && (
+          <button type="button" className="btn btn-secondary" onClick={onReintentar}>
+            <i className="ph ph-arrow-clockwise" aria-hidden="true" />
+            Reintentar
+          </button>
+        )}
+      </div>
+    );
+  }
   return (
     <div className="estado estado--error" role="alert">
       <i className="ph ph-warning-circle" aria-hidden="true" />

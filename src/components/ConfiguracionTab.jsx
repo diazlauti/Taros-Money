@@ -426,24 +426,28 @@ export default function ConfiguracionTab({
                   <i className="ph ph-caret-right opcion-flecha" aria-hidden="true" />
                 </button>
               </li>
-              <li className="opcion-con-info">
-                {estaInstalada() ? (
+              {/* El atajo del ícono solo sirve con la app instalada: la «i» va ahí.
+                  Sin instalar, la fila queda alineada con las demás (flecha a la derecha). */}
+              {estaInstalada() ? (
+                <li className="opcion-con-info">
                   <p className="opcion">
                     <i className="ph ph-check-circle opcion-icono" aria-hidden="true" />
                     <span className="opcion-texto">Ya la tenés en tu pantalla de inicio</span>
                   </p>
-                ) : (
+                  <Explicacion
+                    texto="Atajo: mantené apretado el ícono de la app para cargar un gasto o un ingreso directo (en Android y en la compu)."
+                    etiqueta="Atajo del ícono"
+                  />
+                </li>
+              ) : (
+                <li>
                   <button type="button" className="opcion" onClick={onInstalar}>
                     <i className="ph ph-device-mobile opcion-icono" aria-hidden="true" />
                     <span className="opcion-texto">Agregar a la pantalla de inicio</span>
                     <i className="ph ph-caret-right opcion-flecha" aria-hidden="true" />
                   </button>
-                )}
-                <Explicacion
-                  texto="Atajo: con la app instalada, mantené apretado su ícono para cargar un gasto o un ingreso directo (en Android y en la compu)."
-                  etiqueta="Atajo del ícono"
-                />
-              </li>
+                </li>
+              )}
               <li>
                 <BuscarActualizacion />
               </li>

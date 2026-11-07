@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria, nombreMes } from "../format";
 import RevisionMails from "./RevisionMails";
-import { etiquetaEstado, serviciosConEstado, textoVencimiento } from "../servicios";
+import { etiquetaEstado, iconoServicio, serviciosConEstado, textoVencimiento } from "../servicios";
 import { colorDeCategoria, nombreDia } from "../movimientos";
 import {
   categoriasOrdenadas,
@@ -12,7 +12,7 @@ import {
   totalesPorDia,
   ultimosMovimientos,
 } from "../resumen";
-import { Cargando, ErrorEstado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
+import { Cargando, ErrorEstado, ErrorYaMostrado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
 import EditarMovimientoDialog from "./EditarMovimientoDialog";
 import { EtiquetaSinSubir } from "./EstadoConexion";
 import PeriodoSelector from "./PeriodoSelector";
@@ -47,7 +47,11 @@ export default function ResumenTab({
     setOculto(!oculto);
   }
 
+  // Con Google caído, el error se explica una vez (en Tu plata) y el resto dice "No se pudo cargar".
+  const errorArriba = saldo.error && !cuentas.data?.length ? saldo.error : null;
+
   return (
+    <ErrorYaMostrado.Provider value={errorArriba}>
     <div className="resumen">
       <SaldoCard
         oculto={oculto}
@@ -86,6 +90,7 @@ export default function ResumenTab({
         onCambio={onCambioMovimientos}
       />
     </div>
+    </ErrorYaMostrado.Provider>
   );
 }
 
@@ -123,6 +128,7 @@ function SaldoCard({ oculto, onAlternarOculto, onNuevo, saldo, cuentas, gastos, 
   } else if (!hayCuentas && saldo.error) {
     contenido = (
       <ErrorEstado
+        principal
         mensaje={saldo.error}
         onReintentar={() => {
           saldo.recargar();
@@ -217,8 +223,8 @@ function EntroSalio({ gastos, ingresos, dias, cotizaciones, monedaPorCuenta, tap
     if (estado.error && !estado.data) return "—";
     return null;
   };
-  const entro = valor(ingresos) ?? tapar(`+ ${fmtMoney(totalEnPesos(soloConfirmados(ingresos.data), monedaPorCuenta, cotizaciones))}`);
-  const salio = valor(gastos) ?? tapar(`− ${fmtMoney(totalEnPesos(soloConfirmados(gastos.data), monedaPorCuenta, cotizaciones))}`);
+  const entro = valor(ingresos) ?? tapar(`+${fmtMoney(totalEnPesos(soloConfirmados(ingresos.data), monedaPorCuenta, cotizaciones))}`);
+  const salio = valor(gastos) ?? tapar(`-${fmtMoney(totalEnPesos(soloConfirmados(gastos.data), monedaPorCuenta, cotizaciones))}`);
   return (
     <dl className="saldo-mini">
       <div>
@@ -238,7 +244,7 @@ function EntroSalio({ gastos, ingresos, dias, cotizaciones, monedaPorCuenta, tap
 function NumerosDelPeriodo({ gastos, ingresos, dias, cotizaciones, monedaPorCuenta, oculto }) {
   const tarjetas = [
     { id: "entro", titulo: "Entró", icono: "ph ph-arrow-down-left", estado: ingresos, signo: "+" },
-    { id: "salio", titulo: "Salió", icono: "ph ph-arrow-up-right", estado: gastos, signo: "−" },
+    { id: "salio", titulo: "Salió", icono: "ph ph-arrow-up-right", estado: gastos, signo: "-" },
   ];
   return (
     <div className="resumen-numeros resumen-area-numeros">
@@ -259,7 +265,7 @@ function NumerosDelPeriodo({ gastos, ingresos, dias, cotizaciones, monedaPorCuen
               </h2>
             </div>
             <p className="numero-valor num">
-              {cargando ? <Skeleton ancho="70%" /> : sinDatos ? "—" : oculto ? "$ •••••" : `${t.signo} ${fmtMoney(total)}`}
+              {cargando ? <Skeleton ancho="70%" /> : sinDatos ? "—" : oculto ? "$ •••••" : `${t.signo}${fmtMoney(total)}`}
             </p>
             <div className="numero-barras" aria-hidden="true">
               {barras.map((v, i) => (
@@ -299,13 +305,9 @@ function AccionesRapidas({ onNuevo, onIrA }) {
   );
 }
 
-// "Luz" o "Internet" pueden tener ícono propio; si no, el de su categoría o un recibo.
+// El mismo ícono que en Servicios: el del nombre ("Luz", "Internet") o el de su categoría.
 function iconoDeServicio(s) {
-  const generico = iconoPorCategoria("");
-  const porNombre = iconoPorCategoria(s.nombre);
-  if (porNombre !== generico) return porNombre;
-  const porCategoria = iconoPorCategoria(s.categoria);
-  return porCategoria !== generico ? porCategoria : "ph ph-receipt";
+  return iconoServicio(s.nombre) || iconoPorCategoria(s.categoria);
 }
 
 // Los servicios del mes que faltan pagar, los más urgentes primero.
@@ -539,7 +541,7 @@ function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, categorias, cuen
                 </span>
                 <span className={"movimiento-monto num" + (esIngreso ? " es-ingreso" : "")}>
                   <span className="visualmente-oculto">{esIngreso ? "Entró" : "Salió"} </span>
-                  <span aria-hidden="true">{esIngreso ? "+ " : "− "}</span>
+                  <span aria-hidden="true">{esIngreso ? "+" : "-"}</span>
                   {monto}
                 </span>
               </button>

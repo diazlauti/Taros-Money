@@ -327,7 +327,7 @@ export async function obtenerTokenActual() {
 function mensajeDeLogin(codigo) {
   if (codigo === "popup_closed") return "Se cerró la ventana de Google antes de terminar. Probá de nuevo.";
   if (codigo === "popup_failed_to_open") {
-    return "El navegador bloqueó la ventana de Google. Permití las ventanas emergentes para este sitio y probá de nuevo.";
+    return "El navegador bloqueó la ventana de Google. Permitila y probá de nuevo.";
   }
   if (codigo === "access_denied") return "Para usar la app hace falta que aceptes los permisos de Google.";
   return "No se pudo iniciar sesión con Google. Probá de nuevo.";
@@ -353,7 +353,7 @@ export async function iniciarSesionConGoogle({ email } = {}) {
     try {
       resultado = await llamarSesion("entrar", { code: respuesta.code });
     } catch {
-      throw new Error("No hay conexión o Google no respondió. Revisá tu internet y probá de nuevo.");
+      throw new Error("Sin conexión con Google. Revisá tu internet.");
     }
     if (resultado.estado !== 200 || !resultado.data?.access_token) {
       throw new Error("No se pudo iniciar sesión con Google. Probá de nuevo.");
