@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { aPesos, fmtMoney, fmtFecha, iconoPorCategoria, nombreMes } from "../format";
 import RevisionMails from "./RevisionMails";
-import { etiquetaEstado, iconoServicio, serviciosConEstado, textoVencimiento } from "../servicios";
+import { DIAS_AVISO, etiquetaEstado, iconoServicio, serviciosConEstado, textoVencimiento } from "../servicios";
 import { colorDeCategoria, nombreDia } from "../movimientos";
 import {
   categoriasOrdenadas,
+  esDeEsteMes,
   guardarOcultarSaldo,
   leerOcultarSaldo,
+  proximosPagos,
   soloConfirmados,
+  textoCobroSub,
   totalEnPesos,
   totalesPorDia,
   ultimosMovimientos,
@@ -20,7 +23,7 @@ import PeriodoSelector from "./PeriodoSelector";
 // Cuántas categorías y movimientos se ven sin tocar «Ver más».
 const CATEGORIAS_A_LA_VISTA = 4;
 const MOVIMIENTOS_A_LA_VISTA = 4;
-const SERVICIOS_A_LA_VISTA = 3;
+const PAGOS_A_LA_VISTA = 3;
 
 // Resumen: arriba la tarjeta con tu plata, accesos rápidos, lo que tenés
 // para hacer (servicios y mails), en qué se fue y los últimos movimientos.
@@ -31,6 +34,7 @@ export default function ResumenTab({
   ingresos,
   cuentas,
   servicios,
+  suscripciones,
   categorias,
   cotizaciones,
   monedaPorCuenta,
@@ -75,7 +79,13 @@ export default function ResumenTab({
         oculto={oculto}
       />
       <AccionesRapidas onNuevo={onNuevo} onIrA={onIrA} />
-      <ParaHacer servicios={servicios} cotizaciones={cotizaciones} monedaPorCuenta={monedaPorCuenta} onIrA={onIrA} />
+      <ParaHacer
+        servicios={servicios}
+        suscripciones={suscripciones}
+        cotizaciones={cotizaciones}
+        monedaPorCuenta={monedaPorCuenta}
+        onIrA={onIrA}
+      />
       {mails && <MailsCard {...mails} cuentas={cuentas.data} monedaPorCuenta={monedaPorCuenta} />}
       <CategoriasCard resumen={resumen} dias={dias} onCambiarDias={onCambiarDias} onNuevo={onNuevo} />
       <UltimosCard
@@ -310,32 +320,53 @@ function iconoDeServicio(s) {
   return iconoServicio(s.nombre) || iconoPorCategoria(s.categoria);
 }
 
-// Los servicios del mes que faltan pagar, los más urgentes primero.
-function ParaHacer({ servicios, cotizaciones, monedaPorCuenta, onIrA }) {
-  const lista = serviciosConEstado(servicios.data);
-  const pendientes = lista.filter((s) => s.estado !== "pagado");
-  const enPesos = (s) => aPesos(s.monto, monedaPorCuenta[s.cuenta], cotizaciones) ?? 0;
-  const faltaPagar = pendientes.reduce((sum, s) => sum + enPesos(s), 0);
+// Lo que toca pagar: servicios del mes que faltan y el próximo cobro de cada
+// suscripción, juntos y por fecha. Aparece lo que tengas cargado.
+function ParaHacer({ servicios, suscripciones, cotizaciones, monedaPorCuenta, onIrA }) {
+  const conEstado = serviciosConEstado(servicios.data);
+  const subs = suscripciones.data || [];
+  const pagos = proximosPagos(conEstado, subs);
+  const hayServicios = conEstado.length > 0;
+  const haySubs = subs.length > 0;
+  const moneda = (p) => monedaPorCuenta[p.cuenta] || "ARS";
+  const enPesos = (p) => aPesos(p.monto, monedaPorCuenta[p.cuenta], cotizaciones) ?? 0;
+  const faltaPagar = pagos.filter((p) => esDeEsteMes(p)).reduce((sum, p) => sum + enPesos(p), 0);
+  const tabDe = (p) => (p.tipo === "suscripcion" ? "recurrentes" : "servicios");
+
+  // Si falló una sola de las dos, se muestra la otra y abajo se avisa.
+  const fallo = [
+    servicios.error && !servicios.data && { cual: "tus servicios", seccion: servicios },
+    suscripciones.error && !suscripciones.data && { cual: "tus suscripciones", seccion: suscripciones },
+  ].filter(Boolean);
 
   let contenido;
-  if (servicios.cargando) {
+  if ((servicios.cargando && !servicios.data) || (suscripciones.cargando && !suscripciones.data)) {
     contenido = (
-      <Cargando texto="Cargando servicios…">
+      <Cargando texto="Cargando lo que tenés para pagar…">
         <SkeletonFilas cantidad={2} />
       </Cargando>
     );
-  } else if (servicios.error && !servicios.data) {
-    contenido = <ErrorEstado mensaje={servicios.error} onReintentar={servicios.recargar} />;
-  } else if (lista.length === 0) {
+  } else if (fallo.length === 2 || (fallo.length === 1 && !hayServicios && !haySubs)) {
     contenido = (
-      <Vacio icono="ph ph-receipt" texto="Cargá la luz, el gas, internet o el alquiler y acá ves cuáles te faltan pagar.">
+      <ErrorEstado
+        mensaje={fallo[0].seccion.error}
+        onReintentar={() => fallo.forEach((f) => f.seccion.recargar())}
+      />
+    );
+  } else if (!hayServicios && !haySubs) {
+    contenido = (
+      <Vacio icono="ph ph-receipt" texto="Cargá tus servicios (luz, internet) o suscripciones (Netflix, Spotify) y acá ves qué te toca pagar.">
         <button type="button" className="btn btn-secondary" onClick={() => onIrA("servicios")}>
           <i className="ph ph-plus" aria-hidden="true" />
-          Agregar servicios
+          Servicios
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={() => onIrA("recurrentes")}>
+          <i className="ph ph-plus" aria-hidden="true" />
+          Suscripciones
         </button>
       </Vacio>
     );
-  } else if (pendientes.length === 0) {
+  } else if (pagos.length === 0) {
     contenido = (
       <p className="para-hacer-listo">
         <span className="resumen-icono resumen-icono--ok" aria-hidden="true">
@@ -348,52 +379,76 @@ function ParaHacer({ servicios, cotizaciones, monedaPorCuenta, onIrA }) {
     contenido = (
       <>
         <ul className="lista resumen-lista">
-          {pendientes.slice(0, SERVICIOS_A_LA_VISTA).map((s) => (
-            <li key={s.nombre}>
-              <button
-                type="button"
-                className="resumen-fila"
-                onClick={() => onIrA("servicios")}
-                aria-label={`Pagar ${s.nombre}, ${fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}, ${textoVencimiento(s)}`}
-              >
-                <span className="mov-icono" style={{ "--mov-color": colorDeCategoria(s.categoria || s.nombre) }} aria-hidden="true">
-                  <i className={iconoDeServicio(s)} />
-                </span>
-                <span className="movimiento-texto">
-                  <span className="movimiento-desc">{s.nombre}</span>
-                </span>
-                <span className="mov-derecha">
-                  <span className="movimiento-monto num">{fmtMoney(s.monto, monedaPorCuenta[s.cuenta] || "ARS")}</span>
-                  {s.estado === "pendiente" ? (
-                    <span className="texto-tenue texto-chico">{etiquetaEstado(s)}</span>
-                  ) : (
-                    <span className={`tag tag-estado tag-estado--${s.estado}`}>{etiquetaEstado(s)}</span>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
+          {pagos.slice(0, PAGOS_A_LA_VISTA).map((p) => {
+            const esSub = p.tipo === "suscripcion";
+            const monto = fmtMoney(p.monto, moneda(p));
+            const cuando = esSub ? textoCobroSub(p.dias) : etiquetaEstado(p);
+            const urgente = esSub ? p.dias <= DIAS_AVISO : p.estado !== "pendiente";
+            const clase = esSub ? "pronto" : p.estado;
+            return (
+              <li key={`${p.tipo}-${p.nombre}`}>
+                <button
+                  type="button"
+                  className="resumen-fila"
+                  onClick={() => onIrA(tabDe(p))}
+                  aria-label={
+                    esSub
+                      ? `Suscripción ${p.nombre}, ${monto}, ${cuando.toLowerCase()}`
+                      : `Pagar ${p.nombre}, ${monto}, ${textoVencimiento(p)}`
+                  }
+                >
+                  <span className="mov-icono" style={{ "--mov-color": colorDeCategoria(p.categoria || p.nombre) }} aria-hidden="true">
+                    <i className={esSub ? iconoPorCategoria(p.categoria) : iconoDeServicio(p)} />
+                  </span>
+                  <span className="movimiento-texto">
+                    <span className="movimiento-desc">{p.nombre}</span>
+                  </span>
+                  <span className="mov-derecha">
+                    <span className="movimiento-monto num">{monto}</span>
+                    {urgente ? (
+                      <span className={`tag tag-estado tag-estado--${clase}`}>{cuando}</span>
+                    ) : (
+                      <span className="texto-tenue texto-chico">{cuando}</span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
-        <p className="resumen-pie texto-tenue texto-chico">
-          Falta <span className="num">{fmtMoney(faltaPagar)}</span>
-        </p>
+        {fallo.length === 1 && (
+          <p className="resumen-pie texto-tenue texto-chico">
+            No se pudieron cargar {fallo[0].cual}.{" "}
+            <button type="button" className="btn-link" onClick={fallo[0].seccion.recargar}>
+              Reintentar
+            </button>
+          </p>
+        )}
+        {faltaPagar > 0 && (
+          <p className="resumen-pie texto-tenue texto-chico">
+            Falta <span className="num">{fmtMoney(faltaPagar)}</span> en {nombreMes()}
+          </p>
+        )}
       </>
     );
   }
+
+  // «Ver» lleva a donde está lo tuyo; con los dos, a Servicios (ahí arriba se cambia).
+  const verTexto = hayServicios && haySubs ? "Ver todo" : haySubs ? "Ver suscripciones" : "Ver servicios";
 
   return (
     <section aria-labelledby="titulo-para-hacer" className="resumen-bloque resumen-area-pagar">
       <Titulo
         id="titulo-para-hacer"
         accion={
-          lista.length > 0 && (
-            <button type="button" className="btn-link resumen-link" onClick={() => onIrA("servicios")}>
-              Ver servicios
+          (hayServicios || haySubs) && (
+            <button type="button" className="btn-link resumen-link" onClick={() => onIrA(hayServicios ? "servicios" : "recurrentes")}>
+              {verTexto}
             </button>
           )
         }
       >
-        Para pagar en {nombreMes()}
+        Para pagar
       </Titulo>
       <div className="card resumen-card">{contenido}</div>
     </section>

@@ -682,6 +682,7 @@ gastos={gastos}
 ingresos={ingresos}
 cuentas={cuentas}
 servicios={servicios}
+suscripciones={suscripciones}
 cotizaciones={cotizaciones}
 monedaPorCuenta={monedaPorCuenta}
 dias={dias}

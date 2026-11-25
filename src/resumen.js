@@ -1,6 +1,7 @@
 // Cuentas del Resumen: lo que entró y salió, los últimos movimientos y las
 // categorías. Sin React, para poder leerlo solo.
-import { aPesos } from "./format";
+import { aPesos, fmtFecha } from "./format";
+import { diasHastaCobro } from "./bandeja";
 
 const OCULTAR_KEY = "taros-ocultar-saldo";
 
@@ -73,4 +74,39 @@ export function totalesPorDia(lista, dias, monedaPorCuenta = {}, cotizaciones = 
     if (i !== undefined) totales[i] += totalEnPesos([t], monedaPorCuenta, cotizaciones);
   });
   return totales;
+}
+
+// «Para pagar» del inicio: los servicios que faltan pagar este mes y el
+// próximo cobro de cada suscripción, todo junto y por fecha (lo vencido
+// primero). Así aparece lo que tengas: servicios, suscripciones o los dos.
+// `servicios` ya viene con estado (serviciosConEstado).
+export function proximosPagos(servicios = [], suscripciones = [], ahora = new Date()) {
+  const lista = [
+    ...(servicios || [])
+      .filter((s) => s.estado !== "pagado")
+      .map((s) => ({ ...s, tipo: "servicio", dias: s.diasRestantes })),
+    ...(suscripciones || [])
+      .map((s) => ({ ...s, tipo: "suscripcion", dias: diasHastaCobro(s.diaCobro, ahora) }))
+      .filter((s) => s.dias !== null),
+  ];
+  return lista.sort((a, b) => a.dias - b.dias || (a.tipo === "servicio" ? -1 : 1));
+}
+
+// Lo que se paga antes de que termine el mes (para el «Falta $X»).
+export function esDeEsteMes(pago, ahora = new Date()) {
+  const ultimo = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate();
+  return pago.dias <= ultimo - ahora.getDate();
+}
+
+// "2026-12-03" a partir de los días que faltan.
+export function fechaEnDias(dias, ahora = new Date()) {
+  const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + dias);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Lo que va a la derecha de una suscripción: «Se cobra hoy», «mañana» o el día.
+export function textoCobroSub(dias, ahora = new Date()) {
+  if (dias === 0) return "Se cobra hoy";
+  if (dias === 1) return "Se cobra mañana";
+  return `Se cobra el ${fmtFecha(fechaEnDias(dias, ahora))}`;
 }
