@@ -86,12 +86,21 @@ export default function EditarMovimientoDialog({ movimiento, tipo, categorias, c
     };
     try {
       let enCola = false;
+      let deFondo = false;
+      // Un cambio común se ve al cerrar y se sube de fondo (la fila dice
+      // «Guardando…»). Confirmar lo de un mail sigue esperando a Google.
       if (sinConfirmar) await confirmarGastoDeMail(movimiento.idMail, cambios);
-      else ({ enCola } = await editarMovimiento(tipo, movimiento, criterio, cambios));
+      else
+        ({ enCola, deFondo } = await editarMovimiento(tipo, movimiento, criterio, cambios, {
+          deFondo: !movimiento.aRevisar,
+        }));
       playSuccess();
-      const texto = movimiento.aRevisar ? (esGasto ? "Gasto confirmado" : "Ingreso confirmado") : "Cambios guardados";
-      avisar(enCola ? `${texto}. Se suben cuando vuelva internet.` : texto);
-      onGuardado?.();
+      if (!deFondo) {
+        const texto = movimiento.aRevisar ? (esGasto ? "Gasto confirmado" : "Ingreso confirmado") : "Cambios guardados";
+        avisar(enCola ? `${texto}. Se suben cuando vuelva internet.` : texto);
+        // De fondo no se recarga todavía: Panel lo sube y recarga después.
+        onGuardado?.();
+      }
       onClose();
     } catch (err) {
       playError();

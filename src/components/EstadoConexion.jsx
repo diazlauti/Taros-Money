@@ -53,8 +53,17 @@ function haceCuanto(cuando) {
   return dias === 1 ? "ayer" : `hace ${dias} días`;
 }
 
-// En la fila de un movimiento que todavía no está en la planilla.
+// En la fila de un movimiento que todavía no está en la planilla. Un cambio
+// que se está subiendo dice «Guardando…» (chiquito, sin barra).
 export function EtiquetaSinSubir({ movimiento }) {
+  if (movimiento.guardando && !movimiento.pendiente) {
+    return (
+      <span className="tag tag-guardando">
+        <i className="ph ph-circle-notch tag-guardando-icono" aria-hidden="true" />
+        Guardando…
+      </span>
+    );
+  }
   if (!movimiento.pendiente) return null;
   const fallo = !!movimiento.errorCola;
   return (

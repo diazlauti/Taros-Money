@@ -227,7 +227,13 @@ export function aplicarCola(lista, ops, tipo, pedidoEn = 0) {
   let resultado = [...lista];
   for (const op of propias) {
     // Lo que se está guardando de fondo se ve como ya guardado.
-    const marca = { pendiente: !op.subidoEn && (!op.deFondo || !!op.error), claveCola: op.clave, errorCola: op.error || "" };
+    const marca = {
+      pendiente: !op.subidoEn && (!op.deFondo || !!op.error),
+      // Un cambio que se está subiendo: la fila muestra «Guardando…».
+      guardando: !op.subidoEn && !!op.deFondo && !op.error && op.accion === "editar",
+      claveCola: op.clave,
+      errorCola: op.error || "",
+    };
     if (op.accion === "agregar") {
       if (resultado.some((m) => m.id && m.id === op.datos.id)) continue;
       resultado = [{ ...op.datos, ...marca }, ...resultado];
@@ -311,7 +317,11 @@ export async function agregarMovimiento(tipo, datos, { deFondo = false } = {}) {
   return intentarOEncolar(op, () => funcionesDe(a, tipo).agregar(conId));
 }
 
-export async function editarMovimiento(tipo, movimiento, criterio, cambios) {
+// Con deFondo (editar un movimiento) pasa lo mismo que al cargar uno nuevo:
+// el cambio se ve al cerrar el formulario y se sube enseguida. Si Google lo
+// rechaza, subirCola lo saca de la fila (vuelve a como estaba) y Panel avisa
+// con «Reintentar».
+export async function editarMovimiento(tipo, movimiento, criterio, cambios, { deFondo = false } = {}) {
   const a = api;
   const clave = claveMovimiento(tipo, movimiento);
   const ops = leerCola();
@@ -319,7 +329,8 @@ export async function editarMovimiento(tipo, movimiento, criterio, cambios) {
   const alta = ops.find((op) => op.clave === clave && op.accion === "agregar" && !op.subidoEn && op.idOp !== enVuelo);
   if (alta) {
     guardarCola(ops.map((op) => (op === alta ? { ...op, datos: { ...op.datos, ...cambios }, error: undefined } : op)));
-    return { enCola: true };
+    // Recién cargado y subiéndose de fondo: sigue igual, no «sin conexión».
+    return alta.deFondo && hayConexion() ? { deFondo: true } : { enCola: true };
   }
   // Un cambio anterior no se pudo subir (ej. eligió una cuenta borrada): se
   // corrige ese mismo, que tiene cómo está de verdad en la planilla.
@@ -330,9 +341,19 @@ export async function editarMovimiento(tipo, movimiento, criterio, cambios) {
   }
   const op = { accion: "editar", tipo, clave, criterio, cambios, anterior: { monto: movimiento.monto, cuenta: movimiento.cuenta } };
   // Si ya tiene cambios esperando, este va después (si no, se pisarían).
+  const deFondoAhora = deFondo && hayConexion();
   if (opsDe(clave).length) {
+    // Un cambio anterior todavía se está subiendo: este va atrás.
+    if (deFondoAhora) {
+      encolar({ ...op, deFondo: true });
+      return { deFondo: true };
+    }
     encolar(op);
     return { enCola: true };
+  }
+  if (deFondoAhora) {
+    encolar({ ...op, deFondo: true });
+    return { deFondo: true };
   }
   return intentarOEncolar(op, () => funcionesDe(a, tipo).editar(criterio, cambios));
 }
@@ -383,6 +404,18 @@ export function useSubiendo() {
   return !!subiendo;
 }
 
+// Para no lanzar otra subida mientras hay una en camino.
+export function estaSubiendo() {
+  return !!subiendo;
+}
+
+// «Reintentar» de un cambio que Google rechazó: vuelve a la fila igual que
+// la primera vez (se ve al instante y se sube de fondo).
+export function reintentarCambio(op) {
+  const { idOp: _idOp, creado: _creado, error: _error, revertido: _revertido, subidoEn: _subidoEn, ...resto } = op;
+  encolar({ ...resto, deFondo: true });
+}
+
 function marcar(idOp, cambios) {
   guardarCola(leerCola().map((op) => (op.idOp === idOp ? { ...op, ...cambios } : op)));
 }
@@ -408,7 +441,10 @@ export function subirCola() {
       const { idOp } = op;
       probados.add(idOp);
       // Un cambio anterior del mismo movimiento no se pudo subir: este espera.
-      if (trabados.has(op.clave)) continue;
+      if (trabados.has(op.clave)) {
+        if (op.deFondo) marcar(idOp, { deFondo: false });
+        continue;
+      }
       const f = funcionesDe(a, op.tipo);
       enVuelo = idOp;
       try {
@@ -428,6 +464,14 @@ export function subirCola() {
         if (op.accion === "borrar" && /no encontr/i.test(err.message || "")) {
           marcar(idOp, { subidoEn: Date.now() });
           subidos++;
+          continue;
+        }
+        // Un cambio guardado de fondo que Google rechaza no queda trabado:
+        // se saca de la fila (el movimiento vuelve a como está en la
+        // planilla) y Panel avisa con «Reintentar».
+        if (op.deFondo && op.accion === "editar") {
+          guardarCola(leerCola().filter((o) => o.idOp !== idOp));
+          fallidos.push({ ...op, error: err.message || "No se pudo guardar.", revertido: true });
           continue;
         }
         marcar(idOp, { error: err.message || "No se pudo subir." });

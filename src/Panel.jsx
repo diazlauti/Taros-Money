@@ -43,6 +43,8 @@ import {
   limpiarSubidos,
   pendientesDeSubir,
   subirCola,
+  estaSubiendo,
+  reintentarCambio,
   useCola,
   useConexion,
   useSubiendo,
@@ -50,7 +52,7 @@ import {
 import { useConfirmar } from "./confirmar";
 import EstadoConexion from "./components/EstadoConexion";
 import { useAvisos } from "./avisos";
-import { playChime, playClick, playSuccess, playTic, sonidoHabilitado, toggleSonido } from "./sounds";
+import { playChime, playClick, playError, playSuccess, playTic, sonidoHabilitado, toggleSonido } from "./sounds";
 import { Sidebar, BottomNav, Insignia } from "./components/Layout";
 import NotificacionesDialog from "./components/NotificacionesDialog";
 import Explicacion from "./components/Explicacion";
@@ -285,14 +287,35 @@ export default function PanelPrincipal({ tema, onCambiarTema, onCerrarSesion }) 
           : `Se subieron ${subidos} movimientos que estaban sin subir`,
       );
     }
-    if (fallidos.length) {
-      const f = fallidos[0];
+    // Un cambio guardado de fondo que Google rechazó ya volvió a como estaba:
+    // se avisa con «Reintentar» (lo vuelve a mandar igual).
+    fallidos
+      .filter((f) => f.revertido)
+      .forEach((f) => {
+        playError();
+        avisar(
+          `No se pudo guardar el cambio de «${f.cambios?.descripcion || f.criterio?.descripcion || "un movimiento"}»: ${String(f.error).replace(/\.?$/, ".")} Lo dejamos como estaba.`,
+          "error",
+          { accion: "Reintentar", onAccion: () => reintentarCambio(f) },
+        );
+      });
+    const trabados = fallidos.filter((f) => !f.revertido);
+    if (trabados.length) {
+      const f = trabados[0];
       avisar(
         `No se pudo subir «${f.datos?.descripcion || f.cambios?.descripcion || f.criterio?.descripcion || "un movimiento"}»: ${String(f.error).replace(/\.?$/, ".")} Tocalo en Movimientos para arreglarlo.`,
         "error",
       );
     }
   }, [recargarMovimientos, avisar]);
+
+  // Lo que se guarda de fondo (un movimiento nuevo o un cambio) se sube
+  // apenas entra a la fila. Si ya hay una subida en camino, esa vuelta lo
+  // toma; al terminar se vuelve a mirar por si entró algo justo al final.
+  const hayDeFondo = pendientesDeSubir(cola).some((op) => op.deFondo && !op.error);
+  useEffect(() => {
+    if (hayDeFondo && conectado && !estaSubiendo()) subirPendientes();
+  }, [hayDeFondo, conectado, subiendo, cola, subirPendientes]);
 
   // Al abrir, al volver la conexión y al volver a la app.
   const conectadoAntes = useRef(conectado);
