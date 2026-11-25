@@ -149,6 +149,7 @@
 --dur-base: 200ms;
 --dur-slow: 400ms;
 --dur-pulse: 1400ms;
+--opacidad-guardando: 0.6;
 --dur-aviso: 3200ms;
 --dur-aviso-accion: 8000ms;
 --dur-flotar: 4000ms;
@@ -5341,6 +5342,28 @@ flex: none;
 align-self: flex-start;
 margin-top: var(--space-1);
 color: var(--color-text-dim);
+}
+
+/* Un cambio que se está subiendo de fondo: la fila ya muestra lo nuevo y
+   avisa bajito que todavía se guarda. */
+.tag-guardando {
+align-self: flex-start;
+margin-top: var(--space-1);
+background: transparent;
+border-color: transparent;
+padding-inline: 0;
+color: var(--color-text-dim);
+}
+
+.mov-guardando .movimiento-monto {
+opacity: var(--opacidad-guardando);
+transition: opacity var(--dur-base) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+.tag-guardando-icono {
+animation: mov-girar var(--dur-pulse) linear infinite;
+}
 }
 
 .tag-sin-subir.tag-sin-subir--error {

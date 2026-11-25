@@ -525,9 +525,10 @@ function UltimosCard({ gastos, ingresos, dias, monedaPorCuenta, categorias, cuen
             <li key={`${t.tipo}-${t.fecha}-${t.hora || ""}-${i}`}>
               <button
                 type="button"
-                className="resumen-fila"
+                className={"resumen-fila" + (t.guardando ? " mov-guardando" : "")}
+                aria-busy={t.guardando || undefined}
                 onClick={() => setEditando(t)}
-                aria-label={`Editar ${esIngreso ? "ingreso" : "gasto"}: ${t.descripcion || "sin descripción"}, ${categoria}, ${esIngreso ? "más" : "menos"} ${monto}, ${cuando}${t.pendiente ? ", sin subir" : ""}`}
+                aria-label={`Editar ${esIngreso ? "ingreso" : "gasto"}: ${t.descripcion || "sin descripción"}, ${categoria}, ${esIngreso ? "más" : "menos"} ${monto}, ${cuando}${t.pendiente ? ", sin subir" : t.guardando ? ", guardando" : ""}`}
               >
                 <span className="mov-icono" style={{ "--mov-color": colorDeCategoria(categoria) }} aria-hidden="true">
                   <i className={iconoPorCategoria(t.categoria)} />
