@@ -6,10 +6,13 @@ import { colorDeCategoria, nombreDia } from "../movimientos";
 import {
   categoriasOrdenadas,
   esDeEsteMes,
+  fechaEnDias,
   guardarOcultarSaldo,
   leerOcultarSaldo,
+  leerSubsPagadas,
   proximosPagos,
   soloConfirmados,
+  subYaPagada,
   textoCobroSub,
   totalEnPesos,
   totalesPorDia,
@@ -17,6 +20,8 @@ import {
 } from "../resumen";
 import { Cargando, ErrorEstado, ErrorYaMostrado, Skeleton, SkeletonFilas, Vacio } from "./Estado";
 import EditarMovimientoDialog from "./EditarMovimientoDialog";
+import PagarServicioDialog from "./PagarServicioDialog";
+import PagarSuscripcionDialog from "./PagarSuscripcionDialog";
 import { EtiquetaSinSubir } from "./EstadoConexion";
 import PeriodoSelector from "./PeriodoSelector";
 
@@ -82,9 +87,12 @@ export default function ResumenTab({
       <ParaHacer
         servicios={servicios}
         suscripciones={suscripciones}
+        gastos={gastos.data}
+        cuentas={cuentas.data}
         cotizaciones={cotizaciones}
         monedaPorCuenta={monedaPorCuenta}
         onIrA={onIrA}
+        onCambioMovimientos={onCambioMovimientos}
       />
       {mails && <MailsCard {...mails} cuentas={cuentas.data} monedaPorCuenta={monedaPorCuenta} />}
       <CategoriasCard resumen={resumen} dias={dias} onCambiarDias={onCambiarDias} onNuevo={onNuevo} />
@@ -322,16 +330,19 @@ function iconoDeServicio(s) {
 
 // Lo que toca pagar: servicios del mes que faltan y el próximo cobro de cada
 // suscripción, juntos y por fecha. Aparece lo que tengas cargado.
-function ParaHacer({ servicios, suscripciones, cotizaciones, monedaPorCuenta, onIrA }) {
+function ParaHacer({ servicios, suscripciones, gastos, cuentas, cotizaciones, monedaPorCuenta, onIrA, onCambioMovimientos }) {
+  // Tocar una fila abre «Pagar» ahí mismo (servicio o suscripción).
+  const [pagando, setPagando] = useState(null);
+  const [marcas, setMarcas] = useState(leerSubsPagadas);
   const conEstado = serviciosConEstado(servicios.data);
   const subs = suscripciones.data || [];
-  const pagos = proximosPagos(conEstado, subs);
+  // Lo ya pagado deja de aparecer hasta el próximo cobro.
+  const pagos = proximosPagos(conEstado, subs).filter((p) => p.tipo !== "suscripcion" || !subYaPagada(p, gastos, marcas));
   const hayServicios = conEstado.length > 0;
   const haySubs = subs.length > 0;
   const moneda = (p) => monedaPorCuenta[p.cuenta] || "ARS";
   const enPesos = (p) => aPesos(p.monto, monedaPorCuenta[p.cuenta], cotizaciones) ?? 0;
   const faltaPagar = pagos.filter((p) => esDeEsteMes(p)).reduce((sum, p) => sum + enPesos(p), 0);
-  const tabDe = (p) => (p.tipo === "suscripcion" ? "recurrentes" : "servicios");
 
   // Si falló una sola de las dos, se muestra la otra y abajo se avisa.
   const fallo = [
@@ -372,7 +383,7 @@ function ParaHacer({ servicios, suscripciones, cotizaciones, monedaPorCuenta, on
         <span className="resumen-icono resumen-icono--ok" aria-hidden="true">
           <i className="ph ph-check" />
         </span>
-        Ya pagaste todos los servicios de {nombreMes()}.
+        {haySubs ? "Ya pagaste todo por ahora." : `Ya pagaste todos los servicios de ${nombreMes()}.`}
       </p>
     );
   } else {
@@ -390,12 +401,8 @@ function ParaHacer({ servicios, suscripciones, cotizaciones, monedaPorCuenta, on
                 <button
                   type="button"
                   className="resumen-fila"
-                  onClick={() => onIrA(tabDe(p))}
-                  aria-label={
-                    esSub
-                      ? `Suscripción ${p.nombre}, ${monto}, ${cuando.toLowerCase()}`
-                      : `Pagar ${p.nombre}, ${monto}, ${textoVencimiento(p)}`
-                  }
+                  onClick={() => setPagando(p)}
+                  aria-label={`Pagar ${p.nombre}, ${monto}, ${esSub ? cuando.toLowerCase() : textoVencimiento(p)}`}
                 >
                   <span className="mov-icono" style={{ "--mov-color": colorDeCategoria(p.categoria || p.nombre) }} aria-hidden="true">
                     <i className={esSub ? iconoPorCategoria(p.categoria) : iconoDeServicio(p)} />
@@ -451,6 +458,31 @@ function ParaHacer({ servicios, suscripciones, cotizaciones, monedaPorCuenta, on
         Para pagar
       </Titulo>
       <div className="card resumen-card">{contenido}</div>
+      {pagando?.tipo === "servicio" && (
+        <PagarServicioDialog
+          servicio={pagando}
+          cuentas={cuentas}
+          monedaPorCuenta={monedaPorCuenta}
+          onClose={() => setPagando(null)}
+          onGuardado={(conGasto) => {
+            servicios.recargar();
+            if (conGasto) onCambioMovimientos?.("gasto");
+          }}
+        />
+      )}
+      {pagando?.tipo === "suscripcion" && (
+        <PagarSuscripcionDialog
+          suscripcion={pagando}
+          fechaCobro={fechaEnDias(pagando.dias)}
+          cuentas={cuentas}
+          monedaPorCuenta={monedaPorCuenta}
+          onClose={() => setPagando(null)}
+          onGuardado={(conGasto) => {
+            setMarcas(leerSubsPagadas());
+            if (conGasto) onCambioMovimientos?.("gasto");
+          }}
+        />
+      )}
     </section>
   );
 }

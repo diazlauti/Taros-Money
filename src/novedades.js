@@ -7,7 +7,7 @@ export const NOVEDADES = [
     fecha: "2026-11-25",
     icono: "ph ph-repeat",
     titulo: "Tus suscripciones en el inicio",
-    texto: "«Para pagar» ahora junta servicios y suscripciones, por fecha. Aparece lo que tengas cargado.",
+    texto: "«Para pagar» junta servicios y suscripciones, por fecha. Tocá uno, poné «Ya lo pagué» y se carga como gasto en la cuenta que elijas.",
   },
   {
     id: "2026-11-01-sin-conexion",

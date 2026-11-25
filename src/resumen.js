@@ -110,3 +110,46 @@ export function textoCobroSub(dias, ahora = new Date()) {
   if (dias === 1) return "Se cobra mañana";
   return `Se cobra el ${fmtFecha(fechaEnDias(dias, ahora))}`;
 }
+
+// --- Suscripciones pagadas ---
+// Las suscripciones no tienen «pagado» en la planilla: se dan por pagadas si
+// hay un gasto con su nombre en los días antes del cobro (lo cargaste vos o
+// llegó de un mail), o si la marcaste en este dispositivo sin anotar gasto.
+const SUBS_PAGADAS_KEY = "taros-subs-pagadas";
+const DIAS_ANTES_DEL_COBRO = 10;
+
+const normalizar = (t) =>
+  String(t || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+
+export function leerSubsPagadas() {
+  try {
+    return JSON.parse(localStorage.getItem(SUBS_PAGADAS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+export function marcarSubPagada(nombre, fechaCobro) {
+  const marcas = { ...leerSubsPagadas(), [normalizar(nombre)]: fechaCobro };
+  try {
+    localStorage.setItem(SUBS_PAGADAS_KEY, JSON.stringify(marcas));
+  } catch {
+    /* modo privado: igual se ve como pagada si se cargó el gasto */
+  }
+  return marcas;
+}
+
+export function subYaPagada(sub, gastos = [], marcas = {}, ahora = new Date()) {
+  const cobro = fechaEnDias(sub.dias, ahora);
+  if (marcas[normalizar(sub.nombre)] === cobro) return true;
+  const desde = fechaEnDias(sub.dias - DIAS_ANTES_DEL_COBRO, ahora);
+  const nombre = normalizar(sub.nombre);
+  return (gastos || []).some((g) => {
+    const fecha = String(g.fecha || "").slice(0, 10);
+    return fecha >= desde && fecha <= cobro && normalizar(g.descripcion) === nombre;
+  });
+}
