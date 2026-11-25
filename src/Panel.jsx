@@ -745,6 +745,7 @@ export default function PanelPrincipal({ tema, onCambiarTema, onCerrarSesion }) 
                 ingresos={ingresos}
                 cuentas={cuentas}
                 servicios={servicios}
+                suscripciones={suscripciones}
                 cotizaciones={cotizaciones}
                 monedaPorCuenta={monedaPorCuenta}
                 dias={dias}

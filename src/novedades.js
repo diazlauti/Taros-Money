@@ -3,6 +3,13 @@
 // se reutilizan ids: con eso se sabe cuáles ya leyó cada uno).
 export const NOVEDADES = [
   {
+    id: "2026-11-25-para-pagar-subs",
+    fecha: "2026-11-25",
+    icono: "ph ph-repeat",
+    titulo: "Tus suscripciones en el inicio",
+    texto: "«Para pagar» junta servicios y suscripciones, por fecha. Tocá uno, poné «Ya lo pagué» y se carga como gasto en la cuenta que elijas.",
+  },
+  {
     id: "2026-11-01-sin-conexion",
     fecha: "2026-11-01",
     icono: "ph ph-cloud-slash",

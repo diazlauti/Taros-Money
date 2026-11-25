@@ -1,6 +1,7 @@
 // Cuentas del Resumen: lo que entró y salió, los últimos movimientos y las
 // categorías. Sin React, para poder leerlo solo.
-import { aPesos } from "./format";
+import { aPesos, fmtFecha } from "./format";
+import { diasHastaCobro } from "./bandeja";
 
 const OCULTAR_KEY = "taros-ocultar-saldo";
 
@@ -73,4 +74,82 @@ export function totalesPorDia(lista, dias, monedaPorCuenta = {}, cotizaciones = 
     if (i !== undefined) totales[i] += totalEnPesos([t], monedaPorCuenta, cotizaciones);
   });
   return totales;
+}
+
+// «Para pagar» del inicio: los servicios que faltan pagar este mes y el
+// próximo cobro de cada suscripción, todo junto y por fecha (lo vencido
+// primero). Así aparece lo que tengas: servicios, suscripciones o los dos.
+// `servicios` ya viene con estado (serviciosConEstado).
+export function proximosPagos(servicios = [], suscripciones = [], ahora = new Date()) {
+  const lista = [
+    ...(servicios || [])
+      .filter((s) => s.estado !== "pagado")
+      .map((s) => ({ ...s, tipo: "servicio", dias: s.diasRestantes })),
+    ...(suscripciones || [])
+      .map((s) => ({ ...s, tipo: "suscripcion", dias: diasHastaCobro(s.diaCobro, ahora) }))
+      .filter((s) => s.dias !== null),
+  ];
+  return lista.sort((a, b) => a.dias - b.dias || (a.tipo === "servicio" ? -1 : 1));
+}
+
+// Lo que se paga antes de que termine el mes (para el «Falta $X»).
+export function esDeEsteMes(pago, ahora = new Date()) {
+  const ultimo = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate();
+  return pago.dias <= ultimo - ahora.getDate();
+}
+
+// "2026-12-03" a partir de los días que faltan.
+export function fechaEnDias(dias, ahora = new Date()) {
+  const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + dias);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Lo que va a la derecha de una suscripción: «Se cobra hoy», «mañana» o el día.
+export function textoCobroSub(dias, ahora = new Date()) {
+  if (dias === 0) return "Se cobra hoy";
+  if (dias === 1) return "Se cobra mañana";
+  return `Se cobra el ${fmtFecha(fechaEnDias(dias, ahora))}`;
+}
+
+// --- Suscripciones pagadas ---
+// Las suscripciones no tienen «pagado» en la planilla: se dan por pagadas si
+// hay un gasto con su nombre en los días antes del cobro (lo cargaste vos o
+// llegó de un mail), o si la marcaste en este dispositivo sin anotar gasto.
+const SUBS_PAGADAS_KEY = "taros-subs-pagadas";
+const DIAS_ANTES_DEL_COBRO = 10;
+
+const normalizar = (t) =>
+  String(t || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+
+export function leerSubsPagadas() {
+  try {
+    return JSON.parse(localStorage.getItem(SUBS_PAGADAS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+export function marcarSubPagada(nombre, fechaCobro) {
+  const marcas = { ...leerSubsPagadas(), [normalizar(nombre)]: fechaCobro };
+  try {
+    localStorage.setItem(SUBS_PAGADAS_KEY, JSON.stringify(marcas));
+  } catch {
+    /* modo privado: igual se ve como pagada si se cargó el gasto */
+  }
+  return marcas;
+}
+
+export function subYaPagada(sub, gastos = [], marcas = {}, ahora = new Date()) {
+  const cobro = fechaEnDias(sub.dias, ahora);
+  if (marcas[normalizar(sub.nombre)] === cobro) return true;
+  const desde = fechaEnDias(sub.dias - DIAS_ANTES_DEL_COBRO, ahora);
+  const nombre = normalizar(sub.nombre);
+  return (gastos || []).some((g) => {
+    const fecha = String(g.fecha || "").slice(0, 10);
+    return fecha >= desde && fecha <= cobro && normalizar(g.descripcion) === nombre;
+  });
 }
