@@ -189,15 +189,100 @@ async function llamarUnaVez(funcion, parametros, destino = API_PRINCIPAL) {
 
 // Lecturas: se reintentan solas ante fallas de red (no cambian nada, así que
 // repetirlas es seguro).
-async function leer(funcion, parametros = []) {
+async function leerSola(funcion, parametros = [], destino = API_PRINCIPAL) {
   for (let intento = 0; ; intento++) {
     try {
-      return await llamarUnaVez(funcion, parametros);
+      return await llamarUnaVez(funcion, parametros, destino);
     } catch (err) {
       if (!err.transitorio || !hayConexion() || intento >= ESPERAS_REINTENTO_MS.length) throw err;
       await esperar(ESPERAS_REINTENTO_MS[intento]);
     }
   }
+}
+
+// Lecturas juntas: las que se piden en el mismo momento (al abrir la app,
+// después de guardar) viajan de a varias en un pedido a obtenerVarios
+// (archivo "lote" del backend): al abrir, 3 pedidos en vez de 14. Google
+// arranca el script y abre la planilla una vez por pedido en vez de una por
+// lectura, y los 3 van en paralelo para no esperar una lectura detrás de la
+// otra. Cada lectura vuelve con su propio resultado o
+// error, así que una que falla no tapa a las demás. Si el backend todavía no
+// tiene el archivo, se vuelve a pedir cada una por separado, como antes.
+// Solo las que leen: guardarCotizacionesAuto (que escribe) va siempre sola.
+const JUNTABLES = new Set([
+  "obtenerSaldo",
+  "generarResumen",
+  "obtenerGastosRecientes",
+  "obtenerIngresosRecientes",
+  "obtenerCategorias",
+  "obtenerIconosCategorias",
+  "obtenerCuentas",
+  "obtenerMetas",
+  "obtenerSuscripcionesView",
+  "obtenerServicios",
+  "obtenerTendencia",
+  "obtenerMonedas",
+  "obtenerUrlPlanilla",
+  "obtenerConfigMails",
+  "obtenerAvisoServicios",
+  "obtenerCotizacion",
+  "obtenerPush",
+  "obtenerWhatsApp",
+]);
+const POR_PEDIDO = 5;
+// Varias lecturas en una sola ejecución tardan más que una sola.
+const API_LOTE = { ...API_PRINCIPAL, tiempoLimite: 45000 };
+let loteDisponible = true;
+let enEspera = null;
+
+function leer(funcion, parametros = []) {
+  if (!loteDisponible || !JUNTABLES.has(funcion)) return leerSola(funcion, parametros);
+  return new Promise((resolve, reject) => {
+    if (!enEspera) {
+      enEspera = [];
+      setTimeout(mandarJuntas, 0);
+    }
+    enEspera.push({ funcion, parametros, resolve, reject });
+  });
+}
+
+// Se reparten salteadas (1ra, 4ta, 7ma… en el primero) para que las más
+// pesadas, que la app pide primero, no caigan todas en el mismo pedido.
+function mandarJuntas() {
+  const todas = enEspera;
+  enEspera = null;
+  const pedidos = Math.ceil(todas.length / POR_PEDIDO);
+  for (let n = 0; n < pedidos; n++) mandarLote(todas.filter((_, i) => i % pedidos === n));
+}
+
+function porSeparado(lote) {
+  for (const p of lote) leerSola(p.funcion, p.parametros).then(p.resolve, p.reject);
+}
+
+async function mandarLote(lote) {
+  if (lote.length === 1) return porSeparado(lote);
+  let respuestas;
+  try {
+    respuestas = await leerSola("obtenerVarios", [lote.map((p) => [p.funcion, p.parametros])], API_LOTE);
+  } catch (err) {
+    if (err.noDisponible) {
+      loteDisponible = false;
+      return porSeparado(lote);
+    }
+    for (const p of lote) p.reject(err);
+    return;
+  }
+  lote.forEach((p, i) => {
+    const r = respuestas?.[i];
+    if (r && !r.error) return p.resolve(r.data ?? null);
+    const crudo = r?.error || "";
+    const mensaje = mensajeDelBackend({ error: { message: crudo } });
+    // Una falla pasajera de Google en esa lectura: se reintenta sola, aparte.
+    if (mensaje === MENSAJE_GOOGLE) return leerSola(p.funcion, p.parametros).then(p.resolve, p.reject);
+    const err = new Error(mensaje);
+    err.noDisponible = /script function not found/i.test(crudo);
+    p.reject(err);
+  });
 }
 
 // Escrituras: NO se reintentan solas. Si el pedido llegó pero se cortó la
