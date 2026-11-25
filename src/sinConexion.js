@@ -208,10 +208,6 @@ function opsDe(clave) {
   return leerCola().filter((op) => op.clave === clave && !op.subidoEn);
 }
 
-export function hayPendientesDe(tipo, m) {
-  return opsDe(claveMovimiento(tipo, m)).length > 0;
-}
-
 // Saca todo lo que no se subió de ese movimiento (el botón «Descartar» de
 // uno que no se pudo subir).
 export function descartarPendientes(tipo, m) {

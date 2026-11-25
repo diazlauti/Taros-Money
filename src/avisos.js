@@ -5,5 +5,5 @@ import { createContext, useContext } from "react";
 export const AvisosContext = createContext({ avisar: () => {} });
 
 export function useAvisos() {
-return useContext(AvisosContext);
+  return useContext(AvisosContext);
 }

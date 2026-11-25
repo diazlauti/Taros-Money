@@ -73,7 +73,7 @@
   <body>
     <main>
       <h1>Privacidad en Taros Money</h1>
-      <p class="fecha">Última actualización: 5 de noviembre de 2026.</p>
+      <p class="fecha">Última actualización: 25 de noviembre de 2026.</p>
       <p>
         Taros Money es una app para llevar tus gastos, ingresos, cuentas y metas. Esto es lo que guardamos, para qué y cómo
         podés borrarlo.
@@ -97,6 +97,21 @@
           número) y sus últimos 4 dígitos para mostrártelos. De cada mensaje que le mandás al bot usamos solo el texto del
           gasto («café 2500») y la fecha.
         </li>
+        <li>
+          <strong>Avisos en el celu (opcional).</strong> Si los prendés, guardamos en tu cuenta de Google la dirección de avisos
+          de tu navegador. El texto de cada aviso (por ejemplo, «Vence la luz mañana») pasa por Netlify y por el servicio de
+          avisos de tu navegador para llegar a tu dispositivo, y no se guarda.
+        </li>
+        <li>
+          <strong>Sesión iniciada.</strong> Para no pedirte que entres cada hora, el permiso de Google queda guardado en una
+          cookie cifrada de tu navegador, que la página no puede leer. Dura hasta 180 días y se borra al tocar «Cerrar sesión».
+        </li>
+        <li>
+          <strong>Sugerencias, errores y lista de espera (opcional).</strong> Si nos mandás una sugerencia o nos avisás de un
+          error, recibimos por mail tu mensaje, el mail de tu cuenta de Google (para poder responderte), la versión de la app,
+          datos del navegador y, si la adjuntás, una captura de pantalla. Si te anotás en la lista de espera, tu nombre y tu
+          mail. Esto pasa por Netlify y lo usamos solo para responderte y arreglar la app.
+        </li>
       </ul>
 
       <h2>Para qué los usamos</h2>
@@ -109,8 +124,9 @@
       <p>
         Taros Money pide permiso para crear y editar tu planilla, programar los avisos que vos prendés (como el de servicios
         por vencer), mandarte esos avisos a tu propio mail y, si prendés «Gastos desde tus mails», leer tu Gmail sin poder
-        borrar ni mandar nada. Esos datos se usan solo para las funciones que ves en la app y no se guardan en otros
-        servidores fuera de tu Google Drive.
+        borrar ni mandar nada. Esos datos se usan solo para las funciones que ves en la app. Tus movimientos y lo que sale
+        de tus mails se guardan solo en tu planilla de Google Drive; lo único que sale de Google es lo que se cuenta arriba
+        (avisos, sesión y lo que nos mandás vos).
       </p>
       <p>
         El uso y la transferencia de la información recibida de las APIs de Google cumple con la
@@ -118,9 +134,17 @@
         datos de usuario de los servicios de API de Google</a>, incluidos los requisitos de uso limitado.
       </p>
 
+      <h2>Cómo los cuidamos</h2>
+      <p>
+        Todo viaja cifrado (HTTPS). La app no tiene una base de datos propia: cada pedido corre con tu propio permiso de
+        Google sobre tu planilla, así que nadie más puede leerla desde la app. El permiso de la sesión se guarda cifrado y
+        solo lo puede usar este sitio.
+      </p>
+
       <h2>Quiénes intervienen</h2>
       <p>
-        Google (login, Sheets y Apps Script), Netlify (donde corre la app) y Meta (el envío y la recepción de mensajes de
+        Google (login, Sheets, Gmail y Apps Script), Netlify (donde corre la app, los avisos, la sesión y los mensajes que nos
+        mandás), el servicio de avisos de tu navegador (Google, Apple, Mozilla u otro) y Meta (el envío y la recepción de mensajes de
         WhatsApp). Cada uno tiene sus propias políticas.
       </p>
 
@@ -140,7 +164,8 @@
         </li>
         <li>
           <strong>Todo lo demás:</strong> escribinos a
-          <a href="mailto:tarosmoney@gmail.com">tarosmoney@gmail.com</a> y lo borramos.
+          <a href="mailto:tarosmoney@gmail.com">tarosmoney@gmail.com</a> y lo borramos (también los mensajes y capturas
+          que nos hayas mandado).
         </li>
       </ul>
 

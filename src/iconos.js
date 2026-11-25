@@ -116,10 +116,6 @@ export function iconoDeCategoria(categoria) {
   return elegidos[clave] || POR_DEFECTO[clave] || ICONO_GENERICO;
 }
 
-export function iconoElegido(categoria) {
-  return elegidos[normalizar(categoria)] || "";
-}
-
 export function leerIconosLocales() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};

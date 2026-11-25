@@ -5,7 +5,9 @@ import { createContext, useContext } from "react";
 // components/Confirmar.jsx.
 // Sin proveedor (no debería pasar) cae en el confirm del navegador, así
 // nunca se pierde lo cargado sin preguntar.
-export const ConfirmarContext = createContext(async ({ titulo, texto }) => window.confirm([titulo, texto].filter(Boolean).join("\n")));
+export const ConfirmarContext = createContext(async ({ titulo, texto }) =>
+  window.confirm([titulo, texto].filter(Boolean).join("\n")),
+);
 
 export function useConfirmar() {
   return useContext(ConfirmarContext);

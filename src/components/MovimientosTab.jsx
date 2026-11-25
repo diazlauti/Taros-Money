@@ -143,11 +143,13 @@ export default function MovimientosTab({
     setConfirmando(true);
     setErrorConfirmar("");
     try {
-      const { confirmados, sinMonto: faltan = 0 } = await confirmarTodosLosDeMails();
+      const { confirmados, sinMonto: faltan = 0, sinCuenta = 0 } = await confirmarTodosLosDeMails();
       playSuccess();
       avisar(
         (confirmados === 1 ? "1 movimiento confirmado" : `${confirmados} movimientos confirmados`) +
-          (faltan > 0 ? `. ${faltan === 1 ? "Falta el monto de 1" : `Falta el monto de ${faltan}`}.` : "")
+          (faltan > 0 ? `. ${faltan === 1 ? "Falta el monto de 1" : `Falta el monto de ${faltan}`}` : "") +
+          (sinCuenta > 0 ? `. ${sinCuenta === 1 ? "Queda 1" : `Quedan ${sinCuenta}`} para que elijas la cuenta` : "") +
+          (faltan > 0 || sinCuenta > 0 ? "." : "")
       );
       setFiltro("todos");
       onCambio?.();
